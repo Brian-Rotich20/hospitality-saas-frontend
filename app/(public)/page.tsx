@@ -1,0 +1,1 @@
+// Homepage for the application. This is the default page that users will see when they visit the root URL of the application.

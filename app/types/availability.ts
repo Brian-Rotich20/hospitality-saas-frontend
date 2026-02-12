@@ -1,0 +1,1 @@
+// Availability types for defining the structure of availability-related data, such as available dates, time slots, and booking status.

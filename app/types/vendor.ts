@@ -1,0 +1,1 @@
+// Vendor types for defining the structure of vendor-related data, such as vendor information, services offered, and contact details.

@@ -1,0 +1,1 @@
+// API response types for defining the structure of data returned from API endpoints, such as booking details, availability information, vendor profiles, and authentication responses.

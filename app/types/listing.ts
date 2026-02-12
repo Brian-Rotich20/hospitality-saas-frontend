@@ -1,0 +1,1 @@
+// Listing types for defining the structure of listing-related data, such as properties, amenities, pricing, and availability.

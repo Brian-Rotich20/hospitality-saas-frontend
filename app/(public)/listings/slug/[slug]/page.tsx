@@ -1,0 +1,1 @@
+// Listing details page by slug

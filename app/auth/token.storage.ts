@@ -1,0 +1,1 @@
+// Token management functions for storing and retrieving authentication tokens in localStorage or cookies, depending on the environment and security requirements.
