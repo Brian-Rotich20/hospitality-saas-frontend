@@ -1,7 +1,7 @@
 // Role check hook to determine user permissions and access levels
 'use client';
 
-import { useAuth } from '../lib/auth/auth.context';
+import { useAuth } from '../auth/auth.context';
 
 export function useRole(allowedRoles: string[]) {
   const { user } = useAuth();
