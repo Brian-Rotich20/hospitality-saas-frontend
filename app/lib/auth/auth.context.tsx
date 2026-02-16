@@ -1,9 +1,9 @@
-// Auth conetext provider
+// It hooks into the authentication system, providing user state and auth functions to the app
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { jwtDecode } from 'jose';
+import { jwtDecode } from 'jwt-decode';
 
 type UserRole = 'customer' | 'vendor' | 'admin';
 
