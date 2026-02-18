@@ -1,60 +1,70 @@
 'use client';
 
-import React from 'react';
-import { AlertCircle, Package, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertCircle, X } from 'lucide-react';
 
-interface EmptyStateProps {
-  message: string;
-  description?: string;
-  icon?: 'package' | 'search' | 'alert' | React.ReactNode;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
+interface ErrorAlertProps {
+  error: string | Error;
+  onDismiss?: () => void;
+  variant?: 'banner' | 'inline';
 }
 
-const defaultIcons = {
-  package: <Package size={48} className="text-gray-400" />,
-  search: <Search size={48} className="text-gray-400" />,
-  alert: <AlertCircle size={48} className="text-gray-400" />,
-};
+export function ErrorAlert({
+  error,
+  onDismiss,
+  variant = 'inline',
+}: ErrorAlertProps) {
+  const [isVisible, setIsVisible] = useState(true);
 
-export function EmptyState({
-  message,
-  description,
-  icon = 'package',
-  action,
-}: EmptyStateProps) {
-  const iconElement = typeof icon === 'string' ? defaultIcons[icon as keyof typeof defaultIcons] : icon;
+  const handleDismiss = () => {
+    setIsVisible(false);
+    onDismiss?.();
+  };
+
+  if (!isVisible) return null;
+
+  const errorMessage = typeof error === 'string' ? error : error.message;
+
+  if (variant === 'banner') {
+    return (
+      <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+        <div className="flex items-start">
+          <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={20} />
+          <div className="ml-3 flex-1">
+            <p className="text-sm font-medium text-red-800">
+              {errorMessage}
+            </p>
+          </div>
+          <button
+            onClick={handleDismiss}
+            className="ml-3 text-red-600 hover:text-red-700 transition"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      {/* Icon */}
-      <div className="mb-4">
-        {iconElement}
-      </div>
-
-      {/* Message */}
-      <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
-        {message}
-      </h3>
-
-      {/* Description */}
-      {description && (
-        <p className="text-sm text-gray-600 mb-6 text-center max-w-md">
-          {description}
-        </p>
-      )}
-
-      {/* Action Button */}
-      {action && (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+      <div className="flex items-start space-x-3">
+        <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+        <div className="flex-1">
+          <p className="text-sm text-red-700 font-medium">
+            Error
+          </p>
+          <p className="text-sm text-red-600 mt-1">
+            {errorMessage}
+          </p>
+        </div>
         <button
-          onClick={action.onClick}
-          className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-sm"
+          onClick={handleDismiss}
+          className="text-red-600 hover:text-red-700 transition flex-shrink-0"
         >
-          {action.label}
+          <X size={16} />
         </button>
-      )}
+      </div>
     </div>
   );
 }

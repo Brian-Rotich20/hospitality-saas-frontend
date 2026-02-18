@@ -28,7 +28,7 @@ export function LocationBadge({
 }: LocationBadgeProps) {
   return (
     <div className={`flex items-center space-x-1.5 text-gray-600 ${sizeClasses[size]}`}>
-      <MapPin size={iconSizes[size]} className="flex-shrink-0 text-primary-600" />
+      <MapPin size={iconSizes[size]} className="shrink-0 text-primary-600" />
       <span className="font-medium">
         {city}
         {area && `, ${area}`}

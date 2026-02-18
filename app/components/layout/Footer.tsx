@@ -92,19 +92,19 @@ export function Footer() {
             <h3 className="text-lg font-semibold text-white mb-4">Contact</h3>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <Phone size={18} className="text-primary-400 flex-shrink-0 mt-1" />
+                <Phone size={18} className="text-primary-400 shrink-0 mt-1" />
                 <div>
                   <p className="text-sm">+254 (0) 700 000 000</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <Mail size={18} className="text-primary-400 flex-shrink-0 mt-1" />
+                <Mail size={18} className="text-primary-400 shrink-0 mt-1" />
                 <div>
                   <p className="text-sm">support@inova.co.ke</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <MapPin size={18} className="text-primary-400 flex-shrink-0 mt-1" />
+                <MapPin size={18} className="text-primary-400 shrink-0 mt-1" />
                 <div>
                   <p className="text-sm">Nairobi, Kenya</p>
                 </div>
