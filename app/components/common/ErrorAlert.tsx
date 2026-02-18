@@ -49,7 +49,7 @@ export function ErrorAlert({
   return (
     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
       <div className="flex items-start space-x-3">
-        <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+        <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={20} />
         <div className="flex-1">
           <p className="text-sm text-red-700 font-medium">
             Error
@@ -60,7 +60,7 @@ export function ErrorAlert({
         </div>
         <button
           onClick={handleDismiss}
-          className="text-red-600 hover:text-red-700 transition flex-shrink-0"
+          className="text-red-600 hover:text-red-700 transition shrink-0"
         >
           <X size={16} />
         </button>
