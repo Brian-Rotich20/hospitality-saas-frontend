@@ -40,4 +40,5 @@ export interface ListingFilters {
   date?: string;
   page?: number;
   limit?: number;
+  sortBy?: 'price' | 'rating' | 'createdAt';
 }
