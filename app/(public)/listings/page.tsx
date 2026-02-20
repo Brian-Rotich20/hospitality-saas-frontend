@@ -104,11 +104,11 @@ export default function ListingsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar Filters */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 sticky top-20 h-fit">
             {/* Mobile Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg mb-4 w-full justify-center"
+              className="lg:hidden flex items-center space-x-2 px-4 py-2 bg-white border border-green-900 rounded-lg mb-4 w-full justify-center"
             >
               <Filter size={20} />
               <span>Filters</span>
@@ -118,7 +118,7 @@ export default function ListingsPage() {
             <div
               className={`${
                 showFilters ? 'block' : 'hidden'
-              } lg:block bg-white rounded-lg shadow-md p-6 space-y-6`}
+              } lg:block bg-emerald-700 rounded-lg shadow-md p-6 space-y-6`}
             >
               <div>
                 <h3 className="font-semibold text-gray-900 mb-4">Filters</h3>
@@ -257,7 +257,7 @@ export default function ListingsPage() {
                 }}
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {listings.map((listing) => (
                   <Link key={listing.id} href={`/listings/${listing.id}`}>
                     <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition duration-300 h-full flex flex-col">

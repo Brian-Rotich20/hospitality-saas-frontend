@@ -1,4 +1,4 @@
-// listing details page
+// listing details page having a dynamic route based on the listing ID. This page will display detailed information about a specific listing, including images, description, amenities, pricing, and availability. It will also include a booking request form and contact information for the vendor.
 'use client';
 
 import React, { useEffect, useState } from 'react';
