@@ -11,6 +11,7 @@ import { LocationBadge } from '../../../components/common/LocationBadge';
 import { RatingStars } from '../../../components/common/RatingStars';
 import { AvailabilityBadge } from '../../../components/common/AvailabilityBadge';
 import { MapPin, Users, Check, Share2, Heart } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
 interface ListingDetailPageProps {
   params: {
@@ -18,18 +19,24 @@ interface ListingDetailPageProps {
   };
 }
 
-export default function ListingDetailPage({ params }: ListingDetailPageProps) {
+export default function ListingDetailPage() {
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  const params = useParams();
+  const id = params.id
+
   useEffect(() => {
+    if (!id) return;
+
     const fetchListing = async () => {
       try {
         setLoading(true);
-        const response = await listingsService.getById(params.id);
+         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings/${id}/`);
+         const response = await res.json();
         setListing(response.data);
       } catch (err) {
         console.error('Error fetching listing:', err);
@@ -40,7 +47,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
     };
 
     fetchListing();
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return <LoadingSpinner fullPage text="Loading listing..." />;

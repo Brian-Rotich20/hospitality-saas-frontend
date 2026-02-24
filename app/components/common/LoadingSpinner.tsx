@@ -8,45 +8,47 @@ interface LoadingSpinnerProps {
   fullPage?: boolean;
 }
 
-export function LoadingSpinner({
-  size = 'md',
-  text,
-  fullPage = false,
-}: LoadingSpinnerProps) {
-  const sizeClasses = {
-    sm: 'w-6 h-6 border-2',
-    md: 'w-8 h-8 border-3',
-    lg: 'w-12 h-12 border-4',
-  };
+const sizeMap = {
+  sm: { wh: 24, border: 2 },
+  md: { wh: 36, border: 3 },
+  lg: { wh: 52, border: 4 },
+};
 
-  const spinnerClasses = `
-    inline-block
-    ${sizeClasses[size]}
-    border-primary-200
-    border-t-primary-600
-    rounded-full
-    animate-spin
-  `;
+export function LoadingSpinner({ size = 'md', text, fullPage = false }: LoadingSpinnerProps) {
+  const { wh, border } = sizeMap[size];
+
+  const spinner = (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+      <div
+        style={{
+          width: wh,
+          height: wh,
+          borderRadius: '50%',
+          border: `${border}px solid #d4e8db`,
+          borderTopColor: '#1a6645',
+          animation: 'spin 0.75s linear infinite',
+        }}
+      />
+      {text && (
+        <p style={{ color: '#6b8a78', fontSize: 14, fontWeight: 500, margin: 0, fontFamily: 'DM Sans, sans-serif' }}>
+          {text}
+        </p>
+      )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   if (fullPage) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center space-y-4">
-          <div className={spinnerClasses} />
-          {text && (
-            <p className="text-gray-600 text-sm font-medium">{text}</p>
-          )}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh' }}>
+        {spinner}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-3">
-      <div className={spinnerClasses} />
-      {text && (
-        <p className="text-gray-600 text-sm font-medium">{text}</p>
-      )}
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0' }}>
+      {spinner}
     </div>
   );
 }

@@ -2,15 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '../../lib/auth/auth.context';
+import { useAuth } from '../../../../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
-import { bookingsService } from '../../lib/api/endpoints';
-import { Booking } from '../../lib/types';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import { EmptyState } from '../../components/common/EmptyState';
-import { StatusBadge } from '../../components/common/StatusBadge';
+import { bookingsService } from '../../../../lib/api/endpoints';
+import { Booking } from '../../../../lib/types';
+import { LoadingSpinner } from '../../../../components/common/LoadingSpinner';
+import { EmptyState } from '../../../../components/common/EmptyState';
+import { StatusBadge } from '../../../../components/common/StatusBadge';
 import { Calendar, MapPin } from 'lucide-react';
-import { formatDate } from '../../lib/utils/format';
+import { formatDate } from '../../../../lib/utils/format';
 
 export default function MyBookingsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();

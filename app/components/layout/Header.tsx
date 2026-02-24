@@ -19,7 +19,7 @@ export function Header() {
           {/* Logo */}
           <Link href="/" className="shrink-0">
             <div className="text-2xl text-green-700 font-bold text-primary-600">
-              Inova
+              InovaShop
             </div>
           </Link>
 

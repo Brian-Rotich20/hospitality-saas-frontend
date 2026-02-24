@@ -25,7 +25,7 @@ const sizeClasses: Record<BadgeSize, string> = {
   lg: 'px-4 py-1.5 text-base',
 };
 
-export function Badge({
+export function StatusBadge({
   children,
   variant = 'primary',
   size = 'md',

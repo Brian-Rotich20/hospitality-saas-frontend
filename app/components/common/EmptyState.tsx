@@ -7,50 +7,54 @@ interface EmptyStateProps {
   message: string;
   description?: string;
   icon?: 'package' | 'search' | 'alert' | React.ReactNode;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
+  action?: { label: string; onClick: () => void };
 }
 
-const defaultIcons = {
-  package: <Package size={48} className="text-gray-400" />,
-  search: <Search size={48} className="text-gray-400" />,
-  alert: <AlertCircle size={48} className="text-gray-400" />,
+const iconMap = {
+  package: <Package size={32} color="#1a6645" />,
+  search:  <Search  size={32} color="#1a6645" />,
+  alert:   <AlertCircle size={32} color="#1a6645" />,
 };
 
-export function EmptyState({
-  message,
-  description,
-  icon = 'package',
-  action,
-}: EmptyStateProps) {
-  const iconElement = typeof icon === 'string' ? defaultIcons[icon as keyof typeof defaultIcons] : icon;
+const s: Record<string, React.CSSProperties> = {
+  wrap: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    textAlign: 'center', padding: '80px 20px', color: '#6b8a78',
+    fontFamily: 'DM Sans, sans-serif',
+  },
+  iconRing: {
+    width: 72, height: 72, borderRadius: '50%',
+    background: 'linear-gradient(135deg, #c8e6d4, #a8d5b5)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontFamily: 'Playfair Display, Georgia, serif',
+    fontSize: 22, fontWeight: 600, color: '#1c2a22', marginBottom: 8,
+  },
+  desc:   { fontSize: 14, marginBottom: 24, maxWidth: 360 },
+  btn: {
+    background: '#1a6645', color: '#fff', border: 'none',
+    borderRadius: 12, padding: '12px 28px', fontSize: 14,
+    fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+    transition: 'background 0.2s',
+  },
+};
+
+export function EmptyState({ message, description, icon = 'package', action }: EmptyStateProps) {
+  const iconEl = typeof icon === 'string' ? iconMap[icon as keyof typeof iconMap] : icon;
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      {/* Icon */}
-      <div className="mb-4">
-        {iconElement}
-      </div>
-
-      {/* Message */}
-      <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
-        {message}
-      </h3>
-
-      {/* Description */}
-      {description && (
-        <p className="text-sm text-gray-600 mb-6 text-center max-w-md">
-          {description}
-        </p>
-      )}
-
-      {/* Action Button */}
+    <div style={s.wrap}>
+      <div style={s.iconRing}>{iconEl}</div>
+      <h3 style={s.title}>{message}</h3>
+      {description && <p style={s.desc}>{description}</p>}
       {action && (
         <button
           onClick={action.onClick}
-          className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-sm"
+          style={s.btn}
+          onMouseEnter={(e) => ((e.target as HTMLElement).style.background = '#0d3d2a')}
+          onMouseLeave={(e) => ((e.target as HTMLElement).style.background = '#1a6645')}
         >
           {action.label}
         </button>

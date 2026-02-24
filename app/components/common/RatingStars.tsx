@@ -1,74 +1,38 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Star } from 'lucide-react';
 
 interface RatingStarsProps {
   rating: number;
   count?: number;
-  interactive?: boolean;
-  onRate?: (rating: number) => void;
   size?: 'sm' | 'md' | 'lg';
 }
 
-export function RatingStars({
-  rating,
-  count,
-  interactive = false,
-  onRate,
-  size = 'md',
-}: RatingStarsProps) {
-  const [hoverRating, setHoverRating] = useState<number | null>(null);
+const starSizeMap = { sm: 12, md: 14, lg: 18 };
 
-  const sizeMap = {
-    sm: 16,
-    md: 20,
-    lg: 24,
-  };
-
-  const starSize = sizeMap[size];
-  const displayRating = hoverRating ?? rating;
+export function RatingStars({ rating, count, size = 'md' }: RatingStarsProps) {
+  const starSize = starSizeMap[size];
+  const rounded  = Math.round(rating ?? 0);
 
   return (
-    <div className="flex items-center space-x-2">
-      <div className="flex items-center space-x-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            onClick={() => {
-              if (interactive && onRate) {
-                onRate(star);
-              }
-            }}
-            onMouseEnter={() => interactive && setHoverRating(star)}
-            onMouseLeave={() => setHoverRating(null)}
-            className={interactive ? 'cursor-pointer' : ''}
-            disabled={!interactive}
-          >
-            <Star
-              size={starSize}
-              className={`
-                transition-colors
-                ${
-                  star <= displayRating
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'text-gray-300'
-                }
-              `}
-            />
-          </button>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'DM Sans, sans-serif' }}>
+      <div style={{ display: 'flex', gap: 2 }}>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Star
+            key={i}
+            size={starSize}
+            fill={i <= rounded ? '#f59e0b' : 'none'}
+            color={i <= rounded ? '#f59e0b' : '#d1d5db'}
+          />
         ))}
       </div>
-
+      <span style={{ fontSize: starSize, fontWeight: 600, color: '#1c2a22' }}>
+        {(rating ?? 0).toFixed(1)}
+      </span>
       {count !== undefined && (
-        <span className="text-sm text-gray-600">
-          ({count} {count === 1 ? 'review' : 'reviews'})
-        </span>
-      )}
-
-      {!count && rating > 0 && (
-        <span className="text-sm font-medium text-gray-700">
-          {rating.toFixed(1)}
+        <span style={{ fontSize: starSize - 1, color: '#6b8a78' }}>
+          ({count} review{count !== 1 ? 's' : ''})
         </span>
       )}
     </div>

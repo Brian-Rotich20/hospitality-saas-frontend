@@ -9,27 +9,24 @@ interface LocationBadgeProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const sizeClasses = {
-  sm: 'text-xs',
-  md: 'text-sm',
-  lg: 'text-base',
-};
+const fontSizeMap  = { sm: 12, md: 14, lg: 16 };
+const iconSizeMap  = { sm: 13, md: 15, lg: 18 };
 
-const iconSizes = {
-  sm: 14,
-  md: 16,
-  lg: 18,
-};
-
-export function LocationBadge({
-  city,
-  area,
-  size = 'md',
-}: LocationBadgeProps) {
+export function LocationBadge({ city, area, size = 'md' }: LocationBadgeProps) {
   return (
-    <div className={`flex items-center space-x-1.5 text-gray-600 ${sizeClasses[size]}`}>
-      <MapPin size={iconSizes[size]} className="shrink-0 text-primary-600" />
-      <span className="font-medium">
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        fontSize: fontSizeMap[size],
+        color: '#6b8a78',
+        fontWeight: 500,
+        fontFamily: 'DM Sans, sans-serif',
+      }}
+    >
+      <MapPin size={iconSizeMap[size]} color="#2d9967" style={{ flexShrink: 0 }} />
+      <span>
         {city}
         {area && `, ${area}`}
       </span>
