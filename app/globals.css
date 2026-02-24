@@ -2,44 +2,43 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
+/*
+  60-30-10 Design System — dukaan
+  ─────────────────────────────────────────
+  60% #F5F7FA  Dominant neutral (page bg, cards)
+  30% #1C2B4A  Navy structure   (sidebar, titles, nav)
+  10% #E8612C  Burnt orange     (CTAs, focus, badges)
+  ─────────────────────────────────────────
+*/
 :root {
-  /* ── Trust-first navy palette ── */
-  --navy-deep:    #1a2c4e;
-  --navy-mid:     #243d6a;
-  --blue-accent:  #2563aa;
-  --blue-light:   #7eb8e8;
-  --slate:        #5a7192;
-  --slate-light:  #9baec8;
-  --border:       #dce3ed;
-  --bg-page:      #f4f6f9;
-  --bg-card:      #ffffff;
-  --bg-input:     #f9fafc;
-  --text-primary: #1a2332;
-  --text-muted:   #5a7192;
+  /* Primary palette */
+  --color-60:     #F5F7FA;   /* dominant bg  */
+  --color-30:     #1C2B4A;   /* navy         */
+  --color-10:     #E8612C;   /* accent       */
+  --color-10-hover: #cf521f;
 
-  /* ── Typography ── */
+  /* Neutrals */
+  --white:        #ffffff;
+  --bg-input:     #f9fafc;
+  --border:       #e5e9f0;
+  --border-light: #f0f3f8;
+  --text-primary: #1C2B4A;
+  --text-secondary:#5a7192;
+  --text-muted:   #9baec8;
+
+  /* Shadows */
+  --card-shadow:  0 1px 4px rgba(28,43,74,0.06);
+  --card-hover:   0 6px 24px rgba(28,43,74,0.12);
+
+  /* Typography */
   --font-serif:   'Playfair Display', Georgia, serif;
   --font-sans:    'DM Sans', sans-serif;
-
-  /* ── Legacy green tokens (keep for Header/Footer) ── */
-  --forest:       #0d3d2a;
-  --emerald:      #1a6645;
-  --jade:         #2d9967;
-  --mint:         #4fd98e;
-  --sage:         #a8d5b5;
-  --cream:        #f7f9f6;
-  --white:        #ffffff;
-  --charcoal:     #1c2a22;
-  --muted:        #6b8a78;
-  --card-shadow:  0 1px 6px rgba(0,0,0,0.06);
-  --card-hover:   0 6px 24px rgba(26,44,78,0.12);
 }
 
 @theme inline {
-  --color-background: var(--bg-page);
-  --color-foreground: var(--text-primary);
+  --color-background: var(--color-60);
+  --color-foreground: var(--color-30);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 *,
@@ -49,7 +48,7 @@
 html { min-height: 100vh; }
 
 body {
-  background: var(--bg-page);
+  background: var(--color-60);
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

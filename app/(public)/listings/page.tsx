@@ -83,16 +83,17 @@ export default function ListingsPage() {
   return (
     <div className={styles.root}>
 
-      {/* ── Page Header ── */}
-      <div className={styles.pageHeader}>
-        <div className={styles.pageHeaderInner}>
-          <p className={styles.pageLabel}>Kenya's Hospitality Marketplace</p>
-          <h1 className={styles.pageTitle}>Browse Venues & Services</h1>
-          <p className={styles.pageSubtitle}>
-            {loading
-              ? 'Finding available listings…'
-              : `${listings.length} verified listing${listings.length !== 1 ? 's' : ''} available`}
-          </p>
+      {/* ── Breadcrumb strip ── */}
+      <div className={styles.breadcrumbBar}>
+        <div className={styles.breadcrumbInner}>
+          <nav className={styles.breadcrumb}>
+            <Link href="/" className={styles.breadcrumbLink}>Home</Link>
+            <span className={styles.breadcrumbSep}>›</span>
+            <span className={styles.breadcrumbCurrent}>Listings</span>
+          </nav>
+          <span className={styles.breadcrumbCount}>
+            {loading ? '…' : <><strong>{listings.length}</strong> listing{listings.length !== 1 ? 's' : ''} found</>}
+          </span>
         </div>
       </div>
 

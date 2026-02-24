@@ -1,46 +1,158 @@
-/* ─────────────────────────────────────────────────────────────────────────────
-   listings.module.css  — Minimal, trust-first theme
-   Tokens defined in globals.css :root
-───────────────────────────────────────────────────────────────────────────── */
+/*
+  60-30-10 COLOUR RULE
+  ─────────────────────────────────────────────────────
+  60% → #F5F7FA  Light grey-white — page bg, cards, breathing room
+  30% → #1C2B4A  Navy            — sidebar header, card titles, structure
+  10% → #E8612C  Burnt orange    — focus rings, CTAs, active badges, accents
+  ─────────────────────────────────────────────────────
+*/
 
 /* ── Root ─────────────────────────────────────────────────────────────────── */
 .root {
   min-height: 100vh;
-  background: #f4f6f9;
+  background: #F5F7FA;   /* 60% */
   font-family: var(--font-sans);
-  color: #1a2332;
+  color: #1C2B4A;
 }
 
-/* ── Page Header ──────────────────────────────────────────────────────────── */
-.pageHeader {
-  background: #1a2c4e;
-  padding: 40px 0 44px;
+/* ── Breadcrumb bar ───────────────────────────────────────────────────────── */
+.breadcrumbBar {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e9f0;
 }
-.pageHeaderInner {
+.breadcrumbInner {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
-.pageLabel {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #7eb8e8;
-  margin-bottom: 10px;
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #9baec8;
 }
-.pageTitle {
+.breadcrumbLink {
+  color: #E8612C;   /* 10% accent */
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+.breadcrumbLink:hover { opacity: 0.75; }
+.breadcrumbSep { color: #dce3ed; }
+.breadcrumbCurrent { color: #5a7192; font-weight: 500; }
+.breadcrumbCount {
+  font-size: 12.5px;
+  color: #9baec8;
+}
+.breadcrumbCount strong {
+  color: #1C2B4A;   /* 30% */
+  font-weight: 700;
+}
+
+/* ── Top Bar (60-30-10 rule) ──────────────────────────────────────────────── */
+/*  60% → #f4f6f9 light bg  (dominant, breathing room)                       */
+/*  30% → #1a2c4e navy      (sidebar, card titles, structural elements)       */
+/*  10% → #2563aa blue      (focus rings, CTAs, active states, accents)       */
+
+.topBar {
+  background: #ffffff;
+  border-bottom: 1px solid #dce3ed;
+}
+.topBarInner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Left: breadcrumb + count */
+.topBarLeft { display: flex; flex-direction: column; gap: 3px; }
+.topBarBreadcrumb {
+  font-size: 12px;
+  color: #9baec8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.topBarBreadcrumb a {
+  color: #2563aa;
+  text-decoration: none;
+  font-weight: 500;
+}
+.topBarBreadcrumb a:hover { text-decoration: underline; }
+.topBarCount {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2c4e;
   font-family: var(--font-serif);
-  font-size: clamp(26px, 4vw, 40px);
-  font-weight: 600;
-  color: #ffffff;
   line-height: 1.2;
-  margin-bottom: 8px;
 }
-.pageSubtitle {
-  font-size: 15px;
-  color: #8fa8c4;
-  font-weight: 400;
+.topBarCount em {
+  font-style: normal;
+  color: #2563aa;
+}
+
+/* Right: quick search */
+.topBarSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 420px;
+}
+.topBarInputWrap { position: relative; flex: 1; }
+.topBarSearchIcon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9baec8;
+  pointer-events: none;
+}
+.topBarInput {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border: 1px solid #dce3ed;
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: #1a2332;
+  background: #f9fafc;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.topBarInput:focus {
+  border-color: #2563aa;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 170, 0.08);
+}
+.topBarInput::placeholder { color: #9baec8; }
+.topBarBtn {
+  padding: 9px 18px;
+  background: #1a2c4e;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.topBarBtn:hover { background: #2563aa; }
+
+@media (max-width: 640px) {
+  .topBarSearch { max-width: 100%; flex: 0 0 100%; }
 }
 
 /* ── Layout ───────────────────────────────────────────────────────────────── */
