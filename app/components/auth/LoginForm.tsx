@@ -127,7 +127,7 @@ export function LoginForm() {
         type="submit"
         disabled={isLoading}
         className={`
-          w-full py-2.5 px-4 rounded-lg font-semibold text-white
+          w-full py-2.5 px-4 rounded-lg font-semibold text-gray-500 
           transition duration-200
           ${
             isLoading
@@ -139,7 +139,7 @@ export function LoginForm() {
       >
         {isLoading ? (
           <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
             <span>Signing in...</span>
           </>
         ) : (
