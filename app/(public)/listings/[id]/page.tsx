@@ -35,7 +35,7 @@ export default function ListingDetailPage() {
     const fetchListing = async () => {
       try {
         setLoading(true);
-         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings/${id}/`);
+         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings/${id}`);
          const response = await res.json();
         setListing(response.data);
       } catch (err) {
@@ -159,10 +159,12 @@ export default function ListingDetailPage() {
                   area={listing.location.address}
                   size="md"
                 />
-                <AvailabilityBadge
-                  available={listing.availability.available}
-                  size="md"
-                />
+                {listing.availability && (
+                  <AvailabilityBadge
+                    available={listing.availability.available}
+                    size="md"
+                  />
+                )}
               </div>
             </div>
 
@@ -248,7 +250,7 @@ export default function ListingDetailPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Rating:</span>
                   <span className="font-semibold text-gray-900">
-                    {listing.rating.toFixed(1)} / 5.0
+                    {listing.rating ? listing.rating.toFixed(1) : 'N/A'} / 5.0
                   </span>
                 </div>
               </div>

@@ -115,7 +115,7 @@ export default function VendorDashboardPage() {
         </div>
 
         {/* Help Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-8 border border-blue-200">
+        <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg p-8 border border-blue-200">
           <h2 className="text-lg font-bold text-blue-900 mb-4">
             Need Help? 🤔
           </h2>

@@ -3,12 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Listing } from '../../lib/types';
+import { Booking } from '../../lib/types';
 import { Edit, Trash2, Eye, MoreVertical, AlertCircle } from 'lucide-react';
 
 interface VendorListingsTableProps {
   listings: Listing[];
   onDelete: (listingId: string) => Promise<void>;
-  onToggleStatus: (listingId: string, status: 'active' | 'paused') => Promise<void>;
+  onToggleStatus: (listingId: string, status: 'published' | 'paused') => Promise<void>;
   loading?: boolean;
 }
 
@@ -21,6 +22,12 @@ export function VendorListingsTable({
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+
+  const bookingCounts = bookings.reduce<Record<string, number>>((acc, b) => {
+  acc[b.listingId] = (acc[b.listingId] || 0) + 1;
+  return acc;
+}, {});
 
   const handleDelete = async (listingId: string) => {
     setProcessingId(listingId);
@@ -39,7 +46,7 @@ export function VendorListingsTable({
     const newStatus = currentStatus === 'active' ? 'paused' : 'active';
     setProcessingId(listingId);
     try {
-      await onToggleStatus(listingId, newStatus as 'active' | 'paused');
+      await onToggleStatus(listingId, newStatus as 'published' | 'paused');
     } finally {
       setProcessingId(null);
     }
@@ -118,7 +125,7 @@ export function VendorListingsTable({
                 day: 'numeric',
               });
 
-              const isActive = listing.status === 'active';
+              const isActive = listing.status === 'published';
 
               return (
                 <tr
@@ -158,12 +165,11 @@ export function VendorListingsTable({
                   </td>
 
                   {/* Bookings */}
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-gray-900">
-                      {listing.bookingCount || 0}
-                    </p>
-                  </td>
-
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-gray-900">
+                        {bookingCounts[listing.id] || 0}
+                      </p>
+                    </td>
                   {/* Price */}
                   <td className="px-6 py-4">
                     <p className="font-semibold text-gray-900">

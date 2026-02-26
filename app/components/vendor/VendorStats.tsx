@@ -92,7 +92,7 @@ export function VendorStats({
 
               {/* Icon */}
               <div
-                className={`inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br ${stat.color}`}
+                className={`inline-flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br ${stat.color}`}
               >
                 <Icon size={24} className="text-white" />
               </div>

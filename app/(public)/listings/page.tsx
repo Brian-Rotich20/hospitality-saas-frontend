@@ -50,21 +50,16 @@ export default function ListingsPage() {
       try {
         setLoading(true);
         setError(null);
-        // Build clean params — strip empty strings, undefined, and NaN
-        const toInt = (v: string) => { const n = parseInt(v, 10); return isNaN(n) ? undefined : n; };
-        const params: Record<string, string | number> = {};
-        if (filters.search.trim())   params.search   = filters.search.trim();
-        if (filters.category.trim()) params.category = filters.category.trim();
-        if (filters.city.trim())     params.city     = filters.city.trim();
-        const pMin = toInt(filters.priceMin); if (pMin !== undefined) params.priceMin = pMin;
-        const pMax = toInt(filters.priceMax); if (pMax !== undefined) params.priceMax = pMax;
-        const cap  = toInt(filters.capacity); if (cap  !== undefined) params.capacity = cap;
-        console.log("[Listings] Request params:", params);
-        const response = await listingsService.getAll(params);
-        // Safely handle both response shapes:
-        // { data: [...] }  OR  { data: { data: [...] } }
-        const raw = response.data;
-        const data = [...(Array.isArray(raw) ? raw : (raw?.data ?? raw?.listings ?? []))];
+        const response = await listingsService.getAll({
+          search:   filters.search   || undefined,
+          category: filters.category || undefined,
+          city:     filters.city     || undefined,
+          priceMin: filters.priceMin ? parseInt(filters.priceMin) : undefined,
+          priceMax: filters.priceMax ? parseInt(filters.priceMax) : undefined,
+          capacity: filters.capacity ? parseInt(filters.capacity) : undefined,
+        });
+        const data = [...response.data];
+        // console.log(response.data);
         if (sortBy === 'price-low')  data.sort((a, b) => (a.startingPrice ?? 0) - (b.startingPrice ?? 0));
         if (sortBy === 'price-high') data.sort((a, b) => (b.startingPrice ?? 0) - (a.startingPrice ?? 0));
         if (sortBy === 'rating')     data.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));

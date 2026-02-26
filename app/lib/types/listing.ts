@@ -7,6 +7,7 @@ export interface Listing {
   description: string;
   category: 'venue' | 'catering' | 'accommodation' | 'other';
   capacity?: number;
+  // bookingCount: number;
   location: {
     address: string;
     city: string;

@@ -169,7 +169,7 @@ export function RecentBookingsPreview({
       {/* Pending Alert */}
       {pendingCount > 0 && !loading && (
         <div className="bg-red-50 border-t border-red-200 p-4 flex items-start space-x-3">
-          <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-red-900">
               {pendingCount} Pending Booking{pendingCount !== 1 ? 's' : ''}

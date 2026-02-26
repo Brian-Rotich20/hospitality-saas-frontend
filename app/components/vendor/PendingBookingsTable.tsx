@@ -126,7 +126,7 @@ export function PendingBookingsTable({
                   {/* Dates */}
                   <td className="px-6 py-4">
                     <div className="flex items-start space-x-2">
-                      <Calendar size={16} className="text-gray-400 flex-shrink-0 mt-0.5" />
+                      <Calendar size={16} className="text-gray-400 shrink-0 mt-0.5" />
                       <div className="text-sm text-gray-700">
                         <p>{formatDate(new Date(booking.startDate))}</p>
                         <p className="text-xs text-gray-500">
