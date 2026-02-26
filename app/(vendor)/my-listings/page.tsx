@@ -64,7 +64,7 @@ export default function VendorMyListingsPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await listingsService.getVendorListings();
+      const response = await listingsService.getMyListings();
       setListings(response.data || []);
     } catch (err) {
       console.error('Error fetching listings:', err);
@@ -76,7 +76,7 @@ export default function VendorMyListingsPage() {
 
   const handleDelete = async (listingId: string) => {
     try {
-      await listingsService.deleteListing(listingId);
+      await listingsService.delete(listingId);
       setSuccess('Listing deleted successfully!');
       setListings(listings.filter((l) => l.id !== listingId));
       setTimeout(() => setSuccess(null), 3000);
@@ -89,12 +89,12 @@ export default function VendorMyListingsPage() {
 
   const handleToggleStatus = async (
     listingId: string,
-    status: 'active' | 'paused'
+    status: 'published' | 'paused'
   ) => {
     try {
-      await listingsService.updateListingStatus(listingId, status);
+      await listingsService.update(listingId, status);
       setSuccess(
-        `Listing ${status === 'active' ? 'activated' : 'paused'} successfully!`
+        `Listing ${status === 'published' ? 'activated' : 'paused'} successfully!`
       );
       setListings(
         listings.map((l) => (l.id === listingId ? { ...l, status } : l))
@@ -140,7 +140,7 @@ export default function VendorMyListingsPage() {
         {/* Error Alert */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-            <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
             <div className="text-red-700">{error}</div>
           </div>
         )}
