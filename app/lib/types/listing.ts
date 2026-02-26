@@ -42,3 +42,4 @@ export interface ListingFilters {
   limit?: number;
   sortBy?: 'price' | 'rating' | 'createdAt';
 }
+

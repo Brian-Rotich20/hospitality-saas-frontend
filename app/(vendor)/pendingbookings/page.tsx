@@ -39,7 +39,7 @@ export default function VendorPendingBookingsPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await bookingsService.getVendorPendingBookings();
+      const response = await bookingsService.getPendingBookings();
       setBookings(response.data || []);
     } catch (err) {
       console.error('Error fetching pending bookings:', err);
@@ -52,7 +52,7 @@ export default function VendorPendingBookingsPage() {
   const handleAccept = async (bookingId: string) => {
     try {
       setError(null);
-      await bookingsService.acceptBooking(bookingId);
+      await bookingsService.accept(bookingId);
       setSuccess('Booking accepted successfully!');
       setBookings(bookings.filter((b) => b.id !== bookingId));
       setTimeout(() => setSuccess(null), 3000);
@@ -66,7 +66,7 @@ export default function VendorPendingBookingsPage() {
   const handleDecline = async (bookingId: string, reason: string) => {
     try {
       setError(null);
-      await bookingsService.declineBooking(bookingId, { reason });
+      await bookingsService.decline(bookingId, reason );
       setSuccess('Booking declined successfully!');
       setBookings(bookings.filter((b) => b.id !== bookingId));
       setTimeout(() => setSuccess(null), 3000);
@@ -102,7 +102,7 @@ export default function VendorPendingBookingsPage() {
         {/* Error Alert */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-            <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
             <div className="text-red-700">{error}</div>
           </div>
         )}
