@@ -53,7 +53,7 @@ export default function CreateListingPage() {
       };
 
       const response = await listingsService.create(submitData);
-      router.push(`/vendor/my-listings/${response.data.id}`);
+      router.push(`/my-listings/${response.data.id}`);
     } catch (error) {
       console.error('Error creating listing:', error);
     }

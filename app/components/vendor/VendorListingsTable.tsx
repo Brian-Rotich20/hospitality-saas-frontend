@@ -193,7 +193,7 @@ export function VendorListingsTable({
                       {openMenu === listing.id && (
                         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                           <Link
-                            href={`/vendor/my-listings/${listing.id}`}
+                            href={`/my-listings/${listing.id}`}
                             className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-50 border-b border-gray-200"
                           >
                             <Eye size={16} />
@@ -201,7 +201,7 @@ export function VendorListingsTable({
                           </Link>
 
                           <Link
-                            href={`/vendor/my-listings/${listing.id}/edit`}
+                            href={`/my-listings/${listing.id}/edit`}
                             className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-50 border-b border-gray-200"
                           >
                             <Edit size={16} />

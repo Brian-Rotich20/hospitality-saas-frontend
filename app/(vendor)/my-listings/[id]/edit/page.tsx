@@ -33,7 +33,7 @@ export default function EditListingPage() {
       setListing(response.data);
     } catch (error) {
       console.error('Error fetching listing:', error);
-      router.push('/vendor/my-listings');
+      router.push('/my-listings');
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function EditListingPage() {
       };
 
       await listingsService.update(id, submitData);
-      router.push(`/vendor/my-listings/${id}`);
+      router.push(`/my-listings/${id}`);
     } catch (error) {
       console.error('Error updating listing:', error);
     }
@@ -100,7 +100,7 @@ export default function EditListingPage() {
     <div className="container mx-auto py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Edit Listing</h1>
-        <p className="text-gray-600">Update your listing details</p>
+        <p className="text-red-600">Update your listing details</p>
       </div>
       <ListingForm listing={listing} onSubmit={handleSubmit} />
     </div>

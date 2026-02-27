@@ -43,7 +43,7 @@ export default function VendorListingDetailPage() {
     setDeleting(true);
     try {
       await listingsService.deleteById(id);
-      router.push('/vendor/my-listings');
+      router.push('/my-listings');
     } catch (err) {
       setError('Failed to delete listing');
     } finally {
@@ -75,7 +75,7 @@ export default function VendorListingDetailPage() {
           <p className="text-red-600 mb-4">
             {error || 'Listing not found'}
           </p>
-          <Link href="/vendor/my-listings" className="text-blue-600 hover:underline">
+          <Link href="/my-listings" className="text-blue-600 hover:underline">
             Back to listings
           </Link>
         </div>
@@ -172,7 +172,7 @@ export default function VendorListingDetailPage() {
               {/* Action Buttons */}
               <div className="space-y-3">
                 <Link
-                  href={`/vendor/my-listings/${id}/edit`}
+                  href={`/my-listings/${id}/edit`}
                   className="w-full py-3 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition text-center block"
                 >
                   <Edit className="w-4 h-4 inline mr-2" />
@@ -201,7 +201,7 @@ export default function VendorListingDetailPage() {
                 </button>
 
                 <Link
-                  href={`/vendor/my-listings/${id}/availability`}
+                  href={`/my-listings/${id}/availability`}
                   className="w-full py-3 rounded-lg font-semibold bg-gray-200 text-gray-800 hover:bg-gray-300 transition text-center block"
                 >
                   <Calendar className="w-4 h-4 inline mr-2" />

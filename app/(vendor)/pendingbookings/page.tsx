@@ -122,6 +122,7 @@ export default function VendorPendingBookingsPage() {
             </li>
           </ul>
         </div>
+       
 
         {/* Pending Bookings Table */}
         <PendingBookingsTable

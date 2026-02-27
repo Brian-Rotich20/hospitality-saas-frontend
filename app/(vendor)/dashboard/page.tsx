@@ -1,4 +1,4 @@
-// Vendor home
+// Vendors dashboard
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -10,6 +10,7 @@ import { VendorStats } from '../../components/vendor/VendorStats';
 import { RecentBookingsPreview } from '../../components/vendor/RecentBookingsPreview';
 import { QuickActions } from '../../components/vendor/QuickActions';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+// import { QuickAccessWidget } from '/components/vendor/QuickAccessWidget';
 
 interface VendorStats {
   totalBookings: number;
