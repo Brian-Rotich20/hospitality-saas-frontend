@@ -4,10 +4,15 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
+    
     remotePatterns: [
       {
+        protocol: 'https',hostname: 'res.cloudinary.com',
+      
+      },
+      {
         protocol: 'https',
-        hostname: '**',
+        hostname: '*.cloudinary.com',
       },
     ],
     formats: ['image/avif', 'image/webp'],

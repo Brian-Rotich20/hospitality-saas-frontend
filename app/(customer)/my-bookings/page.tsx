@@ -101,7 +101,7 @@ export default function MyBookingsPage() {
                       <div className="flex items-start space-x-2">
                         <Calendar
                           size={16}
-                          className="text-gray-400 flex-shrink-0 mt-1"
+                          className="text-gray-400 shrink-0 mt-1"
                         />
                         <div>
                           <p className="text-sm text-gray-600">Dates</p>

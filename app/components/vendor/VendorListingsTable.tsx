@@ -173,7 +173,7 @@ export function VendorListingsTable({
                   {/* Price */}
                   <td className="px-6 py-4">
                     <p className="font-semibold text-gray-900">
-                      KSh {listing.startingPrice.toLocaleString()}
+                      KSh {(listing.startingPrice || 0).toLocaleString()}
                     </p>
                   </td>
 

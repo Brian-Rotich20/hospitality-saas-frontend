@@ -90,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
+  // Logging in 
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -101,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const error = await response.json();
+        console.log('Login failed from backend:', error);
         throw new Error(error.message || 'Login failed');
       }
 

@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { listingsService } from '../../lib/api/endpoints';
 import { Listing } from '../../lib/types';
+import { ListingCard } from '../../components/listings/ListingCard';
 import {
-  Search, SlidersHorizontal, Package,
-  Users, X, ChevronDown, ArrowUpDown, ArrowRight, MapPin, Star,
+  Search, SlidersHorizontal, X, ChevronDown, ArrowUpDown,
 } from 'lucide-react';
-import styles from './listings.module.css';
+import styles from '../../components/listings/ListingCard.module.css';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function SkeletonCard() {
@@ -59,7 +59,6 @@ export default function ListingsPage() {
           capacity: filters.capacity ? parseInt(filters.capacity) : undefined,
         });
         const data = [...response.data];
-        // console.log(response.data);
         if (sortBy === 'price-low')  data.sort((a, b) => (a.startingPrice ?? 0) - (b.startingPrice ?? 0));
         if (sortBy === 'price-high') data.sort((a, b) => (b.startingPrice ?? 0) - (a.startingPrice ?? 0));
         if (sortBy === 'rating')     data.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
@@ -114,7 +113,7 @@ export default function ListingsPage() {
             {hasActiveFilters && <span className={styles.mobileToggleDot} />}
           </button>
 
-          {/* Sidebar card — always visible on desktop, toggled on mobile */}
+          {/* Sidebar card */}
           <div className={`${styles.sidebarCard} ${showFilters ? styles.sidebarCardOpen : ''}`}>
             <div className={styles.sidebarHead}>
               <span className={styles.sidebarHeadTitle}>
@@ -199,16 +198,13 @@ export default function ListingsPage() {
               {/* Capacity */}
               <div className={styles.filterSection}>
                 <label className={styles.filterLabel}>Min. Capacity</label>
-                <div className={styles.inputWrap}>
-                  <Users size={14} className={styles.inputIcon} />
-                  <input
-                    type="number"
-                    className={styles.filterInput}
-                    placeholder="No. of guests"
-                    value={filters.capacity}
-                    onChange={(e) => handleFilterChange('capacity', e.target.value)}
-                  />
-                </div>
+                <input
+                  type="number"
+                  className={`${styles.filterInput} ${styles.filterInputBare}`}
+                  placeholder="No. of guests"
+                  value={filters.capacity}
+                  onChange={(e) => handleFilterChange('capacity', e.target.value)}
+                />
               </div>
 
               {hasActiveFilters && (
@@ -261,72 +257,7 @@ export default function ListingsPage() {
           ) : (
             <div className={styles.grid}>
               {listings.map((listing) => (
-                <Link key={listing.id} href={`/listings/${listing.id}`} className={styles.card}>
-
-                  {/* Image */}
-                  <div className={styles.cardImageWrap}>
-                    {listing.images?.[0] ? (
-                      <img src={listing.images[0]} alt={listing.title} className={styles.cardImage} />
-                    ) : (
-                      <div className={styles.cardPlaceholder}>
-                        <Package size={36} />
-                      </div>
-                    )}
-                    <span className={styles.cardBadge}>{listing.category}</span>
-                  </div>
-
-                  {/* Body */}
-                  <div className={styles.cardBody}>
-                    <h3 className={styles.cardTitle}>{listing.title}</h3>
-
-                    {/* Location */}
-                    <div className={styles.cardMeta}>
-                      <MapPin size={12} color="#2563aa" />
-                      {listing.location?.city}
-                    </div>
-
-                    {/* Rating */}
-                    {listing.rating != null && (
-                      <div className={styles.cardMeta}>
-                        <Star size={12} fill="#f59e0b" color="#f59e0b" />
-                        <strong style={{ color: '#1a2332', fontSize: 13 }}>
-                          {(listing.rating).toFixed(1)}
-                        </strong>
-                        {listing.reviewCount != null && (
-                          <span style={{ color: '#9baec8', fontSize: 12 }}>
-                            ({listing.reviewCount} review{listing.reviewCount !== 1 ? 's' : ''})
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Capacity */}
-                    {listing.capacity != null && (
-                      <div className={styles.cardCapacity}>
-                        <Users size={11} color="#5a7192" />
-                        Up to {Number(listing.capacity).toLocaleString()} guests
-                      </div>
-                    )}
-
-                    <div className={styles.cardDivider} />
-
-                    {/* Footer */}
-                    <div className={styles.cardFooter}>
-                      <div>
-                        <div className={styles.priceLabel}>Starting from</div>
-                        <div className={styles.priceValue}>
-                          <span className={styles.priceCurrency}>KSh</span>
-                          {(listing.startingPrice ?? 0).toLocaleString()}
-                          <span className={styles.pricePeriod}>/event</span>
-                        </div>
-                      </div>
-                      <div className={styles.cardArrow}>
-                        <ArrowRight size={14} />
-                      </div>
-                    </div>
-                  </div>
-
-                </Link>
+                <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
           )}
