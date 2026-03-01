@@ -603,7 +603,7 @@ export function Header() {
             </div>
 
             {/* Sell / List button */}
-            <Link href="/vendor/listings/new" className="hdr-sell-btn">
+            <Link href="/listings/new" className="hdr-sell-btn">
               <Tag size={14} /> Sell / List
             </Link>
 
@@ -634,7 +634,7 @@ export function Header() {
                       </Link>
                     )}
                     {user?.role === 'vendor' && (
-                      <Link href="/vendor/dashboard" className="hdr-drop-item" onClick={() => setIsUserMenuOpen(false)}>
+                      <Link href="/dashboard" className="hdr-drop-item" onClick={() => setIsUserMenuOpen(false)}>
                         <Store size={13} /> Vendor Dashboard
                       </Link>
                     )}
