@@ -131,11 +131,11 @@ export function ListingForm({
       setError('City is required');
       return;
     }
-    if (!formData.capacity || parseInt(formData.capacity) < 1) {
+    if (!formData.capacity || parseInt(String(formData.capacity)) < 1) {
       setError('Capacity must be at least 1');
       return;
     }
-    if (!formData.startingPrice || parseFloat(formData.startingPrice) < 0) {
+    if (!formData.startingPrice || parseFloat(String(formData.startingPrice)) < 0) {
       setError('Price must be greater than 0');
       return;
     }
@@ -148,8 +148,8 @@ export function ListingForm({
     try {
       const submitData = {
         ...formData,
-        capacity: parseInt(formData.capacity),
-        startingPrice: parseFloat(formData.startingPrice),
+        capacity: parseInt(String(formData.capacity)),
+        startingPrice: parseFloat(String(formData.startingPrice)),
         amenities: selectedAmenities,
         images: imagePreviewUrls,
         newImages: images,
@@ -168,7 +168,7 @@ export function ListingForm({
       {/* Error Alert */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-          <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
           <div className="text-red-700">{error}</div>
         </div>
       )}
@@ -443,7 +443,7 @@ export function ListingForm({
           disabled={loading}
           className={`flex-1 py-3 px-6 rounded-lg font-semibold text-white transition ${
             loading
-              ? 'bg-gray-400 cursor-not-allowed'
+              ? 'bg-green-600 cursor-not-allowed'
               : 'bg-primary-600 hover:bg-primary-700'
           }`}
         >
