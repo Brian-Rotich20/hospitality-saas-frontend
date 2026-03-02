@@ -9,8 +9,16 @@ import { LocationBadge } from '../../../components/common/LocationBadge';
 import { RatingStars } from '../../../components/common/RatingStars';
 import { AvailabilityBadge } from '../../../components/common/AvailabilityBadge';
 import { ListingGallery } from '../../../components/listings/ListingGallery';
-import { MapPin, Users, Check, ArrowLeft } from 'lucide-react';
+import { MapPin, Users, Check, ArrowLeft, Phone, Calendar, Shield } from 'lucide-react';
 import { useParams } from 'next/navigation';
+
+// ─── Palette (from Melbourne stays UI) ─────────────────────────────
+// #F7F7F7  page bg          #FFFFFF   card surface
+// #1A1A1A  primary heading  #374151   body text
+// #6B7280  muted / meta     #9CA3AF   placeholder
+// #111827  CTA button       #EAB308   star / accent amber
+// #E5E7EB  borders          #F3F4F6   subtle fills
+// ────────────────────────────────────────────────────────────────────
 
 export default function ListingDetailPage() {
   const [listing, setListing] = useState<Listing | null>(null);
@@ -22,7 +30,6 @@ export default function ListingDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-
     const fetchListing = async () => {
       try {
         setLoading(true);
@@ -36,215 +43,221 @@ export default function ListingDetailPage() {
         setLoading(false);
       }
     };
-
     fetchListing();
   }, [id]);
 
-  if (loading) {
-    return <LoadingSpinner fullPage text="Loading listing..." />;
-  }
+  if (loading) return <LoadingSpinner fullPage text="Loading..." />;
 
   if (error || !listing) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            {error || 'Listing not found'}
-          </h1>
-          <Link
-            href="/listings"
-            className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-semibold"
-          >
-            <ArrowLeft size={20} />
-            <span>Back to listings</span>
+      <div style={{ minHeight: '100vh', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Sans, sans-serif' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 16 }}>{error || 'Listing not found'}</p>
+          <Link href="/listings" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#111827', textDecoration: 'none' }}>
+            <ArrowLeft size={14} />
+            Back to listings
           </Link>
         </div>
       </div>
     );
   }
 
-  const images = listing.images && listing.images.length > 0 ? listing.images : [];
+  const images = listing.images?.length > 0 ? listing.images : [];
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Gallery Section - Using Component */}
+    <div style={{ minHeight: '100vh', background: '#F7F7F7', fontFamily: 'DM Sans, sans-serif' }}>
+
+      {/* ── GALLERY ── */}
       {images.length > 0 && <ListingGallery images={images} />}
 
-      {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Back Button */}
-            <Link
-              href="/listings"
-              className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-semibold"
-            >
-              <ArrowLeft size={20} />
-              <span>Back to listings</span>
-            </Link>
+      {/* ── BODY ── */}
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '28px 20px 64px' }}>
 
-            {/* Header */}
-            <div>
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="inline-block bg-primary-600 text-white px-3 py-1 rounded-full text-xs font-semibold capitalize mb-3">
-                    {listing.category}
-                  </div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-3">
-                    {listing.title}
-                  </h1>
-                </div>
-              </div>
+        {/* Back */}
+        <Link
+          href="/listings"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#6B7280', textDecoration: 'none', marginBottom: 24 }}
+        >
+          <ArrowLeft size={13} />
+          Back to listings
+        </Link>
 
-              {/* Rating and Location */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-3 sm:space-y-0">
-                <RatingStars
-                  rating={listing.rating}
-                  count={listing.reviewCount}
-                />
-                <LocationBadge
-                  city={listing.location.city}
-                  area={listing.location.address}
-                  size="md"
-                />
-                {listing.availability && (
-                  <AvailabilityBadge
-                    available={listing.availability.available}
-                    size="md"
-                  />
-                )}
-              </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 296px', gap: 40, alignItems: 'start' }}>
+
+          {/* ── LEFT: MAIN ── */}
+          <div>
+
+            {/* Category badge */}
+            <div style={{
+              display: 'inline-block', background: '#F3F4F6', border: '1px solid #E5E7EB',
+              color: '#6B7280', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em',
+              padding: '3px 10px', borderRadius: 20, marginBottom: 10, textTransform: 'uppercase',
+            }}>
+              {listing.category}
             </div>
+
+            {/* Title */}
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1A1A1A', lineHeight: 1.25, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+              {listing.title}
+            </h1>
+
+            {/* Meta row */}
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 26 }}>
+              <RatingStars rating={listing.rating} count={listing.reviewCount} size="sm" />
+              <LocationBadge city={listing.location.city} area={listing.location.address} size="sm" />
+              {listing.availability && <AvailabilityBadge available={listing.availability.available} size="sm" />}
+            </div>
+
+            <div style={{ height: 1, background: '#E5E7EB', marginBottom: 26 }} />
 
             {/* Description */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
-              <p className="text-gray-700 text-lg leading-relaxed">
-                {listing.description}
-              </p>
-            </div>
+            <section style={{ marginBottom: 30 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>About</p>
+              <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.8, margin: 0 }}>{listing.description}</p>
+            </section>
 
-            {/* Features */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Features</h2>
+            <div style={{ height: 1, background: '#E5E7EB', marginBottom: 26 }} />
 
-              {listing.capacity && (
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg flex items-center space-x-3">
-                  <Users size={24} className="text-primary-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Capacity</p>
-                    <p className="font-semibold text-gray-900">
-                      Up to {listing.capacity.toLocaleString()} guests
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {listing.amenities && listing.amenities.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Amenities</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {listing.amenities.map((amenity) => (
-                      <div
-                        key={amenity}
-                        className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg"
-                      >
-                        <Check size={20} className="text-green-600" />
-                        <span className="text-gray-700">{amenity}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Location */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Location</h2>
-              <div className="bg-gray-100 rounded-lg overflow-hidden h-80 flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin size={48} className="text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600">
-                    {listing.location.address}, {listing.location.city}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar - Booking Card */}
-          <div className="lg:col-span-1">
-            <div className="bg-white border-2 border-gray-200 rounded-lg p-6 sticky top-24 space-y-6">
-              {/* Price */}
-              <div>
-                <p className="text-gray-600 text-sm mb-2">Starting from</p>
-                <PriceDisplay
-                  price={listing.startingPrice}
-                  period="per event"
-                  size="lg"
-                />
-              </div>
-
-              {/* Divider */}
-              <div className="border-t border-gray-200" />
-
-              {/* Quick Info */}
-              <div className="space-y-3">
-                {listing.capacity && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Capacity:</span>
-                    <span className="font-semibold text-gray-900">
-                      {listing.capacity.toLocaleString()} guests
-                    </span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Rating:</span>
-                  <span className="font-semibold text-gray-900">
-                    {listing.rating ? listing.rating.toFixed(1) : 'N/A'} / 5.0
+            {/* Capacity */}
+            {listing.capacity && (
+              <section style={{ marginBottom: 30 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Capacity</p>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, padding: '8px 14px' }}>
+                  <Users size={14} color="#6B7280" />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>
+                    Up to {listing.capacity.toLocaleString()} guests
                   </span>
                 </div>
+              </section>
+            )}
+
+            {/* Amenities */}
+            {listing.amenities?.length > 0 && (
+              <section style={{ marginBottom: 30 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Amenities</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 7 }}>
+                  {listing.amenities.map((amenity) => (
+                    <div
+                      key={amenity}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8 }}
+                    >
+                      <Check size={12} color="#111827" strokeWidth={2.5} />
+                      <span style={{ fontSize: 12, color: '#374151', fontWeight: 500 }}>{amenity}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <div style={{ height: 1, background: '#E5E7EB', marginBottom: 26 }} />
+
+            {/* Location */}
+            <section>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Location</p>
+              <div style={{ background: '#F3F4F6', borderRadius: 10, height: 172, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '1px solid #E5E7EB', gap: 8 }}>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#FFFFFF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <MapPin size={15} color="#1A1A1A" />
+                </div>
+                <p style={{ fontSize: 13, color: '#6B7280', margin: 0, fontWeight: 500 }}>
+                  {listing.location.address}, {listing.location.city}
+                </p>
+              </div>
+            </section>
+          </div>
+
+          {/* ── RIGHT: SIDEBAR ── */}
+          <div style={{ position: 'sticky', top: 80 }}>
+
+            {/* Booking card */}
+            <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: '22px 20px', marginBottom: 10 }}>
+
+              {/* Price */}
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Starting from</p>
+                <PriceDisplay price={listing.startingPrice} period="per event" size="lg" />
               </div>
 
-              {/* Divider */}
-              <div className="border-t border-gray-200" />
+              <div style={{ height: 1, background: '#F3F4F6', marginBottom: 14 }} />
 
-              {/* CTA Buttons */}
-              <div className="space-y-3">
+              {/* Stats */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 16 }}>
+                {listing.capacity && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 12, color: '#6B7280' }}>Capacity</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#1A1A1A' }}>{listing.capacity.toLocaleString()} guests</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: '#6B7280' }}>Rating</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ fontSize: 13, color: '#EAB308', lineHeight: 1 }}>★</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#1A1A1A' }}>{listing.rating?.toFixed(1) ?? 'N/A'}</span>
+                    {listing.reviewCount && <span style={{ fontSize: 11, color: '#9CA3AF' }}>({listing.reviewCount})</span>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 12, color: '#6B7280' }}>Location</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1A1A1A' }}>{listing.location.city}</span>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: '#F3F4F6', marginBottom: 14 }} />
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <Link
                   href={`/listings/${listing.id}/book`}
-                  className="w-full py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition text-center block"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                    padding: '11px 20px', background: '#111827', color: '#FFFFFF',
+                    borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                    letterSpacing: '0.01em',
+                  }}
                 >
+                  <Calendar size={13} />
                   Request Booking
                 </Link>
-                <button className="w-full py-3 border-2 border-primary-600 text-primary-600 rounded-lg font-semibold hover:bg-primary-50 transition">
+                <button style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  padding: '10px 20px', background: '#FFFFFF', color: '#374151',
+                  border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 13,
+                  fontWeight: 600, cursor: 'pointer',
+                }}>
+                  <Phone size={13} color="#6B7280" />
                   Contact Vendor
                 </button>
               </div>
-
-              {/* Info Box */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900">
-                  <strong>Need help?</strong> Our support team is available 24/7 to assist you.
-                </p>
-              </div>
             </div>
+
+            {/* Trust strip */}
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 9,
+              padding: '11px 14px', background: '#FFFFFF',
+              border: '1px solid #E5E7EB', borderRadius: 10,
+            }}>
+              <Shield size={13} color="#6B7280" style={{ flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: 11, color: '#6B7280', margin: 0, lineHeight: 1.6 }}>
+                <strong style={{ color: '#374151' }}>Secure booking</strong> · M-Pesa Daraja protected payments
+              </p>
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* Related Listings Section */}
-      <div className="bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">
-            Similar Listings
-          </h2>
-          <p className="text-gray-600">
-            More listings coming soon. Check back later for similar venues and services.
-          </p>
+      {/* ── SIMILAR LISTINGS ── */}
+      <div style={{ borderTop: '1px solid #E5E7EB', background: '#FFFFFF', padding: '36px 20px' }}>
+        <div style={{ maxWidth: 1160, margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1A1A1A', margin: 0 }}>Similar Listings</h2>
+            <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', border: '1px solid #E5E7EB', padding: '2px 7px', borderRadius: 20 }}>
+              Coming soon
+            </span>
+          </div>
+          <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>More venues and services will appear here.</p>
         </div>
       </div>
+
     </div>
   );
 }

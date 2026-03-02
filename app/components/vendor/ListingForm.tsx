@@ -106,6 +106,7 @@ export function ListingForm({
     );
   };
 
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -144,23 +145,11 @@ export function ListingForm({
       setError('At least one image is required');
       return;
     }
-
-    try {
-      const submitData = {
-        ...formData,
-        capacity: parseInt(String(formData.capacity)),
-        startingPrice: parseFloat(String(formData.startingPrice)),
-        amenities: selectedAmenities,
-        images: imagePreviewUrls,
-        newImages: images,
-      };
-
-      await onSubmit(submitData);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to save listing'
-      );
-    }
+    await onSubmit({
+      ...formData,
+      amenities: selectedAmenities,
+      newImages: images,
+    })
   };
 
   return (
@@ -441,9 +430,9 @@ export function ListingForm({
         <button
           type="submit"
           disabled={loading}
-          className={`flex-1 py-3 px-6 rounded-lg font-semibold text-white transition ${
+          className={`flex-1 py-3 px-6 rounded-lg font-semibold text-blue-500 transition ${
             loading
-              ? 'bg-green-600 cursor-not-allowed'
+              ? 'bg-primary-400 cursor-not-allowed opacity-70'
               : 'bg-primary-600 hover:bg-primary-700'
           }`}
         >

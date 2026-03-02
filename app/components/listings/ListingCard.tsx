@@ -15,7 +15,7 @@ export function ListingCard({ listing }: ListingCardProps) {
   const imageUrl = listing.images?.[0];
 
   return (
-    <Link href={`/listings/${listing.id}`} className={styles.card}>
+    <Link href={`/${listing.id}`} className={styles.card}>
       {/* Image */}
       <div className={styles.cardImageWrap}>
         {imageUrl ? (

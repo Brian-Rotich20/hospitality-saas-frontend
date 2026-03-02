@@ -114,24 +114,6 @@ export default function VendorDashboardPage() {
         <div>
           <RecentBookingsPreview bookings={recentBookings} loading={loading} />
         </div>
-
-        {/* Help Section */}
-        <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg p-8 border border-blue-200">
-          <h2 className="text-lg font-bold text-blue-900 mb-4">
-            Need Help? 🤔
-          </h2>
-          <p className="text-blue-800 mb-4">
-            Check out our vendor guide to maximize your bookings and earnings.
-          </p>
-          <div className="flex gap-4">
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">
-              View Guide
-            </button>
-            <button className="px-6 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold">
-              Contact Support
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

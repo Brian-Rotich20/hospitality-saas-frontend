@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
-import { listingsService } from '../../../lib/api/endpoints';
-import { ListingForm } from '../../../components/vendor/ListingForm';
+import { listingsService,uploadService } from '../../../lib/api/endpoints';
+import apiClient from '../../../lib/api/client';
+import { ListingForm} from '../../../components/vendor/ListingForm';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Files } from 'lucide-react';
 
 export default function CreateListingPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
@@ -27,62 +28,29 @@ export default function CreateListingPage() {
     }
   }, [isAuthenticated, authLoading, user, router]);
 
-  const uploadToCloudinary = async (
-    file: File,
-    folder: string
-  ): Promise<string> => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append(
-        'upload_preset',
-        process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || ''
-      );
-      formData.append('folder', `venuehub/${folder}`);
+  // Helper function to upload images and return their URLs
+const uploadImages = async (files: File[]): Promise<string[]> => {
+  if (!files || files.length === 0) return [];
 
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
+  const uploadedUrls: string[] = [];
 
-      if (!response.ok) {
-        throw new Error('Failed to upload image to Cloudinary');
-      }
+  for (const file of files) {
+    const response = await uploadService.uploadImage(file);
 
-      const data = await response.json();
+    // apiClient.uploadFile returns AxiosResponse<{ url: string }>
+    // so response.data is { url: string }
+    const url = response.data?.url;
 
-      if (!data.secure_url) {
-        throw new Error('No URL returned from Cloudinary');
-      }
-
-      return data.secure_url;
-    } catch (err) {
-      console.error('Cloudinary upload error:', err);
-      throw new Error(
-        err instanceof Error ? err.message : 'Failed to upload image'
-      );
-    }
-  };
-
-  const uploadImages = async (files: File[]): Promise<string[]> => {
-    if (!files || files.length === 0) {
-      return [];
+    if (!url) {
+      console.error('Upload response was:', response.data);
+      throw new Error('Upload failed: no URL in response');
     }
 
-    try {
-      const uploadedUrls = await Promise.all(
-        files.map((file) => uploadToCloudinary(file, 'listings'))
-      );
-      return uploadedUrls;
-    } catch (err) {
-      throw new Error(
-        err instanceof Error ? err.message : 'Failed to upload images'
-      );
-    }
-  };
+    uploadedUrls.push(url);
+  }
+
+  return uploadedUrls;
+};
 
   const handleSubmit = async (formData: any) => {
     try {
@@ -142,7 +110,7 @@ export default function CreateListingPage() {
         capacity: parseInt(formData.capacity),
         startingPrice: parseFloat(formData.startingPrice),
         amenities: formData.amenities || [],
-        images: allImages,
+        images: imageUrls,
         status: 'draft',
       };
 
@@ -153,11 +121,10 @@ export default function CreateListingPage() {
         throw new Error('Failed to get listing ID from response');
       }
 
-      setSuccess(`✅ Listing created successfully! Redirecting...`);
-
-      // Redirect to listing detail page
+      setSuccess(`✅ Listing created successfully! Redirecting...`); 
+      setLoading(false);
       setTimeout(() => {
-        router.push(`/vendor/my-listings/${response.data.id}`);
+        router.push(`/my-listings/${response.data.id}`);  // Redirect to listing detail page
       }, 1000);
     } catch (err) {
       console.error('Error creating listing:', err);
@@ -216,28 +183,6 @@ export default function CreateListingPage() {
             loading={loading}
             isEditing={false}
           />
-        </div>
-
-        {/* Info Box */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="font-semibold text-blue-900 mb-3">💡 Tips for Success</h3>
-          <ul className="space-y-2 text-blue-800 text-sm">
-            <li>
-              ✓ <strong>Be descriptive:</strong> Write a detailed description about your listing
-            </li>
-            <li>
-              ✓ <strong>Clear images:</strong> Upload high-quality photos that showcase your venue
-            </li>
-            <li>
-              ✓ <strong>Accurate pricing:</strong> Set competitive prices to attract customers
-            </li>
-            <li>
-              ✓ <strong>List amenities:</strong> Tell customers what features are available
-            </li>
-            <li>
-              ✓ <strong>Complete info:</strong> Fill all required fields for better visibility
-            </li>
-          </ul>
         </div>
       </div>
     </div>
