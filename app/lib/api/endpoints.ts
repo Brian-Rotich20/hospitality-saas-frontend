@@ -279,7 +279,8 @@ export const uploadService = {
   uploadImage: (file: File) =>
     apiClient.uploadFile<{ url: string }>(
       API_ENDPOINTS.UPLOAD.SINGLE_IMAGE,
-      file
+      file,
+      { uploadType: 'listing_photo', optimize: 'true' } 
     ),
 
   uploadImages: (files: File[]) =>

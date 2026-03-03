@@ -29,28 +29,27 @@ export default function CreateListingPage() {
   }, [isAuthenticated, authLoading, user, router]);
 
   // Helper function to upload images and return their URLs
-const uploadImages = async (files: File[]): Promise<string[]> => {
-  if (!files || files.length === 0) return [];
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    if (!files || files.length === 0) return [];
 
-  const uploadedUrls: string[] = [];
+    const uploadedUrls: string[] = [];
 
-  for (const file of files) {
-    const response = await uploadService.uploadImage(file);
+    for (const file of files) {
+      const response = await uploadService.uploadImage(file);
 
-    // apiClient.uploadFile returns AxiosResponse<{ url: string }>
-    // so response.data is { url: string }
-    const url = response.data?.url;
+      // Backend returns: { success: true, data: { url: "...", publicId: "..." } }
+      const url = response.data?.url;
 
-    if (!url) {
-      console.error('Upload response was:', response.data);
-      throw new Error('Upload failed: no URL in response');
+      if (!url) {
+        console.error('Upload response was:', JSON.stringify(response.data, null, 2));
+        throw new Error('Upload failed: no URL in response');
+      }
+
+      uploadedUrls.push(url);
     }
 
-    uploadedUrls.push(url);
-  }
-
-  return uploadedUrls;
-};
+    return uploadedUrls;
+  };
 
   const handleSubmit = async (formData: any) => {
     try {
@@ -103,34 +102,42 @@ const uploadImages = async (files: File[]): Promise<string[]> => {
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: formData.category,
-        location: {
-          address: formData.address.trim(),
-          city: formData.city.trim(),
-        },
+        city: formData.city.trim(),
+        location:formData.city.trim(),
         capacity: parseInt(formData.capacity),
-        startingPrice: parseFloat(formData.startingPrice),
+        basePrice: parseFloat(formData.startingPrice),
         amenities: formData.amenities || [],
-        images: imageUrls,
+        photos: imageUrls,
         status: 'draft',
       };
 
       // Create listing
+      console.log('Submitting listing data:', JSON.stringify(submitData, null, 2));
       const response = await listingsService.create(submitData);
 
-      if (!response.data?.id) {
-        throw new Error('Failed to get listing ID from response');
-      }
+      // if (!response.data?.id) {
+      //   throw new Error('Failed to get listing ID from response');
+      // }
+      const listingId = response.data?.id ?? response.data?.data?.id;
 
+      if (!listingId) {
+      console.error('Create listing response:', JSON.stringify(response.data, null, 2));
+      throw new Error('Failed to get listing ID from response');
+    }
       setSuccess(`✅ Listing created successfully! Redirecting...`); 
       setLoading(false);
       setTimeout(() => {
-        router.push(`/my-listings/${response.data.id}`);  // Redirect to listing detail page
+        router.push(`/my-listings/${listingId}`);  // Redirect to listing detail page
       }, 1000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating listing:', err);
-      const errorMessage =
-        err instanceof Error ? err.message : 'Failed to create listing';
-      setError(errorMessage);
+      const backendMsg =
+      err?.response?.data?.error ||
+      err?.response?.data?.message ||
+      err?.message ||
+      'Failed to create listing';
+      console.error('Error creating listing:', backendMsg);
+      setError(backendMsg);
       setLoading(false);
     }
   };
