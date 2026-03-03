@@ -140,6 +140,7 @@ class ApiClient {
 
   private formatError(error: AxiosError<any>): ApiError {
     const message =
+      error.response?.data?.error ||
       error.response?.data?.message ||
       error.message ||
       'An unexpected error occurred';

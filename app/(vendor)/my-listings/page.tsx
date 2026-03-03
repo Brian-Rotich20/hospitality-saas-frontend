@@ -123,7 +123,7 @@ export default function VendorMyListingsPage() {
             </p>
           </div>
           <Link
-            href="/vendor/my-listings/create"
+            href="/my-listings/create"
             className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
           >
             + Create Listing
