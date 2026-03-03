@@ -1,742 +1,384 @@
 'use client';
 
-/**
- * Header — Dukaan Marketplace
- *
- * 60-30-10 palette:
- *   60% → #FFFFFF / #F5F7FA  (background, cards, breathing room)
- *   30% → #1C2B4A            (navy — logo, nav text, structure)
- *   10% → #E8612C            (burnt-orange accent — CTA, badges, hover)
- */
-
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth/auth.context';
 import { useMobileMenu } from '../../lib/hooks/useMobileMenu';
 import {
-  Search, Menu, X, LogOut, User,
-  Bell, MessageSquare, Bookmark, ChevronDown,
-  Tag, Store,
+  Home, Search, Heart, Mail, CalendarCheck, LayoutGrid,
+  Bell, Menu, X, LogOut, User, Store, Bookmark,
+  MessageSquare, ChevronDown, MapPin, Clock, Calendar,
+  Utensils, Building2, Camera, Music, Flower2, Bus, Sparkles,
+  MoreHorizontal,
 } from 'lucide-react';
 
-const CSS = `
-  /* ── Reset ── */
-  .hdr * { box-sizing: border-box; }
+/* ─── Category strip data ─────────────────────── */
+const CATEGORIES = [
+  { href: '/listings',                        Icon: LayoutGrid, label: 'All'           },
+  { href: '/listings?category=venue',         Icon: Building2,  label: 'Venues'        },
+  { href: '/listings?category=catering',      Icon: Utensils,   label: 'Catering'      },
+  { href: '/listings?category=photography',   Icon: Camera,     label: 'Photography'   },
+  { href: '/listings?category=music',         Icon: Music,      label: 'Music & DJ'    },
+  { href: '/listings?category=decor',         Icon: Flower2,    label: 'Décor'         },
+  { href: '/listings?category=transport',     Icon: Bus,        label: 'Transport'     },
+  { href: '/listings?category=other',         Icon: Sparkles,   label: 'Other'         },
+];
 
-  /* ════════════════════════════════════
-     TOP UTILITY BAR  (30% navy strip)
-  ════════════════════════════════════ */
-  .hdr-utility {
-    background: #1C2B4A;
-    padding: 0;
-  }
-  .hdr-utility-inner {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 36px;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .hdr-utility-left {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-  .hdr-utility-link {
-    font-size: 11.5px;
-    color: #8fa8c4;
-    text-decoration: none;
-    font-weight: 400;
-    transition: color 0.15s;
-    white-space: nowrap;
-  }
-  .hdr-utility-link:hover { color: #ffffff; }
-
-  .hdr-utility-right {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  /* Icon action buttons */
-  .hdr-icon-btn {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    background: transparent;
-    border: none;
-    border-radius: 5px;
-    color: #8fa8c4;
-    font-size: 11.5px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 400;
-    cursor: pointer;
-    text-decoration: none;
-    transition: background 0.15s, color 0.15s;
-    white-space: nowrap;
-  }
-  .hdr-icon-btn:hover { background: rgba(255,255,255,0.07); color: #fff; }
-  .hdr-badge {
-    position: absolute;
-    top: 1px;
-    right: 4px;
-    background: #E8612C;
-    color: #fff;
-    font-size: 9px;
-    font-weight: 700;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-  }
-  .hdr-divider-v {
-    width: 1px;
-    height: 16px;
-    background: rgba(255,255,255,0.1);
-    margin: 0 2px;
-  }
-
-  /* ════════════════════════════════════
-     MAIN HEADER BAR  (60% white)
-  ════════════════════════════════════ */
-  .hdr-main {
-    background: #ffffff;
-    border-bottom: 1px solid #e5e9f0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    transition: box-shadow 0.3s;
-  }
-  .hdr-main.scrolled {
-    box-shadow: 0 2px 16px rgba(28, 43, 74, 0.08);
-  }
-  .hdr-main-inner {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    height: 60px;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  /* ── Logo ── */
-  .hdr-logo {
-    display: flex;
-    align-items: baseline;
-    gap: 1px;
-    text-decoration: none;
-    flex-shrink: 0;
-  }
-  .hdr-logo-word {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 24px;
-    font-weight: 700;
-    color: #1C2B4A;
-    letter-spacing: -0.5px;
-  }
-  .hdr-logo-dot {
-    width: 7px;
-    height: 7px;
-    background: #E8612C;
-    border-radius: 50%;
-    margin-bottom: 2px;
-    flex-shrink: 0;
-  }
-
-  /* ── Search bar (prominent — 10% accent on focus) ── */
-  .hdr-search {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    border: 1.5px solid #e5e9f0;
-    border-radius: 8px;
-    background: #F5F7FA;
-    overflow: hidden;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    max-width: 600px;
-  }
-  .hdr-search:focus-within {
-    border-color: #E8612C;
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(232, 97, 44, 0.10);
-  }
-  .hdr-search-category {
-    padding: 0 12px;
-    height: 40px;
-    border: none;
-    border-right: 1.5px solid #e5e9f0;
-    background: transparent;
-    font-size: 12.5px;
-    font-family: 'DM Sans', sans-serif;
-    color: #5a7192;
-    font-weight: 500;
-    appearance: none;
-    cursor: pointer;
-    outline: none;
-    white-space: nowrap;
-    min-width: 100px;
-  }
-  .hdr-search-input {
-    flex: 1;
-    padding: 0 14px;
-    height: 40px;
-    border: none;
-    background: transparent;
-    font-size: 13.5px;
-    font-family: 'DM Sans', sans-serif;
-    color: #1C2B4A;
-    outline: none;
-  }
-  .hdr-search-input::placeholder { color: #9baec8; }
-  .hdr-search-btn {
-    padding: 0 18px;
-    height: 40px;
-    background: #E8612C;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-    flex-shrink: 0;
-  }
-  .hdr-search-btn:hover { background: #cf521f; }
-
-  /* ── Sell button ── */
-  .hdr-sell-btn {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px 18px;
-    background: #1C2B4A;
-    color: #fff;
-    border: none;
-    border-radius: 7px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
-    cursor: pointer;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background 0.2s;
-    flex-shrink: 0;
-  }
-  .hdr-sell-btn:hover { background: #E8612C; }
-
-  /* ── User menu ── */
-  .hdr-user-wrap { position: relative; flex-shrink: 0; }
-  .hdr-user-btn {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 6px 10px;
-    background: transparent;
-    border: 1.5px solid #e5e9f0;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .hdr-user-btn:hover { border-color: #1C2B4A; background: #F5F7FA; }
-  .hdr-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    background: #e8edf4;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #1C2B4A;
-    flex-shrink: 0;
-  }
-  .hdr-user-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: #1C2B4A;
-    max-width: 90px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .hdr-chevron { color: #9baec8; transition: transform 0.2s; }
-  .hdr-chevron.open { transform: rotate(180deg); }
-
-  .hdr-dropdown {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 8px);
-    width: 196px;
-    background: #fff;
-    border: 1px solid #e5e9f0;
-    border-radius: 10px;
-    box-shadow: 0 8px 28px rgba(28,43,74,0.12);
-    overflow: hidden;
-    z-index: 200;
-    animation: dropFade 0.15s ease;
-  }
-  @keyframes dropFade {
-    from { opacity: 0; transform: translateY(-5px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .hdr-drop-head {
-    padding: 12px 14px 10px;
-    border-bottom: 1px solid #f0f3f8;
-  }
-  .hdr-drop-role {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: #E8612C;
-    margin-bottom: 1px;
-  }
-  .hdr-drop-email {
-    font-size: 11.5px;
-    color: #9baec8;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .hdr-drop-item {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #1C2B4A;
-    text-decoration: none;
-    background: transparent;
-    border: none;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    transition: background 0.15s;
-  }
-  .hdr-drop-item:hover { background: #F5F7FA; }
-  .hdr-drop-divider { height: 1px; background: #f0f3f8; }
-  .hdr-drop-item.danger { color: #c0392b; }
-  .hdr-drop-item.danger:hover { background: #fdf4f4; }
-
-  /* ── Auth buttons ── */
-  .hdr-btn-ghost {
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #1C2B4A;
-    background: transparent;
-    border: 1.5px solid #e5e9f0;
-    border-radius: 7px;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: border-color 0.2s, background 0.2s;
-    flex-shrink: 0;
-  }
-  .hdr-btn-ghost:hover { border-color: #1C2B4A; background: #F5F7FA; }
-  .hdr-btn-solid {
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #fff;
-    background: #E8612C;
-    border: none;
-    border-radius: 7px;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background 0.2s;
-    flex-shrink: 0;
-  }
-  .hdr-btn-solid:hover { background: #cf521f; }
-
-  /* ── Nav strip below main bar ── */
-  .hdr-nav-strip {
-    background: #ffffff;
-    border-bottom: 1px solid #e5e9f0;
-  }
-  .hdr-nav-inner {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    height: 40px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .hdr-nav-inner::-webkit-scrollbar { display: none; }
-  .hdr-nav-link {
-    padding: 5px 13px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #5a7192;
-    text-decoration: none;
-    border-radius: 5px;
-    white-space: nowrap;
-    transition: color 0.15s, background 0.15s;
-    flex-shrink: 0;
-  }
-  .hdr-nav-link:hover { color: #1C2B4A; background: #F5F7FA; }
-  .hdr-nav-link.active { color: #E8612C; font-weight: 600; background: #fdf2ed; }
-
-  /* ── Mobile menu button ── */
-  .hdr-mob-btn {
-    display: none;
-    padding: 7px;
-    background: transparent;
-    border: 1.5px solid #e5e9f0;
-    border-radius: 7px;
-    cursor: pointer;
-    color: #1C2B4A;
-    flex-shrink: 0;
-    transition: border-color 0.2s;
-  }
-  .hdr-mob-btn:hover { border-color: #1C2B4A; }
-
-  /* ── Mobile drawer ── */
-  .hdr-mob-drawer {
-    border-top: 1px solid #e5e9f0;
-    background: #fff;
-    padding: 12px 0 16px;
-    animation: slideDown 0.18s ease;
-  }
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-6px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .hdr-mob-link {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #1C2B4A;
-    text-decoration: none;
-    transition: background 0.15s;
-  }
-  .hdr-mob-link:hover, .hdr-mob-link.active { background: #F5F7FA; color: #E8612C; }
-  .hdr-mob-divider { height: 1px; background: #f0f3f8; margin: 8px 0; }
-  .hdr-mob-auth { padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; }
-  .hdr-mob-btn-ghost {
-    display: block;
-    text-align: center;
-    padding: 10px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #1C2B4A;
-    border: 1.5px solid #e5e9f0;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: border-color 0.2s;
-  }
-  .hdr-mob-btn-ghost:hover { border-color: #1C2B4A; }
-  .hdr-mob-btn-solid {
-    display: block;
-    text-align: center;
-    padding: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #fff;
-    background: #E8612C;
-    border-radius: 8px;
-    text-decoration: none;
-  }
-  .hdr-mob-danger {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #c0392b;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    width: 100%;
-    transition: background 0.15s;
-  }
-  .hdr-mob-danger:hover { background: #fdf4f4; }
-
-  @media (max-width: 768px) {
-    .hdr-utility { display: none; }
-    .hdr-search { display: none; }
-    .hdr-sell-btn { display: none; }
-    .hdr-user-wrap { display: none; }
-    .hdr-btn-ghost, .hdr-btn-solid { display: none; }
-    .hdr-nav-strip { display: none; }
-    .hdr-mob-btn { display: flex; align-items: center; justify-content: center; }
-  }
-`;
+/* ─── Top nav links ───────────────────────────── */
+const NAV_LINKS = [
+  { href: '/',          Icon: Home,          label: 'Home'        },
+  { href: '/listings',  Icon: Search,        label: 'Search'      },
+  { href: '/saved',     Icon: Heart,         label: 'Favorites'   },
+  { href: '/messages',  Icon: Mail,          label: 'Inbox',  badge: 3 },
+  { href: '/bookings',  Icon: CalendarCheck, label: 'My Bookings' },
+  { href: '/dashboard', Icon: LayoutGrid,    label: 'My Listings' },
+];
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
-  const { isOpen: isMenuOpen, toggle: toggleMenu, close: closeMenu } = useMobileMenu();
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchCategory, setSearchCategory] = useState('');
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu } = useMobileMenu();
+  const [dropOpen, setDropOpen] = useState(false);
+  const [scrolled, setScrolled]  = useState(false);
+  const [query, setQuery]        = useState('');
+  const dropRef  = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const router   = useRouter();
 
+  /* scroll shadow */
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    const fn = () => setScrolled(window.scrollY > 6);
+    window.addEventListener('scroll', fn, { passive: true });
+    return () => window.removeEventListener('scroll', fn);
   }, []);
 
+  /* close dropdown on outside click */
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
-        setIsUserMenuOpen(false);
+    const fn = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node))
+        setDropOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
   }, []);
 
-  const isActive = (href: string) => pathname === href;
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href.split('?')[0]);
 
-  const navLinks = [
-    { href: '/listings', label: 'All Listings' },
-    { href: '/listings?category=venue', label: 'Venues' },
-    { href: '/listings?category=catering', label: 'Catering' },
-    { href: '/listings?category=accommodation', label: 'Accommodation' },
-    { href: '/about', label: 'About' },
-  ];
+  const handleSearch = () => {
+    if (query.trim())
+      router.push(`/listings?search=${encodeURIComponent(query.trim())}`);
+  };
+
+  const initials = user?.email?.[0]?.toUpperCase() ?? 'U';
 
   return (
-    <>
-      <style>{CSS}</style>
-      <div className="hdr">
+    <div className="font-sans">
 
-        {/* ── Utility Bar (30% navy) ── */}
-        <div className="hdr-utility">
-          <div className="hdr-utility-inner">
-            <div className="hdr-utility-left">
-              <span className="hdr-utility-link">Kenya's #1 Hospitality Marketplace</span>
-              <a href="/about" className="hdr-utility-link">How it works</a>
-              <a href="/auth/register-vendor" className="hdr-utility-link">Become a Vendor</a>
+      {/* ══════════════════════════════════════════
+          MAIN HEADER BAR
+      ══════════════════════════════════════════ */}
+      <header
+        className={`sticky top-0 z-50 bg-white border-b border-slate-200 transition-shadow duration-300
+          ${scrolled ? 'shadow-[0_2px_20px_rgba(0,0,0,0.08)]' : ''}`}
+      >
+        <div className="max-w-[1280px] mx-auto px-6 h-7 flex items-center gap-6">
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0 no-underline">
+            <div className="w-9 h-9 bg-[#1d9bf0] rounded-xl flex items-center justify-center shrink-0">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M3 2h6a7 7 0 010 14H3V2z" fill="white" fillOpacity="0.9"/>
+                <circle cx="9" cy="9" r="3" fill="white" fillOpacity="0.4"/>
+              </svg>
             </div>
-            <div className="hdr-utility-right">
-              {isAuthenticated ? (
-                <>
-                  <Link href="/saved" className="hdr-icon-btn">
-                    <Bookmark size={13} /> Saved
-                  </Link>
-                  <div className="hdr-divider-v" />
-                  <Link href="/messages" className="hdr-icon-btn" style={{ position: 'relative' }}>
-                    <MessageSquare size={13} /> Messages
-                    <span className="hdr-badge">3</span>
-                  </Link>
-                  <div className="hdr-divider-v" />
-                  <Link href="/notifications" className="hdr-icon-btn" style={{ position: 'relative' }}>
-                    <Bell size={13} /> Notifications
-                    <span className="hdr-badge">5</span>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <a href="/auth/login" className="hdr-utility-link">Sign in</a>
-                  <div className="hdr-divider-v" />
-                  <a href="/auth/register" className="hdr-utility-link">Create account</a>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+            <span className="text-[19px] font-bold text-slate-800 tracking-tight">Inova</span>
+          </Link>
 
-        {/* ── Main Bar (60% white) ── */}
-        <header className={`hdr-main${scrolled ? ' scrolled' : ''}`}>
-          <div className="hdr-main-inner">
+          {/* ── Icon Nav — centered ── */}
+          <nav className="hidden lg:flex items-center flex-1 justify-center gap-1">
+            {NAV_LINKS.map(({ href, Icon, label, badge }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`relative flex flex-col items-center gap-0.75 px-4 py-2 rounded-xl no-underline
+                  transition-colors duration-150 group
+                  ${isActive(href)
+                    ? 'text-[#1d9bf0]'
+                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'}`}
+              >
+                <Icon
+                  size={20}
+                  strokeWidth={isActive(href) ? 2.2 : 1.8}
+                />
+                <span className="text-[11px] font-medium leading-none whitespace-nowrap">{label}</span>
+                {/* active underline */}
+                {isActive(href) && (
+                  <span className="absolute -bottom-px left-1/2 -translate-x-1/2 w-6 h-[2.5px] bg-[#1d9bf0] rounded-full" />
+                )}
+                {/* badge */}
+                {badge && isAuthenticated && (
+                  <span className="absolute top-1 right-2 bg-[#1d9bf0] text-white text-[9px] font-bold
+                    min-w-[15px] h-[15px] rounded-full flex items-center justify-center px-[3px]">
+                    {badge}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </nav>
 
-            {/* Logo */}
-            <Link href="/" className="hdr-logo">
-              <span className="hdr-logo-word">dukaan</span>
-              <div className="hdr-logo-dot" />
+          {/* ── Right side actions ── */}
+          <div className="ml-auto lg:ml-0 flex items-center gap-3 shrink-0">
+
+            {/* Bell */}
+            {isAuthenticated && (
+              <Link
+                href="/notifications"
+                className="relative w-10 h-10 rounded-full border border-slate-200 flex items-center
+                  justify-center text-slate-400 hover:text-[#1d9bf0] hover:border-[#1d9bf0]
+                  hover:bg-blue-50 transition-colors no-underline"
+              >
+                <Bell size={18} strokeWidth={1.8} />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full
+                  border-2 border-white" />
+              </Link>
+            )}
+
+            {/* List Service CTA */}
+            <Link
+              href="/listings/new"
+              className="hidden sm:flex items-center gap-1.5 px-5 py-2.5 bg-[#1d9bf0] text-white
+                text-[13.5px] font-semibold rounded-xl hover:bg-[#0b86d6] transition-all
+                hover:-translate-y-px no-underline whitespace-nowrap"
+            >
+              List Service
+              <span className="text-lg font-light opacity-80">+</span>
             </Link>
 
-            {/* Search — 10% accent on focus */}
-            <div className="hdr-search">
-              <select
-                className="hdr-search-category"
-                value={searchCategory}
-                onChange={(e) => setSearchCategory(e.target.value)}
-              >
-                <option value="">All Categories</option>
-                <option value="venue">Venues</option>
-                <option value="catering">Catering</option>
-                <option value="accommodation">Accommodation</option>
-                <option value="other">Other</option>
-              </select>
-              <input
-                type="text"
-                className="hdr-search-input"
-                placeholder="What service are you looking for?"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter')
-                    window.location.href = `/listings?search=${encodeURIComponent(searchQuery)}&category=${searchCategory}`;
-                }}
-              />
-              <button
-                className="hdr-search-btn"
-                onClick={() =>
-                  (window.location.href = `/listings?search=${encodeURIComponent(searchQuery)}&category=${searchCategory}`)
-                }
-              >
-                <Search size={16} />
-              </button>
-            </div>
-
-            {/* Sell / List button */}
-            <Link href="/listings/new" className="hdr-sell-btn">
-              <Tag size={14} /> Sell / List
-            </Link>
-
-            {/* Auth / User */}
+            {/* ── Authenticated: user pill ── */}
             {isAuthenticated ? (
-              <div className="hdr-user-wrap" ref={userMenuRef}>
+              <div className="relative" ref={dropRef}>
                 <button
-                  className="hdr-user-btn"
-                  onClick={() => setIsUserMenuOpen((v) => !v)}
+                  onClick={() => setDropOpen(v => !v)}
+                  className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 bg-slate-50 border border-slate-200
+                    rounded-full hover:border-[#1d9bf0] hover:bg-white transition-colors cursor-pointer"
                 >
-                  <div className="hdr-avatar"><User size={14} /></div>
-                  <span className="hdr-user-name">{user?.email?.split('@')[0]}</span>
-                  <ChevronDown size={13} className={`hdr-chevron${isUserMenuOpen ? ' open' : ''}`} />
+                  <span className="text-[13px] font-semibold text-slate-700 max-w-[72px] truncate">
+                    {user?.email?.split('@')[0]}
+                  </span>
+                  {/* Avatar circle */}
+                  <div className="w-8 h-8 rounded-full bg-[#1d9bf0] flex items-center justify-center
+                    text-white text-[13px] font-bold shrink-0">
+                    {initials}
+                  </div>
                 </button>
 
-                {isUserMenuOpen && (
-                  <div className="hdr-dropdown">
-                    <div className="hdr-drop-head">
-                      <div className="hdr-drop-role">{user?.role ?? 'Member'}</div>
-                      <div className="hdr-drop-email">{user?.email}</div>
+                {/* Dropdown */}
+                {dropOpen && (
+                  <div className="absolute right-0 top-[calc(100%+10px)] w-52 bg-white border border-slate-200
+                    rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.12)] overflow-hidden z-50 animate-drop-in">
+                    {/* Head */}
+                    <div className="px-4 py-3 border-b border-slate-100">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#1d9bf0] mb-0.5">
+                        {user?.role ?? 'Member'}
+                      </p>
+                      <p className="text-[12px] text-slate-400 truncate">{user?.email}</p>
                     </div>
-                    <Link href="/profile" className="hdr-drop-item" onClick={() => setIsUserMenuOpen(false)}>
-                      <User size={13} /> My Account
-                    </Link>
-                    {user?.role === 'customer' && (
-                      <Link href="/dashboard" className="hdr-drop-item" onClick={() => setIsUserMenuOpen(false)}>
-                        <Store size={13} /> Dashboard
+                    {/* Items */}
+                    {[
+                      { href: '/profile',          Icon: User,     label: 'My Account'       },
+                      ...(user?.role === 'vendor'
+                        ? [{ href: '/dashboard',   Icon: Store,    label: 'Vendor Dashboard' }]
+                        : user?.role === 'admin'
+                        ? [{ href: '/admin/dashboard', Icon: Store, label: 'Admin Panel'     }]
+                        : [{ href: '/dashboard',   Icon: Store,    label: 'Dashboard'        }]),
+                      { href: '/saved',             Icon: Bookmark, label: 'Saved Listings'   },
+                    ].map(({ href, Icon: I, label }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setDropOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium
+                          text-slate-700 hover:bg-slate-50 no-underline transition-colors"
+                      >
+                        <I size={14} className="text-slate-400" /> {label}
                       </Link>
-                    )}
-                    {user?.role === 'vendor' && (
-                      <Link href="/dashboard" className="hdr-drop-item" onClick={() => setIsUserMenuOpen(false)}>
-                        <Store size={13} /> Vendor Dashboard
-                      </Link>
-                    )}
-                    {user?.role === 'admin' && (
-                      <Link href="/admin/dashboard" className="hdr-drop-item" onClick={() => setIsUserMenuOpen(false)}>
-                        <Store size={13} /> Admin Panel
-                      </Link>
-                    )}
-                    <Link href="/saved" className="hdr-drop-item" onClick={() => setIsUserMenuOpen(false)}>
-                      <Bookmark size={13} /> Saved Listings
-                    </Link>
-                    <div className="hdr-drop-divider" />
+                    ))}
+                    <div className="h-px bg-slate-100" />
                     <button
-                      className="hdr-drop-item danger"
-                      onClick={() => { logout(); setIsUserMenuOpen(false); }}
+                      onClick={() => { logout(); setDropOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium
+                        text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
                     >
-                      <LogOut size={13} /> Logout
+                      <LogOut size={14} /> Logout
                     </button>
                   </div>
                 )}
               </div>
+
             ) : (
-              <>
-                <Link href="/auth/login" className="hdr-btn-ghost">Log in</Link>
-                <Link href="/auth/register" className="hdr-btn-solid">Sign up</Link>
-              </>
+              /* ── Unauthenticated ── */
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/auth/login"
+                  className="px-4 py-2 text-[13px] font-medium text-slate-700 border border-slate-200
+                    rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors no-underline"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="px-4 py-2 text-[13px] font-semibold text-white bg-[#1d9bf0] rounded-xl
+                    hover:bg-[#0b86d6] transition-colors no-underline"
+                >
+                  Sign up
+                </Link>
+              </div>
             )}
 
-            {/* Mobile toggle */}
-            <button className="hdr-mob-btn" onClick={toggleMenu}>
-              {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            {/* Mobile hamburger */}
+            <button
+              onClick={toggleMenu}
+              className="lg:hidden w-10 h-10 flex items-center justify-center border border-slate-200
+                rounded-xl text-slate-600 hover:border-slate-400 transition-colors"
+            >
+              {menuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
+        </div>
 
-          {/* Mobile Drawer */}
-          {isMenuOpen && (
-            <div className="hdr-mob-drawer">
-              {/* Mobile search */}
-              <div style={{ padding: '4px 16px 12px', display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  placeholder="What service are you looking for?"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    flex: 1, padding: '9px 12px', border: '1px solid #e5e9f0',
-                    borderRadius: 7, fontSize: 13, fontFamily: 'DM Sans, sans-serif',
-                    background: '#F5F7FA', outline: 'none', color: '#1C2B4A',
-                  }}
-                />
-                <button
-                  onClick={() => (window.location.href = `/listings?search=${encodeURIComponent(searchQuery)}`)}
-                  style={{
-                    padding: '9px 14px', background: '#E8612C', border: 'none',
-                    borderRadius: 7, color: '#fff', cursor: 'pointer',
-                  }}
-                >
-                  <Search size={15} />
-                </button>
-              </div>
-
-              {navLinks.map((l) => (
-                <Link key={l.href} href={l.href} className={`hdr-mob-link${isActive(l.href) ? ' active' : ''}`} onClick={closeMenu}>
-                  {l.label}
-                </Link>
-              ))}
-
-              <div className="hdr-mob-divider" />
-
-              {isAuthenticated ? (
-                <>
-                  <Link href="/saved" className="hdr-mob-link" onClick={closeMenu}><Bookmark size={14} /> Saved</Link>
-                  <Link href="/messages" className="hdr-mob-link" onClick={closeMenu}><MessageSquare size={14} /> Messages</Link>
-                  <Link href="/notifications" className="hdr-mob-link" onClick={closeMenu}><Bell size={14} /> Notifications</Link>
-                  <Link href="/profile" className="hdr-mob-link" onClick={closeMenu}><User size={14} /> My Account</Link>
-                  <div className="hdr-mob-divider" />
-                  <button className="hdr-mob-danger" onClick={() => { logout(); closeMenu(); }}>
-                    <LogOut size={14} /> Logout
-                  </button>
-                </>
-              ) : (
-                <div className="hdr-mob-auth">
-                  <Link href="/auth/login" className="hdr-mob-btn-ghost" onClick={closeMenu}>Log in</Link>
-                  <Link href="/auth/register" className="hdr-mob-btn-solid" onClick={closeMenu}>Sign up free</Link>
-                </div>
-              )}
-            </div>
-          )}
-        </header>
-
-        {/* ── Category Nav Strip ── */}
-        <nav className="hdr-nav-strip">
-          <div className="hdr-nav-inner">
-            {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} className={`hdr-nav-link${isActive(l.href) ? ' active' : ''}`}>
-                {l.label}
+        {/* ── Mobile drawer ── */}
+        {menuOpen && (
+          <div className="lg:hidden border-t border-slate-100 bg-white pb-4 animate-slide-down">
+            {NAV_LINKS.map(({ href, Icon, label }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={closeMenu}
+                className={`flex items-center gap-3 px-5 py-3 text-[14px] font-medium no-underline
+                  transition-colors
+                  ${isActive(href)
+                    ? 'text-[#1d9bf0] bg-blue-50'
+                    : 'text-slate-700 hover:bg-slate-50'}`}
+              >
+                <Icon size={16} /> {label}
               </Link>
             ))}
+            <div className="h-px bg-slate-100 my-2" />
+            {isAuthenticated ? (
+              <>
+                <Link href="/saved"         onClick={closeMenu} className="flex items-center gap-3 px-5 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50 no-underline"><Heart size={15}/> Saved</Link>
+                <Link href="/messages"      onClick={closeMenu} className="flex items-center gap-3 px-5 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50 no-underline"><MessageSquare size={15}/> Messages</Link>
+                <Link href="/listings/new"  onClick={closeMenu} className="flex items-center gap-3 px-5 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50 no-underline"><Store size={15}/> List a Service</Link>
+                <div className="h-px bg-slate-100 my-2" />
+                <button onClick={() => { logout(); closeMenu(); }} className="w-full flex items-center gap-3 px-5 py-3 text-[14px] font-medium text-red-500 hover:bg-red-50 transition-colors">
+                  <LogOut size={15}/> Logout
+                </button>
+              </>
+            ) : (
+              <div className="px-4 pt-2 flex flex-col gap-2">
+                <Link href="/auth/login"    onClick={closeMenu} className="block text-center py-2.5 border border-slate-200 rounded-xl text-[13.5px] font-medium text-slate-700 no-underline hover:border-slate-400">Log in</Link>
+                <Link href="/auth/register" onClick={closeMenu} className="block text-center py-2.5 bg-[#1d9bf0] rounded-xl text-[13.5px] font-semibold text-white no-underline hover:bg-[#0b86d6]">Sign up free</Link>
+              </div>
+            )}
           </div>
-        </nav>
+        )}
+      </header>
 
+      {/* ══════════════════════════════════════════
+          SEARCH BAR — centered hero strip
+      ══════════════════════════════════════════ */}
+      <div className="bg-white border-b border-slate-100 py-4">
+        <div className="max-w-[1280px] mx-auto px-6 flex justify-center">
+          <div className="flex items-center w-full max-w-[680px] bg-white border border-slate-200
+            rounded-2xl shadow-sm overflow-hidden hover:border-slate-300 focus-within:border-[#1d9bf0]
+            focus-within:shadow-[0_0_0_3px_rgba(29,155,240,0.1)] transition-all">
+
+            {/* Location / keyword input */}
+            <div className="flex items-center gap-2 flex-1 px-4 py-2.5 min-w-0">
+              <MapPin size={15} className="text-slate-400 shrink-0" />
+              <input
+                type="text"
+                placeholder="Add your location or keywords"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                className="flex-1 text-[13.5px] text-slate-700 placeholder-slate-400 bg-transparent
+                  outline-none border-none min-w-0"
+              />
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-7 bg-slate-200 shrink-0" />
+
+            {/* Date picker placeholder */}
+            <button className="flex items-center gap-2 px-4 py-2.5 text-[13px] text-slate-500
+              hover:text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap shrink-0">
+              <Calendar size={14} className="text-slate-400" />
+              Any Date
+            </button>
+
+            {/* Divider */}
+            <div className="w-px h-7 bg-slate-200 shrink-0" />
+
+            {/* Time picker placeholder */}
+            <button className="flex items-center gap-2 px-4 py-2.5 text-[13px] text-slate-500
+              hover:text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap shrink-0">
+              <Clock size={14} className="text-slate-400" />
+              Any Time
+            </button>
+
+            {/* Search button */}
+            <button
+              onClick={handleSearch}
+              className="flex items-center gap-2 px-5 py-2.5 m-1 bg-[#1d9bf0] text-white text-[13.5px]
+                font-semibold rounded-xl hover:bg-[#0b86d6] transition-colors shrink-0 whitespace-nowrap"
+            >
+              <Search size={15} />
+              Search
+            </button>
+          </div>
+        </div>
       </div>
-    </>
+
+      {/* ══════════════════════════════════════════
+          CATEGORY ICON STRIP
+      ══════════════════════════════════════════ */}
+      <nav className="bg-white border-b border-slate-100">
+        <div className="max-w-[1280px] mx-auto px-6 flex items-center h-[60px]
+          overflow-x-auto hide-scrollbar gap-1">
+          {CATEGORIES.map(({ href, Icon, label }) => {
+            const active = pathname === '/listings' && label === 'All'
+              ? true
+              : pathname.includes('category') && href.includes(pathname.split('category=')[1] ?? '__');
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`relative flex flex-col items-center gap-[5px] px-5 py-2 rounded-xl
+                  shrink-0 no-underline transition-colors group
+                  ${active
+                    ? 'text-[#1d9bf0]'
+                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'}`}
+              >
+                <Icon size={20} strokeWidth={active ? 2.2 : 1.7} />
+                <span className="text-[11.5px] font-medium whitespace-nowrap leading-none">{label}</span>
+                {active && (
+                  <span className="absolute -bottom-px left-3 right-3 h-[2.5px] bg-[#1d9bf0] rounded-t-full" />
+                )}
+              </Link>
+            );
+          })}
+
+          {/* More button */}
+          <button className="flex flex-col items-center gap-[5px] px-5 py-2 rounded-xl shrink-0
+            text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors">
+            <ChevronDown size={20} strokeWidth={1.7} />
+            <span className="text-[11.5px] font-medium whitespace-nowrap leading-none">More</span>
+          </button>
+        </div>
+      </nav>
+
+    </div>
   );
 }

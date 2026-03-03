@@ -29,6 +29,7 @@ export interface Listing {
   };
   createdAt: string;
   updatedAt: string;
+  instantBooking: boolean;
 }
 
 export interface ListingFilters {

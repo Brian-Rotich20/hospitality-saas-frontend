@@ -6,12 +6,9 @@ import { useSearchParams } from 'next/navigation';
 import { listingsService } from '../../lib/api/endpoints';
 import { Listing } from '../../lib/types';
 import { ListingCard } from '../../components/listings/ListingCard';
-import {
-  Search, SlidersHorizontal, X, ChevronDown, ArrowUpDown,
-} from 'lucide-react';
+import { Search, SlidersHorizontal, X, ChevronDown, ArrowUpDown } from 'lucide-react';
 import styles from '../../components/listings/ListingCard.module.css';
 
-// ── Skeleton ──────────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
     <div className={styles.skeletonCard}>
@@ -25,7 +22,6 @@ function SkeletonCard() {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
 export default function ListingsPage() {
   const searchParams = useSearchParams();
   const [listings, setListings] = useState<Listing[]>([]);
@@ -83,7 +79,7 @@ export default function ListingsPage() {
   return (
     <div className={styles.root}>
 
-      {/* ── Breadcrumb strip ── */}
+      {/* Breadcrumb */}
       <div className={styles.breadcrumbBar}>
         <div className={styles.breadcrumbInner}>
           <nav className={styles.breadcrumb}>
@@ -97,23 +93,16 @@ export default function ListingsPage() {
         </div>
       </div>
 
-      {/* ── Layout ── */}
       <div className={styles.layout}>
 
-        {/* ── Sidebar ── */}
+        {/* Sidebar */}
         <aside className={styles.sidebar}>
-
-          {/* Mobile toggle */}
-          <button
-            className={styles.mobileToggle}
-            onClick={() => setShowFilters((v) => !v)}
-          >
+          <button className={styles.mobileToggle} onClick={() => setShowFilters(v => !v)}>
             <SlidersHorizontal size={15} />
             {showFilters ? 'Hide Filters' : 'Filter Results'}
             {hasActiveFilters && <span className={styles.mobileToggleDot} />}
           </button>
 
-          {/* Sidebar card */}
           <div className={`${styles.sidebarCard} ${showFilters ? styles.sidebarCardOpen : ''}`}>
             <div className={styles.sidebarHead}>
               <span className={styles.sidebarHeadTitle}>
@@ -127,8 +116,6 @@ export default function ListingsPage() {
             </div>
 
             <div className={styles.sidebarBody}>
-
-              {/* Keyword */}
               <div className={styles.filterSection}>
                 <label className={styles.filterLabel}>Keyword</label>
                 <div className={styles.inputWrap}>
@@ -138,19 +125,18 @@ export default function ListingsPage() {
                     className={styles.filterInput}
                     placeholder="Search listings…"
                     value={filters.search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                    onChange={e => handleFilterChange('search', e.target.value)}
                   />
                 </div>
               </div>
 
-              {/* Category */}
               <div className={styles.filterSection}>
                 <label className={styles.filterLabel}>Category</label>
                 <div className={styles.selectWrap}>
                   <select
                     className={styles.filterSelect}
                     value={filters.category}
-                    onChange={(e) => handleFilterChange('category', e.target.value)}
+                    onChange={e => handleFilterChange('category', e.target.value)}
                   >
                     <option value="">All Categories</option>
                     <option value="venue">Event Venues</option>
@@ -162,7 +148,6 @@ export default function ListingsPage() {
                 </div>
               </div>
 
-              {/* City */}
               <div className={styles.filterSection}>
                 <label className={styles.filterLabel}>City</label>
                 <input
@@ -170,11 +155,10 @@ export default function ListingsPage() {
                   className={`${styles.filterInput} ${styles.filterInputBare}`}
                   placeholder="e.g. Nairobi"
                   value={filters.city}
-                  onChange={(e) => handleFilterChange('city', e.target.value)}
+                  onChange={e => handleFilterChange('city', e.target.value)}
                 />
               </div>
 
-              {/* Price */}
               <div className={styles.filterSection}>
                 <label className={styles.filterLabel}>Price Range (KSh)</label>
                 <div className={styles.priceRow}>
@@ -183,19 +167,18 @@ export default function ListingsPage() {
                     className={`${styles.filterInput} ${styles.filterInputBare}`}
                     placeholder="Min"
                     value={filters.priceMin}
-                    onChange={(e) => handleFilterChange('priceMin', e.target.value)}
+                    onChange={e => handleFilterChange('priceMin', e.target.value)}
                   />
                   <input
                     type="number"
                     className={`${styles.filterInput} ${styles.filterInputBare}`}
                     placeholder="Max"
                     value={filters.priceMax}
-                    onChange={(e) => handleFilterChange('priceMax', e.target.value)}
+                    onChange={e => handleFilterChange('priceMax', e.target.value)}
                   />
                 </div>
               </div>
 
-              {/* Capacity */}
               <div className={styles.filterSection}>
                 <label className={styles.filterLabel}>Min. Capacity</label>
                 <input
@@ -203,7 +186,7 @@ export default function ListingsPage() {
                   className={`${styles.filterInput} ${styles.filterInputBare}`}
                   placeholder="No. of guests"
                   value={filters.capacity}
-                  onChange={(e) => handleFilterChange('capacity', e.target.value)}
+                  onChange={e => handleFilterChange('capacity', e.target.value)}
                 />
               </div>
 
@@ -212,14 +195,12 @@ export default function ListingsPage() {
                   <X size={13} /> Clear All Filters
                 </button>
               )}
-
             </div>
           </div>
         </aside>
 
-        {/* ── Listings ── */}
+        {/* Main */}
         <main>
-          {/* Toolbar */}
           <div className={styles.toolbar}>
             <p className={styles.resultCount}>
               <strong>{loading ? '—' : listings.length}</strong>{' '}
@@ -229,7 +210,7 @@ export default function ListingsPage() {
               <select
                 className={styles.sortSelect}
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                onChange={e => setSortBy(e.target.value)}
               >
                 <option value="rating">Highest Rated</option>
                 <option value="price-low">Price: Low to High</option>
@@ -240,7 +221,6 @@ export default function ListingsPage() {
             </div>
           </div>
 
-          {/* States */}
           {loading ? (
             <div className={styles.skeletonGrid}>
               {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
@@ -256,9 +236,7 @@ export default function ListingsPage() {
             </div>
           ) : (
             <div className={styles.grid}>
-              {listings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
+              {listings.map(listing => <ListingCard key={listing.id} listing={listing} />)}
             </div>
           )}
         </main>
