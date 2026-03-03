@@ -10,7 +10,7 @@ import {
   Bell, Menu, X, LogOut, User, Store, Bookmark,
   MessageSquare, ChevronDown, MapPin, Clock, Calendar,
   Utensils, Building2, Camera, Music, Flower2, Bus, Sparkles,
-  MoreHorizontal,
+  MoreHorizontal,BookOpen
 } from 'lucide-react';
 
 /* ─── Category strip data ─────────────────────── */
@@ -22,7 +22,9 @@ const CATEGORIES = [
   { href: '/listings?category=music',         Icon: Music,      label: 'Music & DJ'    },
   { href: '/listings?category=decor',         Icon: Flower2,    label: 'Décor'         },
   { href: '/listings?category=transport',     Icon: Bus,        label: 'Transport'     },
-  { href: '/listings?category=other',         Icon: Sparkles,   label: 'Other'         },
+  { href: '/listings?category=entertainment', Icon: MoreHorizontal, label: 'Entertainment'},
+  { href: '/listings?category=wellness',      Icon: User,       label: 'Wellness'      },
+  { href: '/listings?category=education',     Icon: BookOpen,   label: 'Education'     },
 ];
 
 /* ─── Top nav links ───────────────────────────── */
@@ -82,7 +84,7 @@ export function Header() {
         className={`sticky top-0 z-50 bg-white border-b border-slate-200 transition-shadow duration-300
           ${scrolled ? 'shadow-[0_2px_20px_rgba(0,0,0,0.08)]' : ''}`}
       >
-        <div className="max-w-[1280px] mx-auto px-6 h-7 flex items-center gap-6">
+        <div className="max-w-[1280px] mx-auto px-6 h-[68px] flex items-center gap-6">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0 no-underline">
@@ -101,7 +103,7 @@ export function Header() {
               <Link
                 key={href}
                 href={href}
-                className={`relative flex flex-col items-center gap-0.75 px-4 py-2 rounded-xl no-underline
+                className={`relative flex flex-col items-center gap-[3px] px-4 py-2 rounded-xl no-underline
                   transition-colors duration-150 group
                   ${isActive(href)
                     ? 'text-[#1d9bf0]'
@@ -345,7 +347,7 @@ export function Header() {
           CATEGORY ICON STRIP
       ══════════════════════════════════════════ */}
       <nav className="bg-white border-b border-slate-100">
-        <div className="max-w-[1280px] mx-auto px-6 flex items-center h-[60px]
+        <div className="max-w-[1280px] mx-auto px-6 flex items-center justify-center h-[60px]
           overflow-x-auto hide-scrollbar gap-1">
           {CATEGORIES.map(({ href, Icon, label }) => {
             const active = pathname === '/listings' && label === 'All'
