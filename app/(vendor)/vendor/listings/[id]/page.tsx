@@ -2,10 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { listingsService } from '../../../lib/api/endpoints';
-import { Listing } from '../../../lib/types';
-import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { ListingGallery } from '../../../components/listings/ListingGallery';
+import { listingsService } from '../../../../lib/api/endpoints';
+import { Listing } from '../../../../lib/types';
+import { LoadingSpinner } from '../../../../components/common/LoadingSpinner';
+import { ListingGallery } from '../../../../components/listings/ListingGallery';
 import { Edit, Trash2, Eye, Pause, Play, Calendar } from 'lucide-react';
 
 export default function VendorListingDetailPage() {

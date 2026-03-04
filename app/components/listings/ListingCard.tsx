@@ -8,10 +8,11 @@ import styles from './ListingCard.module.css';
 interface ListingCardProps { listing: Listing; }
 
 export function ListingCard({ listing }: ListingCardProps) {
-  const imageUrl = listing.images?.[0];
+  // ✅ photos not images
+  const imageUrl = listing.photos?.[0] ?? listing.coverPhoto;
 
   return (
-    <Link href={`/${listing.id}`} className={styles.card}>
+    <Link href={`/listings/${listing.id}`} className={styles.card}>
       <div className={styles.cardImageWrap}>
         {imageUrl ? (
           <Image
@@ -24,28 +25,29 @@ export function ListingCard({ listing }: ListingCardProps) {
             blurDataURL="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23f1f5f9' width='400' height='300'/%3E%3C/svg%3E"
           />
         ) : (
-          <div className={styles.cardPlaceholder}><Package size={36} /></div>
+          <div className={styles.cardPlaceholder}><Package size={28} /></div>
         )}
-        <span className={styles.cardBadge}>{listing.category}</span>
+        <span className={styles.cardBadge}>{listing.category.replace('_', ' ')}</span>
       </div>
 
       <div className={styles.cardBody}>
         <h3 className={styles.cardTitle}>{listing.title}</h3>
 
-        {listing.location?.city && (
+        {/* ✅ flat city field */}
+        {listing.city && (
           <div className={styles.cardMeta}>
-            <MapPin size={12} color="#1d9bf0" />
-            {listing.location.city}
+            <MapPin size={11} color="#1d9bf0" />
+            {listing.city}
           </div>
         )}
 
         {listing.rating != null && (
           <div className={styles.cardMeta}>
-            <Star size={12} fill="#f59e0b" color="#f59e0b" />
-            <strong style={{ color: '#0f172a', fontSize: 13 }}>{listing.rating.toFixed(1)}</strong>
+            <Star size={11} fill="#f59e0b" color="#f59e0b" />
+            <strong style={{ color: '#0f172a', fontSize: 12 }}>{listing.rating.toFixed(1)}</strong>
             {listing.reviewCount != null && (
-              <span style={{ color: '#94a3b8', fontSize: 12 }}>
-                ({listing.reviewCount} review{listing.reviewCount !== 1 ? 's' : ''})
+              <span style={{ color: '#94a3b8', fontSize: 11 }}>
+                ({listing.reviewCount})
               </span>
             )}
           </div>
@@ -53,7 +55,7 @@ export function ListingCard({ listing }: ListingCardProps) {
 
         {listing.capacity != null && (
           <div className={styles.cardCapacity}>
-            <Users size={11} color="#94a3b8" />
+            <Users size={10} color="#94a3b8" />
             Up to {Number(listing.capacity).toLocaleString()} guests
           </div>
         )}
@@ -62,14 +64,14 @@ export function ListingCard({ listing }: ListingCardProps) {
 
         <div className={styles.cardFooter}>
           <div>
-            <div className={styles.priceLabel}>Starting from</div>
+            <div className={styles.priceLabel}>From</div>
             <div className={styles.priceValue}>
               <span className={styles.priceCurrency}>KSh</span>
-              {(listing.startingPrice ?? 0).toLocaleString()}
-              <span className={styles.pricePeriod}>/event</span>
+              {/* ✅ basePrice not startingPrice */}
+              {(listing.basePrice ?? 0).toLocaleString()}
             </div>
           </div>
-          <div className={styles.cardArrow}><ArrowRight size={14} /></div>
+          <div className={styles.cardArrow}><ArrowRight size={13} /></div>
         </div>
       </div>
     </Link>

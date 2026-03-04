@@ -2,14 +2,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../lib/auth/auth.context';
+import { useAuth } from '../../../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
-import { vendorsService, bookingsService } from '../../lib/api/endpoints';
-import { Booking } from '../../lib/types';
-import { VendorStats } from '../../components/vendor/VendorStats';
-import { RecentBookingsPreview } from '../../components/vendor/RecentBookingsPreview';
-import { QuickActions } from '../../components/vendor/QuickActions';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { vendorsService, bookingsService } from '../../../lib/api/endpoints';
+import { Booking } from '../../../lib/types';
+import { VendorStats } from '../../../components/vendor/VendorStats';
+import { RecentBookingsPreview } from '../../../components/vendor/RecentBookingsPreview';
+import { QuickActions } from '../../../components/vendor/QuickActions';
+import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
 // import { QuickAccessWidget } from '/components/vendor/QuickAccessWidget';
 
 interface VendorStats {

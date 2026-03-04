@@ -36,10 +36,10 @@ export default function ListingsPage() {
     search:   searchParams.get('search')   || undefined,
     category: (searchParams.get('category') as ListingFilters['category']) || undefined,
     location: searchParams.get('location') || undefined,
-    priceMin: searchParams.get('priceMin') ? Number(searchParams.get('priceMin')) : undefined,
-    priceMax: searchParams.get('priceMax') ? Number(searchParams.get('priceMax')) : undefined,
-    capacity: searchParams.get('capacity') ? Number(searchParams.get('capacity')) : undefined,
-    page:  1,
+    maxPrice: searchParams.get('priceMin') ? Number(searchParams.get('priceMin')) : undefined,
+    minPrice: searchParams.get('priceMax') ? Number(searchParams.get('priceMax')) : undefined,
+    minCapacity: searchParams.get('capacity') ? Number(searchParams.get('capacity')) : undefined,
+    offset: 1,
     limit: 20,
   });
 
@@ -47,9 +47,9 @@ export default function ListingsPage() {
     filters.search   ||
     filters.category ||
     filters.location ||
-    filters.priceMin ||
-    filters.priceMax ||
-    filters.capacity
+    filters.maxPrice ||
+    filters.minPrice ||
+    filters.minCapacity
   );
 
   useEffect(() => {
@@ -73,28 +73,10 @@ export default function ListingsPage() {
     setFilters(prev => ({ ...prev, [key]: value === '' ? undefined : value }));
 
   const handleClearFilters = () =>
-    setFilters({ page: 1, limit: 20 });
+    setFilters({ offset: 1, limit: 20 });
 
   return (
     <div className={styles.root}>
-
-      {/* Breadcrumb */}
-      <div className={styles.breadcrumbBar}>
-        <div className={styles.breadcrumbInner}>
-          <nav className={styles.breadcrumb}>
-            <Link href="/" className={styles.breadcrumbLink}>Home</Link>
-            <span className={styles.breadcrumbSep}>›</span>
-            <span className={styles.breadcrumbCurrent}>Listings</span>
-          </nav>
-          <span className={styles.breadcrumbCount}>
-            {loading
-              ? '…'
-              : <><strong>{listings.length}</strong> listing{listings.length !== 1 ? 's' : ''} found</>
-            }
-          </span>
-        </div>
-      </div>
-
       {/* Toolbar — outside the layout grid, full width */}
       <ListingsToolbar
         count={listings.length}

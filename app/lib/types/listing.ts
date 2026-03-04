@@ -1,47 +1,62 @@
-// Listing types for defining the structure of listing-related data, such as properties, amenities, pricing, and availability.
+// Listing types - aligned with backend database schema
 export interface Listing {
   id: string;
   vendorId: string;
   title: string;
   slug: string;
   description: string;
-  category: 'venue' | 'catering' | 'accommodation' | 'other';
+  category: 'event_venue' | 'catering' | 'accommodation' | 'other'; // ✅ matches backend enum
   capacity?: number;
-  // bookingCount: number;
-  location: {
-    address: string;
-    city: string;
-    coordinates?: {
-      lat: number;
-      lng: number;
-    };
-  };
-  startingPrice: number;
-  currency: string;
-  images: string[];
+
+  // ✅ Backend returns these as flat fields, NOT nested object
+  location: string;        // flat string e.g. "Nairobi"
+  address: string;
+  city: string;
+  county?: string;
+  latitude?: string;
+  longitude?: string;
+  basePrice: number;
+  currency: string;        // e.g. "KES"
+
+  photos: string[];
+  coverPhoto?: string;
+
   amenities: string[];
-  status: 'draft' | 'published' | 'paused' | 'archived';
-  rating: number;
-  reviewCount: number;
-  availability: {
-    available: boolean;
-    blockedDates: string[];
-  };
+  status: 'draft' | 'active' | 'paused' | 'deleted'; // ✅ matches backend enum
+
+  // Stats
+  views: number;
+  bookingsCount: number;
+  rating?: number;
+  reviewCount?: number;
+
+  // Booking settings
+  instantBooking: boolean;
+  minBookingDuration: number;
+  maxBookingDuration: number;
+  leadTime: number;
+
   createdAt: string;
   updatedAt: string;
-  instantBooking: boolean;
+
+  // Optional vendor relation (populated when includeVendor=true)
+  vendor?: {
+    id: string;
+    businessName: string;
+    businessType: string;
+    location: string;
+    phoneNumber?: string;
+  };
 }
 
 export interface ListingFilters {
   search?: string;
   category?: string;
   location?: string;
-  priceMin?: number;
-  priceMax?: number;
-  capacity?: number;
-  date?: string;
-  page?: number;
+  minPrice?: number;       // ✅ matches backend schema field names
+  maxPrice?: number;
+  minCapacity?: number;
   limit?: number;
-  sortBy?: 'price' | 'rating' | 'createdAt';
-}
-
+  offset?: number;
+  sortBy?: string;    
+  }      // e.g. "price", "rating", "createdAt"    

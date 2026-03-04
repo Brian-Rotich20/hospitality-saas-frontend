@@ -7,18 +7,9 @@ import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
 import { PriceDisplay } from '../../../components/common/PriceDisplay';
 import { LocationBadge } from '../../../components/common/LocationBadge';
 import { RatingStars } from '../../../components/common/RatingStars';
-import { AvailabilityBadge } from '../../../components/common/AvailabilityBadge';
 import { ListingGallery } from '../../../components/listings/ListingGallery';
 import { MapPin, Users, Check, ArrowLeft, Phone, Calendar, Shield } from 'lucide-react';
 import { useParams } from 'next/navigation';
-
-// ─── Palette (from Melbourne stays UI) ─────────────────────────────
-// #F7F7F7  page bg          #FFFFFF   card surface
-// #1A1A1A  primary heading  #374151   body text
-// #6B7280  muted / meta     #9CA3AF   placeholder
-// #111827  CTA button       #EAB308   star / accent amber
-// #E5E7EB  borders          #F3F4F6   subtle fills
-// ────────────────────────────────────────────────────────────────────
 
 export default function ListingDetailPage() {
   const [listing, setListing] = useState<Listing | null>(null);
@@ -50,67 +41,55 @@ export default function ListingDetailPage() {
 
   if (error || !listing) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Sans, sans-serif' }}>
+      <div style={{ minHeight: '100vh', background: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 16 }}>{error || 'Listing not found'}</p>
-          <Link href="/listings" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#111827', textDecoration: 'none' }}>
-            <ArrowLeft size={14} />
-            Back to listings
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#111827', textDecoration: 'none' }}>
+            <ArrowLeft size={14} /> Back to listings
           </Link>
         </div>
       </div>
     );
   }
 
-  const images = listing.images?.length > 0 ? listing.images : [];
+  // ✅ photos from backend, no more listing.images
+  const images = listing.photos?.length > 0 ? listing.photos : [];
 
   return (
     <div style={{ minHeight: '100vh', background: '#F7F7F7', fontFamily: 'DM Sans, sans-serif' }}>
 
-      {/* ── GALLERY ── */}
       {images.length > 0 && <ListingGallery images={images} />}
 
-      {/* ── BODY ── */}
       <div style={{ maxWidth: 1160, margin: '0 auto', padding: '28px 20px 64px' }}>
 
-        {/* Back */}
-        <Link
-          href="/listings"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#6B7280', textDecoration: 'none', marginBottom: 24 }}
-        >
-          <ArrowLeft size={13} />
-          Back to listings
+        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#6B7280', textDecoration: 'none', marginBottom: 24 }}>
+          <ArrowLeft size={13} /> Back to listings
         </Link>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 296px', gap: 40, alignItems: 'start' }}>
 
-          {/* ── LEFT: MAIN ── */}
+          {/* ── LEFT ── */}
           <div>
-
-            {/* Category badge */}
-            <div style={{
-              display: 'inline-block', background: '#F3F4F6', border: '1px solid #E5E7EB',
-              color: '#6B7280', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em',
-              padding: '3px 10px', borderRadius: 20, marginBottom: 10, textTransform: 'uppercase',
-            }}>
-              {listing.category}
+            <div style={{ display: 'inline-block', background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', padding: '3px 10px', borderRadius: 20, marginBottom: 10, textTransform: 'uppercase' }}>
+              {listing.category.replace('_', ' ')}
             </div>
 
-            {/* Title */}
             <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1A1A1A', lineHeight: 1.25, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
               {listing.title}
             </h1>
 
-            {/* Meta row */}
             <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 26 }}>
-              <RatingStars rating={listing.rating} count={listing.reviewCount} size="sm" />
-              <LocationBadge city={listing.location.city} area={listing.location.address} size="sm" />
-              {listing.availability && <AvailabilityBadge available={listing.availability.available} size="sm" />}
+              {/* ✅ rating is optional, guard it */}
+              {listing.rating != null && (
+                <RatingStars rating={listing.rating} count={listing.reviewCount} size="sm" />
+              )}
+              {/* ✅ use flat city/address fields */}
+              <LocationBadge city={listing.city} area={listing.address} size="sm" />
+              {/* ✅ removed AvailabilityBadge — availability is not on the Listing object */}
             </div>
 
             <div style={{ height: 1, background: '#E5E7EB', marginBottom: 26 }} />
 
-            {/* Description */}
             <section style={{ marginBottom: 30 }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>About</p>
               <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.8, margin: 0 }}>{listing.description}</p>
@@ -118,7 +97,6 @@ export default function ListingDetailPage() {
 
             <div style={{ height: 1, background: '#E5E7EB', marginBottom: 26 }} />
 
-            {/* Capacity */}
             {listing.capacity && (
               <section style={{ marginBottom: 30 }}>
                 <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Capacity</p>
@@ -131,16 +109,12 @@ export default function ListingDetailPage() {
               </section>
             )}
 
-            {/* Amenities */}
             {listing.amenities?.length > 0 && (
               <section style={{ marginBottom: 30 }}>
                 <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Amenities</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 7 }}>
                   {listing.amenities.map((amenity) => (
-                    <div
-                      key={amenity}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8 }}
-                    >
+                    <div key={amenity} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8 }}>
                       <Check size={12} color="#111827" strokeWidth={2.5} />
                       <span style={{ fontSize: 12, color: '#374151', fontWeight: 500 }}>{amenity}</span>
                     </div>
@@ -151,35 +125,32 @@ export default function ListingDetailPage() {
 
             <div style={{ height: 1, background: '#E5E7EB', marginBottom: 26 }} />
 
-            {/* Location */}
             <section>
               <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Location</p>
               <div style={{ background: '#F3F4F6', borderRadius: 10, height: 172, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '1px solid #E5E7EB', gap: 8 }}>
                 <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#FFFFFF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <MapPin size={15} color="#1A1A1A" />
                 </div>
+                {/* ✅ flat address + city */}
                 <p style={{ fontSize: 13, color: '#6B7280', margin: 0, fontWeight: 500 }}>
-                  {listing.location.address}, {listing.location.city}
+                  {listing.address}, {listing.city}
                 </p>
               </div>
             </section>
           </div>
 
-          {/* ── RIGHT: SIDEBAR ── */}
+          {/* ── RIGHT SIDEBAR ── */}
           <div style={{ position: 'sticky', top: 80 }}>
-
-            {/* Booking card */}
             <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: '22px 20px', marginBottom: 10 }}>
 
-              {/* Price */}
               <div style={{ marginBottom: 16 }}>
                 <p style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Starting from</p>
-                <PriceDisplay price={listing.startingPrice} period="per event" size="lg" />
+                {/* ✅ basePrice not startingPrice */}
+                <PriceDisplay price={listing.basePrice} period="per event" size="lg" />
               </div>
 
               <div style={{ height: 1, background: '#F3F4F6', marginBottom: 14 }} />
 
-              {/* Stats */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 16 }}>
                 {listing.capacity && (
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -190,74 +161,53 @@ export default function ListingDetailPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 12, color: '#6B7280' }}>Rating</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ fontSize: 13, color: '#EAB308', lineHeight: 1 }}>★</span>
+                    <span style={{ fontSize: 13, color: '#EAB308' }}>★</span>
                     <span style={{ fontSize: 12, fontWeight: 600, color: '#1A1A1A' }}>{listing.rating?.toFixed(1) ?? 'N/A'}</span>
-                    {listing.reviewCount && <span style={{ fontSize: 11, color: '#9CA3AF' }}>({listing.reviewCount})</span>}
+                    {listing.reviewCount != null && <span style={{ fontSize: 11, color: '#9CA3AF' }}>({listing.reviewCount})</span>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 12, color: '#6B7280' }}>Location</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1A1A1A' }}>{listing.location.city}</span>
+                  {/* ✅ listing.city not listing.location.city */}
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1A1A1A' }}>{listing.city}</span>
                 </div>
               </div>
 
               <div style={{ height: 1, background: '#F3F4F6', marginBottom: 14 }} />
 
-              {/* Buttons */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <Link
                   href={`/listings/${listing.id}/book`}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                    padding: '11px 20px', background: '#111827', color: '#FFFFFF',
-                    borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                    letterSpacing: '0.01em',
-                  }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 20px', background: '#111827', color: '#FFFFFF', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}
                 >
-                  <Calendar size={13} />
-                  Request Booking
+                  <Calendar size={13} /> Request Booking
                 </Link>
-                <button style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                  padding: '10px 20px', background: '#FFFFFF', color: '#374151',
-                  border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 13,
-                  fontWeight: 600, cursor: 'pointer',
-                }}>
-                  <Phone size={13} color="#6B7280" />
-                  Contact Vendor
+                <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 20px', background: '#FFFFFF', color: '#374151', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  <Phone size={13} color="#6B7280" /> Contact Vendor
                 </button>
               </div>
             </div>
 
-            {/* Trust strip */}
-            <div style={{
-              display: 'flex', alignItems: 'flex-start', gap: 9,
-              padding: '11px 14px', background: '#FFFFFF',
-              border: '1px solid #E5E7EB', borderRadius: 10,
-            }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '11px 14px', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 10 }}>
               <Shield size={13} color="#6B7280" style={{ flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: 11, color: '#6B7280', margin: 0, lineHeight: 1.6 }}>
                 <strong style={{ color: '#374151' }}>Secure booking</strong> · M-Pesa Daraja protected payments
               </p>
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* ── SIMILAR LISTINGS ── */}
+      {/* Similar listings */}
       <div style={{ borderTop: '1px solid #E5E7EB', background: '#FFFFFF', padding: '36px 20px' }}>
         <div style={{ maxWidth: 1160, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1A1A1A', margin: 0 }}>Similar Listings</h2>
-            <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', border: '1px solid #E5E7EB', padding: '2px 7px', borderRadius: 20 }}>
-              Coming soon
-            </span>
+            <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', border: '1px solid #E5E7EB', padding: '2px 7px', borderRadius: 20 }}>Coming soon</span>
           </div>
           <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>More venues and services will appear here.</p>
         </div>
       </div>
-
     </div>
   );
 }

@@ -149,8 +149,8 @@ export function Header() {
             {/* List Service CTA */}
             <Link
               href="/listings/new"
-              className="hidden sm:flex items-center gap-1.5 px-5 py-2.5 bg-[#1d9bf0] text-white
-                text-[13.5px] font-semibold rounded-xl hover:bg-[#0b86d6] transition-all
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#1d9bf0] text-white
+                text-sm font-semibold rounded-full hover:bg-[#0b86d6] transition-all
                 hover:-translate-y-px no-underline whitespace-nowrap"
             >
               List Service

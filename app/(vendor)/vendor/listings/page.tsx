@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '../../lib/auth/auth.context';
+import { useAuth } from '../../../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
-import { listingsService } from '../../lib/api/endpoints';
-import { Listing } from '../../lib/types';
-import { VendorListingsTable } from '../../components/vendor/VendorListingsTable';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { listingsService } from '../../../lib/api/endpoints';
+import { Listing } from '../../../lib/types';
+import { VendorListingsTable } from '../../../components/vendor/VendorListingsTable';
+import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
 import { AlertCircle, Filter } from 'lucide-react';
 
 export default function VendorMyListingsPage() {

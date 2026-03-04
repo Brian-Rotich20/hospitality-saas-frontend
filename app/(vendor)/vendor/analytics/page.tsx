@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../lib/auth/auth.context';
+import { useAuth } from '../../../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
-import { vendorsService, bookingsService } from '../../lib/api/endpoints';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { vendorsService, bookingsService } from '../../../lib/api/endpoints';
+import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
 import {
   TrendingUp,
   Calendar,
