@@ -57,7 +57,7 @@ export default function ListingsPage() {
       try {
         setLoading(true);
         setError(null);
-        const response = await listingsService.getAll(filters, sortBy);
+        const response = await listingsService.getAll({ ...filters, sortBy });
         setListings(response.data as unknown as Listing[]);
       } catch (err) {
         console.error(err);
