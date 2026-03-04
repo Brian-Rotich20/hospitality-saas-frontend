@@ -1,12 +1,9 @@
-import {Header}  from './components/layout/Header';
-import { Footer } from './components/layout/Footer';
-import ListingsPage from './(public)/(listings)/page';
+
+import Hero from './components/layout/Hero';
 export default function Home() {
   return (
     <main>
-      <Header />
-      <ListingsPage />
-      <Footer />
+      <Hero />
     </main>
   );
 }
