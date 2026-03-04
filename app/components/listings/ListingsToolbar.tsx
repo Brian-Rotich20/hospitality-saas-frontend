@@ -167,16 +167,16 @@ export function ListingsToolbar({
                 <input
                   type="number"
                   placeholder="Min"
-                  value={filters.priceMin ?? ''}
-                  onChange={e => onFilterChange('priceMin', e.target.value ? Number(e.target.value) : '')}
+                  value={filters.minPrice ?? ''}
+                  onChange={e => onFilterChange('minPrice', e.target.value ? Number(e.target.value) : '')}
                   className="w-full h-9 px-2 text-[13px] bg-white border border-slate-200 rounded-lg outline-none
                     focus:border-[#1d9bf0] transition-all placeholder-slate-400"
                 />
                 <input
                   type="number"
                   placeholder="Max"
-                  value={filters.priceMax ?? ''}
-                  onChange={e => onFilterChange('priceMax', e.target.value ? Number(e.target.value) : '')}
+                  value={filters.maxPrice ?? ''}
+                  onChange={e => onFilterChange('maxPrice', e.target.value ? Number(e.target.value) : '')}
                   className="w-full h-9 px-2 text-[13px] bg-white border border-slate-200 rounded-lg outline-none
                     focus:border-[#1d9bf0] transition-all placeholder-slate-400"
                 />
@@ -191,8 +191,8 @@ export function ListingsToolbar({
               <input
                 type="number"
                 placeholder="No. of guests"
-                value={filters.capacity ?? ''}
-                onChange={e => onFilterChange('capacity', e.target.value ? Number(e.target.value) : '')}
+                value={filters.minCapacity ?? ''}
+                onChange={e => onFilterChange('minCapacity', e.target.value ? Number(e.target.value) : '')}
                 className="h-9 px-3 text-[13px] bg-white border border-slate-200 rounded-lg outline-none
                   focus:border-[#1d9bf0] focus:ring-2 focus:ring-[#1d9bf0]/10 transition-all placeholder-slate-400"
               />
