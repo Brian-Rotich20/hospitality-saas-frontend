@@ -91,7 +91,7 @@ export function RecentBookingsPreview({
                   <td className="px-6 py-4">
                     <div>
                       <p className="font-medium text-gray-900">
-                        {booking.customerName || 'Customer'}
+                        {booking.customerId || 'Customer'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {booking.id.slice(0, 8)}...
@@ -116,30 +116,17 @@ export function RecentBookingsPreview({
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2 text-sm text-gray-700">
                       <Users size={16} className="text-gray-400" />
-                      <span>{booking.guests}</span>
+                      <span>{booking.guestCount}</span>
                     </div>
                   </td>
 
                   {/* Amount */}
                   <td className="px-6 py-4">
                     <p className="font-semibold text-gray-900">
-                      KSh {booking.totalAmount.toLocaleString()}
+                      KSh {booking.totalPrice.toLocaleString()}
                     </p>
                   </td>
 
-                  {/* Status */}
-                  <td className="px-6 py-4">
-                    <StatusBadge
-                      status={
-                        booking.status as
-                          | 'pending'
-                          | 'confirmed'
-                          | 'completed'
-                          | 'cancelled'
-                          | 'disputed'
-                      }
-                    />
-                  </td>
 
                   {/* Action */}
                   <td className="px-6 py-4">
