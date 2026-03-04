@@ -1,1 +1,0 @@
-// Bookings API client functions

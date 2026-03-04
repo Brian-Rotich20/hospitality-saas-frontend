@@ -1,1 +1,0 @@
-// Vendors API client functions

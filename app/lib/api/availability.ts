@@ -1,1 +1,0 @@
-// Availability API client functions
