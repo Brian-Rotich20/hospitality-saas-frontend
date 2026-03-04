@@ -38,7 +38,9 @@ export default function AdminLayout({
 
       {/* Mobile Sidebar */}
       <div className="md:hidden">
-        <MobileNav role="admin" />
+        <MobileNav role="admin" isOpen={false} onClose={function (): void {
+          throw new Error('Function not implemented.');
+        } } />
       </div>
 
       {/* Main Content */}
