@@ -42,7 +42,7 @@ export default function VendorListingDetailPage() {
 
     setDeleting(true);
     try {
-      await listingsService.deleteById(id);
+      await listingsService.delete(id);
       router.push('/my-listings');
     } catch (err) {
       setError('Failed to delete listing');

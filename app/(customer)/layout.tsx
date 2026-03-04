@@ -39,7 +39,9 @@ export default function CustomerLayout({
 
       {/* Mobile Sidebar */}
       <div className="md:hidden">
-        <MobileNav role="customer" />
+        <MobileNav role="customer" isOpen={false} onClose={function (): void {
+          throw new Error('Function not implemented.');
+        } } />
       </div>
 
       {/* Main Content */}
