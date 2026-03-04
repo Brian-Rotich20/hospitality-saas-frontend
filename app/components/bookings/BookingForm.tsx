@@ -14,6 +14,8 @@ interface BookingFormProps {
   basePrice: number;
   title: string;
   capacity: number;
+  notes: string;
+  
 }
 
 export function BookingForm({
@@ -21,13 +23,14 @@ export function BookingForm({
   basePrice,
   title,
   capacity,
+  notes,
 }: BookingFormProps) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [guests, setGuests] = useState<number>(1);
+  const [guestCount, setGuestCount] = useState<number>(1);
   const [specialRequests, setSpecialRequests] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +58,7 @@ export function BookingForm({
       return;
     }
 
-    if (guests < 1 || guests > capacity) {
+    if (guestCount < 1 || guestCount > capacity) {
       setError(`Guests must be between 1 and ${capacity}`);
       return;
     }
@@ -68,8 +71,8 @@ export function BookingForm({
         listingId,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        guests,
-        specialRequests,
+        guestCount,
+        notes,
       });
 
       // Redirect to confirmation page
@@ -123,8 +126,8 @@ export function BookingForm({
             type="number"
             min="1"
             max={capacity}
-            value={guests}
-            onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
+            value={guestCount}
+            onChange={(e) => setGuestCount(parseInt(e.target.value) || 1)}
             disabled={loading}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
           />
