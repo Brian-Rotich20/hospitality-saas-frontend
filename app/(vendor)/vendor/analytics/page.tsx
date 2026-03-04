@@ -1,296 +1,191 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
-import { vendorsService, bookingsService } from '../../../lib/api/endpoints';
+import { bookingsService } from '../../../lib/api/endpoints';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import {
-  TrendingUp,
-  Calendar,
-  Users,
-  DollarSign,
-  Eye,
-  ThumbsUp,
-  AlertCircle,
-} from 'lucide-react';
+import { Calendar, TrendingUp, CheckCircle2, XCircle, BarChart3, Eye, Zap, AlertCircle } from 'lucide-react';
 
-interface AnalyticsData {
-  totalBookings: number;
-  completedBookings: number;
-  cancelledBookings: number;
-  totalRevenue: number;
-  averageRating: number;
-  responseRate: number;
-  totalViews: number;
-  conversionRate: number;
+interface Analytics {
+  total: number; completed: number; cancelled: number; pending: number;
+  revenue: number; conversionRate: number; responseRate: number;
+}
+
+type Timeframe = 'week' | 'month' | 'year';
+
+function MetricCard({ label, value, sub, color, icon: Icon, border }: {
+  label: string; value: string | number; sub?: string;
+  color: string; icon: React.ElementType; border?: string;
+}) {
+  return (
+    <div style={{ background: '#fff', border: `1px solid ${border ?? '#E5E7EB'}`, borderRadius: 12, padding: '18px 20px', borderLeft: `3px solid ${color}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon size={15} color={color} />
+        </div>
+      </div>
+      <div style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: '#6B7280', marginTop: 5 }}>{sub}</div>}
+    </div>
+  );
 }
 
 export default function VendorAnalyticsPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
-  const router = useRouter();
+  const router  = useRouter();
+  const [data,     setData]     = useState<Analytics | null>(null);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState<string | null>(null);
+  const [period,   setPeriod]   = useState<Timeframe>('month');
 
-  const [analytics, setAnalytics] = useState<AnalyticsData>({
-    totalBookings: 0,
-    completedBookings: 0,
-    cancelledBookings: 0,
-    totalRevenue: 0,
-    averageRating: 0,
-    responseRate: 0,
-    totalViews: 0,
-    conversionRate: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [timeframe, setTimeframe] = useState<'week' | 'month' | 'year'>('month');
-
-  // Check auth
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
+    if (!authLoading && !isAuthenticated) { router.push('/auth/login'); return; }
+    if (!authLoading && user?.role !== 'vendor') { router.push('/dashboard'); }
+  }, [authLoading, isAuthenticated, user, router]);
 
-    if (!authLoading && user?.role !== 'vendor') {
-      router.push('/dashboard');
-      return;
-    }
-
-    if (!authLoading && isAuthenticated) {
-      fetchAnalytics();
-    }
-  }, [isAuthenticated, authLoading, user, router, timeframe]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true); setError(null);
+      const res      = await bookingsService.getVendorBookings(1, 200);
+      const bookings: any[] = Array.isArray(res.data) ? res.data : (res.data as any)?.data ?? [];
 
-      // Fetch booking data
-      const bookingsResponse = await bookingsService.getVendorBookings();
-      const bookings = bookingsResponse.data || [];
+      // Filter by timeframe
+      const now  = new Date();
+      const from = new Date();
+      if (period === 'week')  from.setDate(now.getDate() - 7);
+      if (period === 'month') from.setMonth(now.getMonth() - 1);
+      if (period === 'year')  from.setFullYear(now.getFullYear() - 1);
 
-      const completed = bookings.filter((b) => b.status === 'completed').length;
-      const cancelled = bookings.filter((b) => b.status === 'cancelled').length;
-      const pending = bookings.filter((b) => b.status === 'pending').length;
+      const inRange = bookings.filter(b => new Date(b.createdAt) >= from);
+      const completed  = inRange.filter(b => b.status === 'completed');
+      const cancelled  = inRange.filter(b => b.status === 'cancelled');
+      const pending    = inRange.filter(b => b.status === 'pending');
+      const revenue    = completed.reduce((s: number, b: any) => s + (b.totalAmount ?? 0), 0);
 
-      const totalRevenue = bookings
-        .filter((b) => b.status === 'completed')
-        .reduce((sum, b) => sum + b.totalAmount, 0);
-
-      // Fetch stats
-      const statsResponse = await vendorsService.getStats();
-      const stats = statsResponse.data;
-
-      setAnalytics({
-        totalBookings: bookings.length,
-        completedBookings: completed,
-        cancelledBookings: cancelled,
-        totalRevenue,
-        averageRating: stats.averageRating,
-        responseRate: pending === 0 ? 100 : ((bookings.length - pending) / bookings.length) * 100,
-        totalViews: bookings.length * 15, // Mock data
-        conversionRate:
-          bookings.length > 0 ? (completed / bookings.length) * 100 : 0,
+      setData({
+        total:          inRange.length,
+        completed:      completed.length,
+        cancelled:      cancelled.length,
+        pending:        pending.length,
+        revenue,
+        conversionRate: inRange.length > 0 ? (completed.length / inRange.length) * 100 : 0,
+        responseRate:   inRange.length > 0 ? ((inRange.length - pending.length) / inRange.length) * 100 : 100,
       });
-    } catch (err) {
-      console.error('Error fetching analytics:', err);
-      setError('Failed to load analytics data');
-    } finally {
-      setLoading(false);
-    }
-  };
+    } catch { setError('Failed to load analytics'); }
+    finally  { setLoading(false); }
+  }, [period]);
 
-  if (authLoading || loading) {
-    return <LoadingSpinner fullPage text="Loading analytics..." />;
-  }
+  useEffect(() => { if (!authLoading && isAuthenticated) fetchAnalytics(); }, [authLoading, isAuthenticated, fetchAnalytics]);
 
-  const metrics = [
-    {
-      id: 'bookings',
-      label: 'Total Bookings',
-      value: analytics.totalBookings,
-      icon: Calendar,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      id: 'revenue',
-      label: 'Total Revenue',
-      value: `KSh ${analytics.totalRevenue.toLocaleString()}`,
-      icon: DollarSign,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      id: 'rating',
-      label: 'Average Rating',
-      value: analytics.averageRating.toFixed(1),
-      suffix: '/ 5.0',
-      icon: ThumbsUp,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-    {
-      id: 'response',
-      label: 'Response Rate',
-      value: analytics.responseRate.toFixed(0),
-      suffix: '%',
-      icon: TrendingUp,
-      color: 'from-orange-500 to-orange-600',
-      bgColor: 'bg-orange-50',
-    },
-  ];
-
-  const detailedMetrics = [
-    {
-      label: 'Completed Bookings',
-      value: analytics.completedBookings,
-      description: 'Bookings that were fulfilled',
-      color: 'text-green-600',
-    },
-    {
-      label: 'Cancelled Bookings',
-      value: analytics.cancelledBookings,
-      description: 'Cancelled by customer',
-      color: 'text-red-600',
-    },
-    {
-      label: 'Conversion Rate',
-      value: `${analytics.conversionRate.toFixed(1)}%`,
-      description: 'Bookings relative to inquiries',
-      color: 'text-blue-600',
-    },
-    {
-      label: 'Total Views',
-      value: analytics.totalViews,
-      description: 'Listing views this period',
-      color: 'text-purple-600',
-    },
-  ];
+  if (authLoading) return <LoadingSpinner fullPage text="Loading..." />;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex justify-between items-start md:items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">Analytics</h1>
-            <p className="text-gray-600 mt-2">
-              Track your performance and growth metrics
-            </p>
-          </div>
+    <div style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
 
-          {/* Timeframe Selector */}
-          <div className="flex gap-2">
-            {(['week', 'month', 'year'] as const).map((period) => (
-              <button
-                key={period}
-                onClick={() => setTimeframe(period)}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
-                  timeframe === period
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {period.charAt(0).toUpperCase() + period.slice(1)}
-              </button>
-            ))}
-          </div>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Analytics</h1>
+          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Track your performance metrics</p>
         </div>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-            <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="text-red-700">{error}</div>
-          </div>
-        )}
-
-        {/* Main Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {metrics.map((metric) => {
-            const Icon = metric.icon;
-            return (
-              <div
-                key={metric.id}
-                className={`${metric.bgColor} rounded-lg p-6 border-l-4 border-l-transparent shadow-sm hover:shadow-md transition`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      {metric.label}
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 mt-1">
-                      {metric.value}
-                      {metric.suffix && (
-                        <span className="text-xl font-normal text-gray-600 ml-1">
-                          {metric.suffix}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-
-                  <div
-                    className={`inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br ${metric.color}`}
-                  >
-                    <Icon size={24} className="text-white" />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Detailed Metrics */}
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">
-            Detailed Performance
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {detailedMetrics.map((metric, index) => (
-              <div
-                key={index}
-                className="border-l-4 border-l-gray-300 pl-6 py-4"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-gray-600">
-                    {metric.label}
-                  </p>
-                  <p className={`text-2xl font-bold ${metric.color}`}>
-                    {metric.value}
-                  </p>
-                </div>
-                <p className="text-xs text-gray-500">{metric.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Tips Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-8 border border-blue-200">
-          <h3 className="text-lg font-bold text-blue-900 mb-4">💡 Tips to Improve</h3>
-          <ul className="space-y-3 text-blue-800">
-            <li className="flex items-start space-x-3">
-              <span className="text-2xl">✓</span>
-              <span>Respond to booking requests within 24 hours to improve response rate</span>
-            </li>
-            <li className="flex items-start space-x-3">
-              <span className="text-2xl">✓</span>
-              <span>Keep your listing photos high quality and description detailed</span>
-            </li>
-            <li className="flex items-start space-x-3">
-              <span className="text-2xl">✓</span>
-              <span>Encourage customers to leave reviews after completed bookings</span>
-            </li>
-            <li className="flex items-start space-x-3">
-              <span className="text-2xl">✓</span>
-              <span>Maintain competitive pricing compared to similar listings</span>
-            </li>
-          </ul>
+        {/* Timeframe pills */}
+        <div style={{ display: 'flex', gap: 6, background: '#F3F4F6', padding: 4, borderRadius: 10 }}>
+          {(['week', 'month', 'year'] as Timeframe[]).map(p => (
+            <button key={p} onClick={() => setPeriod(p)} style={{
+              padding: '6px 14px', borderRadius: 7, border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              background: period === p ? '#111827' : 'transparent',
+              color:      period === p ? '#fff'    : '#6B7280',
+              fontFamily: 'inherit',
+            }}>
+              {p.charAt(0).toUpperCase() + p.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
+
+      {error && (
+        <div style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#991B1B' }}>
+          <AlertCircle size={14} /> {error}
+        </div>
+      )}
+
+      {loading ? <LoadingSpinner text="Loading analytics..." /> : data && (
+        <>
+          {/* Primary metrics */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }} className="analytics-grid">
+            <MetricCard label="Total Bookings"  value={data.total}                           color="#6366F1" icon={Calendar}       />
+            <MetricCard label="Revenue"         value={`KSh ${(data.revenue/1000).toFixed(0)}K`} color="#10B981" icon={TrendingUp} sub="From completed bookings" />
+            <MetricCard label="Conversion"      value={`${data.conversionRate.toFixed(0)}%`} color="#F59E0B" icon={Zap}           sub="Completed vs total"      />
+            <MetricCard label="Response Rate"   value={`${data.responseRate.toFixed(0)}%`}   color="#8B5CF6" icon={BarChart3}     sub="Non-pending ratio"        />
+          </div>
+
+          {/* Secondary row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }} className="analytics-grid2">
+            <MetricCard label="Completed"  value={data.completed}  color="#10B981" icon={CheckCircle2} />
+            <MetricCard label="Cancelled"  value={data.cancelled}  color="#EF4444" icon={XCircle}      />
+            <MetricCard label="Pending"    value={data.pending}    color="#F59E0B" icon={Calendar}     />
+          </div>
+
+          {/* Booking breakdown bar */}
+          {data.total > 0 && (
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '20px 22px', marginBottom: 24 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 14px' }}>Booking Breakdown</p>
+              <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', gap: 2, marginBottom: 14 }}>
+                {[
+                  { count: data.completed, color: '#10B981' },
+                  { count: data.pending,   color: '#F59E0B' },
+                  { count: data.cancelled, color: '#EF4444' },
+                ].map((seg, i) => (
+                  <div key={i} style={{ flex: seg.count, background: seg.color, minWidth: seg.count > 0 ? 4 : 0 }} />
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 20 }}>
+                {[
+                  { label: 'Completed', count: data.completed, color: '#10B981' },
+                  { label: 'Pending',   count: data.pending,   color: '#F59E0B' },
+                  { label: 'Cancelled', count: data.cancelled, color: '#EF4444' },
+                ].map(seg => (
+                  <div key={seg.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, display: 'inline-block' }} />
+                    <span style={{ fontSize: 12, color: '#6B7280' }}>{seg.label}: <strong style={{ color: '#111827' }}>{seg.count}</strong></span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tips */}
+          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '18px 22px' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#065F46', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 12px' }}>💡 Tips to Improve</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                'Respond to booking requests within 24 hours to boost response rate',
+                'Add high-quality photos to increase listing views and conversion',
+                'Ask customers to leave reviews after completed bookings',
+                'Keep pricing competitive — check similar listings in your area',
+              ].map((tip, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#10B981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>✓</span>
+                  <span style={{ fontSize: 13, color: '#065F46' }}>{tip}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .analytics-grid  { grid-template-columns: repeat(2, 1fr) !important; }
+          .analytics-grid2 { grid-template-columns: repeat(3, 1fr) !important; }
+        }
+        @media (max-width: 480px) {
+          .analytics-grid  { grid-template-columns: 1fr !important; }
+          .analytics-grid2 { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }

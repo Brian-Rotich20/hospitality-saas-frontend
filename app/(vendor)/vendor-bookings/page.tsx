@@ -1,1 +1,0 @@
-// Pending and accepted bookings for vendors. This page will show a list of all pending and accepted bookings for the vendor. Vendors can also cancel bookings from this page.

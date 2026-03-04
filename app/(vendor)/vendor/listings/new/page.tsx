@@ -11,109 +11,66 @@ import { AlertCircle, CheckCircle } from 'lucide-react';
 export default function CreateListingPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const router = useRouter();
-
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error,   setError]   = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
-    if (!authLoading && user?.role !== 'vendor') {
-      router.push('/dashboard');
-    }
+    if (!authLoading && !isAuthenticated) { router.push('/auth/login'); return; }
+    if (!authLoading && user?.role !== 'vendor') { router.push('/dashboard'); }
   }, [isAuthenticated, authLoading, user, router]);
 
+  // Upload via backend proxy → Cloudinary
   const uploadImages = async (files: File[]): Promise<string[]> => {
-    if (!files || files.length === 0) return [];
-
-    const uploadedUrls: string[] = [];
-
+    const urls: string[] = [];
     for (const file of files) {
-      const response = await uploadService.uploadImage(file);
-      const url = response.data?.url;
-
-      if (!url) {
-        console.error('Upload response was:', JSON.stringify(response.data, null, 2));
-        throw new Error('Upload failed: no URL in response');
-      }
-
-      uploadedUrls.push(url);
+      const res = await uploadService.uploadImage(file);
+      const url = res.data?.url;
+      if (!url) throw new Error('Upload failed: no URL returned');
+      urls.push(url);
     }
-
-    return uploadedUrls;
+    return urls;
   };
 
   const handleSubmit = async (formData: any) => {
     try {
-      setLoading(true);
-      setError(null);
-      setSuccess(null);
+      setLoading(true); setError(null); setSuccess(null);
 
-      // Validate
-      if (!formData.title?.trim())          throw new Error('Title is required');
-      if (!formData.description?.trim())    throw new Error('Description is required');
-      if (!formData.category)               throw new Error('Category is required');
-      if (!formData.address?.trim())        throw new Error('Address is required');
-      if (!formData.city?.trim())           throw new Error('City is required');
-      if (!formData.capacity || formData.capacity < 1)
-                                            throw new Error('Capacity must be at least 1');
-      if (!formData.startingPrice || formData.startingPrice <= 0)
-                                            throw new Error('Starting price must be greater than 0');
-      if (!formData.newImages || formData.newImages.length === 0)
-                                            throw new Error('At least one image is required');
+      // Client-side guards (form also validates, but double-check)
+      if (!formData.newImages?.length) throw new Error('At least one image is required');
 
-      // Upload images
-      setSuccess('Uploading images...');
-      const imageUrls = await uploadImages(formData.newImages);
+      setSuccess('Uploading photos...');
+      const photoUrls = await uploadImages(formData.newImages);
 
       setSuccess('Creating listing...');
 
-      // ✅ submitData matches backend schema exactly
-      const submitData = {
+      // ✅ Payload matches backend createListingSchema exactly
+      const payload = {
         title:       formData.title.trim(),
         description: formData.description.trim(),
         category:    formData.category,
-        location:    formData.city.trim(),          // required string field
-        address:     formData.address.trim(),       // required, min 10 chars
+        location:    formData.city.trim(),      // required string
+        address:     formData.address.trim(),   // min 10 chars
         city:        formData.city.trim(),
-        capacity:    parseInt(formData.capacity),
+        capacity:    parseInt(formData.capacity, 10),
         basePrice:   parseFloat(formData.startingPrice),
-        amenities:   formData.amenities || [],
-        photos:      imageUrls,                     // ✅ "photos" not "images"
+        amenities:   formData.amenities ?? [],
+        photos:      photoUrls,                 // ✅ "photos" not "images"
       };
 
-      console.log('Submitting:', JSON.stringify(submitData, null, 2));
-
-      const response = await listingsService.create(submitData);
-
-      // Backend returns: { success: true, data: { id, ... } }
+      const response = await listingsService.create(payload);
+      // apiClient unwraps one level → response.data = backend's data object
       const listingId = response.data?.id;
 
-      if (!listingId) {
-        console.error('Response:', JSON.stringify(response.data, null, 2));
-        throw new Error('Failed to get listing ID from response');
-      }
+      if (!listingId) throw new Error('No listing ID in response');
 
-      setSuccess('✅ Listing created successfully! Redirecting...');
+      setSuccess('✅ Listing created! Redirecting...');
       setLoading(false);
-
-      setTimeout(() => {
-        router.push(`/my-listings/${listingId}`); // ✅ correct path
-      }, 1000);
+      setTimeout(() => router.push(`/vendor/listings/${listingId}`), 1000);
 
     } catch (err: any) {
-      const backendMsg =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        'Failed to create listing';
-
-      console.error('Error:', backendMsg);
-      console.log('Full error response:', JSON.stringify(err?.response?.data, null, 2));
-      setError(backendMsg);
+      const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Failed to create listing';
+      setError(msg);
       setLoading(false);
     }
   };
@@ -122,45 +79,30 @@ export default function CreateListingPage() {
   if (!isAuthenticated || user?.role !== 'vendor') return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
 
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900">Create New Listing</h1>
-          <p className="mt-2 text-gray-600">
-            Add your venue, service, or accommodation to reach more customers
-          </p>
-        </div>
-
-        {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
-            <CheckCircle size={20} className="text-green-600 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-green-900">Progress</h3>
-              <p className="text-sm text-green-700 mt-1">{success}</p>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-            <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-red-900">Error</h3>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <ListingForm
-            onSubmit={handleSubmit}
-            loading={loading}
-            isEditing={false}
-          />
-        </div>
-
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+          Create New Listing
+        </h1>
+        <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>
+          Add your venue, service, or accommodation to reach more customers
+        </p>
       </div>
+
+      {success && (
+        <div style={{ background: '#D1FAE5', border: '1px solid #A7F3D0', borderRadius: 9, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#065F46', fontWeight: 600 }}>
+          <CheckCircle size={14} /> {success}
+        </div>
+      )}
+
+      {error && (
+        <div style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 9, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#991B1B', fontWeight: 600 }}>
+          <AlertCircle size={14} /> {error}
+        </div>
+      )}
+
+      <ListingForm onSubmit={handleSubmit} loading={loading} isEditing={false} />
     </div>
   );
 }
