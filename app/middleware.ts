@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtDecode } from 'jose';
+import { jwtDecode } from 'jwt-decode';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.NEXT_PUBLIC_JWT_SECRET || 'your-secret-key'
