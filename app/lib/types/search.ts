@@ -10,5 +10,6 @@ export interface SearchParams {
   endDate?: string;
   page?: number;
   search?: string;
+sortBy?: string;
 }
 
