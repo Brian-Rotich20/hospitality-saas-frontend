@@ -249,7 +249,7 @@ export default function VendorListingDetailPage() {
             My Listings
           </Link>
           <span className="text-gray-200">/</span>
-          <span className="text-xs font-semibold text-gray-700 truncate max-w-[200px]">{listing.title}</span>
+          <span className="text-xs font-semibold text-gray-700 truncate max-w-50">{listing.title}</span>
         </div>
 
         {/* ── Page header ── */}
@@ -276,7 +276,7 @@ export default function VendorListingDetailPage() {
           </div>
 
           {/* Desktop action buttons */}
-          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <Link href={`/vendor/listings/${id}/edit`}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-[#2D3B45] text-white rounded-lg hover:bg-[#3a4d5a] transition">
               <Edit size={12} />

@@ -1,6 +1,6 @@
 // app/store/page.tsx  ← this is the SERVER component (no 'use client'
 import { Suspense } from 'react';
-import { StoreContent } from '../../components/listings/StoreContent';
+import  StoreContent  from '../../components/listings/StoreContent';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 export const metadata = {

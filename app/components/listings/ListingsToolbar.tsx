@@ -19,17 +19,20 @@ interface Props {
 
 const CATEGORY_OPTIONS: { value: ListingFilters['category']; label: string }[] = [
   { value: undefined,        label: 'All Categories' },
-  { value: 'venue',          label: 'Venues'         },
+  { value: 'event_venue',    label: 'Venues'         },
   { value: 'catering',       label: 'Catering'       },
   { value: 'accommodation',  label: 'Accommodation'  },
   { value: 'other',          label: 'Other'          },
 ];
 
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
-  { value: 'rating',    label: 'Sort by: Highest Rated'  },
-  { value: 'price',     label: 'Sort by: Price'          },
-  { value: 'createdAt', label: 'Sort by: Newest'         },
+  { value: 'rating',    label: 'Top Rated'  },
+  { value: 'price',     label: 'Price'      },
+  { value: 'createdAt', label: 'Newest'     },
 ];
+
+const inputCls = "h-9 px-3 text-xs bg-white border border-gray-200 rounded-lg outline-none focus:border-[#2D3B45] focus:ring-2 focus:ring-[#2D3B45]/10 transition-all placeholder-gray-300 w-full";
+const labelCls = "text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block";
 
 export function ListingsToolbar({
   count, loading, filters, sortBy,
@@ -37,62 +40,63 @@ export function ListingsToolbar({
 }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const activeCount = Object.values(filters).filter(
-    v => v !== undefined && v !== ''
-  ).length;
+  const activeCount = Object.values(filters).filter(v => v !== undefined && v !== '').length;
 
   return (
-    <div className="bg-white border-b border-slate-100">
+    <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
 
-      {/* ── Toolbar row ── */}
-      <div className="max-w-[1280px] mx-auto px-6 h-14 flex items-center justify-between gap-4">
+      {/* Toolbar row */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-3">
 
-        {/* Left — location + count */}
-        <p className="text-[13.5px] text-slate-500 shrink-0">
+        {/* Count */}
+        <p className="text-xs text-gray-500 shrink-0 hidden sm:block">
           {filters.location
-            ? <>Listings in <span className="font-semibold text-slate-700">{filters.location}</span></>
+            ? <><span className="font-bold text-gray-700">{filters.location}</span> listings</>
             : 'All Listings'
           }
           {!loading && (
-            <span className="ml-2 text-slate-400">
-              · <strong className="text-slate-600">{count}</strong> found
+            <span className="ml-1.5 text-gray-400">
+              · <strong className="text-gray-600">{count}</strong> found
             </span>
           )}
         </p>
+        {!loading && (
+          <p className="text-xs text-gray-500 sm:hidden">
+            <strong className="text-gray-700">{count}</strong> results
+          </p>
+        )}
 
-        {/* Right — sort + filter toggle */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right controls */}
+        <div className="flex items-center gap-2 ml-auto">
 
           {/* Sort */}
           <div className="relative">
             <select
               value={sortBy}
               onChange={e => onSortChange(e.target.value as SortBy)}
-              className="appearance-none pl-3 pr-8 py-2 text-[13px] font-medium text-slate-600
-                bg-slate-50 border border-slate-200 rounded-xl cursor-pointer outline-none
-                hover:border-slate-300 focus:border-[#1d9bf0] transition-colors"
+              className="appearance-none pl-3 pr-7 py-1.5 text-xs font-semibold text-gray-600
+                bg-gray-50 border border-gray-200 rounded-lg cursor-pointer outline-none
+                hover:border-gray-300 focus:border-[#2D3B45] transition-colors"
             >
               {SORT_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
-            <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
 
-          {/* Filters button */}
+          {/* Filters toggle */}
           <button
             onClick={() => setFiltersOpen(v => !v)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold
-              border transition-colors
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors
               ${hasActiveFilters
-                ? 'bg-[#1d9bf0] text-white border-[#1d9bf0] hover:bg-[#0b86d6]'
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-100'
-              }`}
+                ? 'bg-[#2D3B45] text-white border-[#2D3B45] hover:bg-[#3a4d5a]'
+                : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'}`}
           >
-            <SlidersHorizontal size={14} />
-            Filters
+            <SlidersHorizontal size={13} />
+            <span className="hidden sm:inline">Filters</span>
             {hasActiveFilters && (
-              <span className="bg-white text-[#1d9bf0] text-[10px] font-bold w-4 h-4
+              <span className="bg-[#F5C842] text-[#2D3B45] text-[9px] font-black w-4 h-4
                 rounded-full flex items-center justify-center">
                 {activeCount}
               </span>
@@ -101,111 +105,77 @@ export function ListingsToolbar({
         </div>
       </div>
 
-      {/* ── Filter panel ── */}
+      {/* Filter panel */}
       {filtersOpen && (
-        <div className="border-t border-slate-100 bg-slate-50/60 px-6 py-4 animate-slide-down">
-          <div className="max-w-[1280px] mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="border-t border-gray-100 bg-gray-50/60 px-4 sm:px-6 py-4">
+          <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
 
-            {/* search */}
-            <div className="flex flex-col gap-1 lg:col-span-2">
-              <label className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">
-                Keyword
-              </label>
-              <input
-                type="text"
-                placeholder="Search listings…"
+            {/* Keyword */}
+            <div className="col-span-2 sm:col-span-1 lg:col-span-2">
+              <label className={labelCls}>Keyword</label>
+              <input type="text" placeholder="Search listings…"
                 value={filters.search ?? ''}
                 onChange={e => onFilterChange('search', e.target.value)}
-                className="h-9 px-3 text-[13px] bg-white border border-slate-200 rounded-lg outline-none
-                  focus:border-[#1d9bf0] focus:ring-2 focus:ring-[#1d9bf0]/10 transition-all placeholder-slate-400"
-              />
+                className={inputCls} />
             </div>
 
-            {/* category — matches Listing['category'] union */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">
-                Category
-              </label>
+            {/* Category */}
+            <div>
+              <label className={labelCls}>Category</label>
               <div className="relative">
                 <select
                   value={filters.category ?? ''}
                   onChange={e => onFilterChange('category', e.target.value)}
-                  className="w-full h-9 pl-3 pr-7 text-[13px] bg-white border border-slate-200 rounded-lg
-                    appearance-none outline-none focus:border-[#1d9bf0] transition-all cursor-pointer"
+                  className="w-full h-9 pl-3 pr-7 text-xs bg-white border border-gray-200 rounded-lg
+                    appearance-none outline-none focus:border-[#2D3B45] transition-all cursor-pointer font-medium text-gray-600"
                 >
                   {CATEGORY_OPTIONS.map(o => (
-                    <option key={o.value ?? '__all'} value={o.value ?? ''}>
-                      {o.label}
-                    </option>
+                    <option key={o.value ?? '__all'} value={o.value ?? ''}>{o.label}</option>
                   ))}
                 </select>
-                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
 
-            {/* location — maps to listing.location.city */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">
-                City
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Nairobi"
+            {/* City */}
+            <div>
+              <label className={labelCls}>City</label>
+              <input type="text" placeholder="e.g. Nairobi"
                 value={filters.location ?? ''}
                 onChange={e => onFilterChange('location', e.target.value)}
-                className="h-9 px-3 text-[13px] bg-white border border-slate-200 rounded-lg outline-none
-                  focus:border-[#1d9bf0] focus:ring-2 focus:ring-[#1d9bf0]/10 transition-all placeholder-slate-400"
-              />
+                className={inputCls} />
             </div>
 
-            {/* priceMin + priceMax — number fields */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">
-                Price (KSh)
-              </label>
+            {/* Price */}
+            <div>
+              <label className={labelCls}>Price (KSh)</label>
               <div className="flex gap-1.5">
-                <input
-                  type="number"
-                  placeholder="Min"
+                <input type="number" placeholder="Min"
                   value={filters.minPrice ?? ''}
                   onChange={e => onFilterChange('minPrice', e.target.value ? Number(e.target.value) : '')}
-                  className="w-full h-9 px-2 text-[13px] bg-white border border-slate-200 rounded-lg outline-none
-                    focus:border-[#1d9bf0] transition-all placeholder-slate-400"
-                />
-                <input
-                  type="number"
-                  placeholder="Max"
+                  className="w-full h-9 px-2 text-xs bg-white border border-gray-200 rounded-lg outline-none focus:border-[#2D3B45] transition-all placeholder-gray-300" />
+                <input type="number" placeholder="Max"
                   value={filters.maxPrice ?? ''}
                   onChange={e => onFilterChange('maxPrice', e.target.value ? Number(e.target.value) : '')}
-                  className="w-full h-9 px-2 text-[13px] bg-white border border-slate-200 rounded-lg outline-none
-                    focus:border-[#1d9bf0] transition-all placeholder-slate-400"
-                />
+                  className="w-full h-9 px-2 text-xs bg-white border border-gray-200 rounded-lg outline-none focus:border-[#2D3B45] transition-all placeholder-gray-300" />
               </div>
             </div>
 
-            {/* capacity — number field */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">
-                Min. Guests
-              </label>
-              <input
-                type="number"
-                placeholder="No. of guests"
+            {/* Guests */}
+            <div>
+              <label className={labelCls}>Min. Guests</label>
+              <input type="number" placeholder="No. of guests"
                 value={filters.minCapacity ?? ''}
                 onChange={e => onFilterChange('minCapacity', e.target.value ? Number(e.target.value) : '')}
-                className="h-9 px-3 text-[13px] bg-white border border-slate-200 rounded-lg outline-none
-                  focus:border-[#1d9bf0] focus:ring-2 focus:ring-[#1d9bf0]/10 transition-all placeholder-slate-400"
-              />
+                className={inputCls} />
             </div>
           </div>
 
           {hasActiveFilters && (
-            <div className="max-w-[1280px] mx-auto flex justify-end mt-3">
-              <button
-                onClick={onClearFilters}
-                className="flex items-center gap-1.5 text-[12.5px] font-medium text-red-400 hover:text-red-600 transition-colors"
-              >
-                <X size={12} /> Clear all filters
+            <div className="max-w-7xl mx-auto flex justify-end mt-3">
+              <button onClick={onClearFilters}
+                className="flex items-center gap-1 text-xs font-semibold text-red-400 hover:text-red-600 transition-colors">
+                <X size={11} /> Clear filters
               </button>
             </div>
           )}
