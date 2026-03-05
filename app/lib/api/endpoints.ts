@@ -152,10 +152,9 @@ export const listingsService = {
   getMyListings: () =>
     apiClient.get<Listing[]>(API_ENDPOINTS.LISTINGS.GET_MY_LISTINGS),
 
-  updateStatus: (id: string, status: 'published' | 'paused') =>
-    apiClient.put<Listing>(API_ENDPOINTS.LISTINGS.UPDATE_STATUS(id), {
-      status,
-    }),
+  updateStatus: (id: string, status: 'active' | 'paused') =>
+    apiClient.put<Listing>(API_ENDPOINTS.LISTINGS.UPDATE_STATUS(id), { status }),
+    
 };
 
 // ============ Availability Services ============

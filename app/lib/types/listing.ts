@@ -1,36 +1,38 @@
-// Listing types - aligned with backend database schema
+// lib/types/index.ts  — Listing interface, aligned with backend Drizzle schema
+
 export interface Listing {
   id: string;
   vendorId: string;
   title: string;
   slug: string;
   description: string;
-  category: 'event_venue' | 'catering' | 'accommodation' | 'other'; // ✅ matches backend enum
+  category: 'event_venue' | 'catering' | 'accommodation' | 'other';
   capacity?: number;
 
-  // ✅ Backend returns these as flat fields, NOT nested object
-  location: string;        // flat string e.g. "Nairobi"
+  // ✅ Flat fields — backend does NOT nest these in a location object
+  location: string;     // e.g. "Nairobi"
   address: string;
   city: string;
   county?: string;
   latitude?: string;
   longitude?: string;
-  basePrice: number;
-  currency: string;        // e.g. "KES"
+
+  basePrice: number;    // ✅ backend field name — NOT startingPrice
+  currency: string;     // e.g. "KES"
 
   photos: string[];
   coverPhoto?: string;
-
   amenities: string[];
-  status: 'draft' | 'active' | 'paused' | 'deleted'; // ✅ matches backend enum
 
-  // Stats
+  // ✅ Backend enum: 'draft' | 'active' | 'paused' | 'deleted'
+  //    'active' = live/published. 'published' does NOT exist in backend.
+  status: 'draft' | 'active' | 'paused' | 'deleted';
+
   views: number;
   bookingsCount: number;
   rating?: number;
   reviewCount?: number;
 
-  // Booking settings
   instantBooking: boolean;
   minBookingDuration: number;
   maxBookingDuration: number;
@@ -39,7 +41,6 @@ export interface Listing {
   createdAt: string;
   updatedAt: string;
 
-  // Optional vendor relation (populated when includeVendor=true)
   vendor?: {
     id: string;
     businessName: string;
@@ -53,10 +54,10 @@ export interface ListingFilters {
   search?: string;
   category?: string;
   location?: string;
-  minPrice?: number;       // ✅ matches backend schema field names
+  minPrice?: number;
   maxPrice?: number;
   minCapacity?: number;
   limit?: number;
   offset?: number;
-  sortBy?: string;    
-  }      // e.g. "price", "rating", "createdAt"    
+  sortBy?: string;
+}

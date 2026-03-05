@@ -14,27 +14,29 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ListingLocation {
-  city?: string;
-  address?: string;
-  country?: string;
-}
-
 interface ListingData {
   id: string;
   title: string;
+  slug?: string;
   description?: string;
   category?: string;
-  status: 'published' | 'paused' | 'draft';
-  startingPrice?: number;
+  status: 'draft' | 'active' | 'paused' | 'deleted';
+  // Flat fields — backend does NOT return a nested location object
+  location?: string;
+  address?: string;
+  city?: string;
+  county?: string;
+  basePrice?: number;
+  currency?: string;
   capacity?: number;
   rating?: number;
   reviewCount?: number;
+  views?: number;
+  bookingsCount?: number;
   amenities?: string[];
-  images?: string[];
   photos?: string[];
-  location?: ListingLocation;
-  city?: string;
+  coverPhoto?: string;
+  instantBooking?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -90,9 +92,10 @@ function DeleteModal({
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string; dot: string }> = {
-    published: { label: 'Published', className: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
-    paused:    { label: 'Paused',    className: 'bg-amber-50 text-amber-700',     dot: 'bg-amber-400'  },
-    draft:     { label: 'Draft',     className: 'bg-gray-100 text-gray-500',      dot: 'bg-gray-400'   },
+    active:  { label: 'Published', className: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+    paused:  { label: 'Paused',    className: 'bg-amber-50 text-amber-700',     dot: 'bg-amber-400'  },
+    draft:   { label: 'Draft',     className: 'bg-gray-100 text-gray-500',      dot: 'bg-gray-400'   },
+    deleted: { label: 'Deleted',   className: 'bg-red-50 text-red-400',         dot: 'bg-red-300'    },
   };
   const c = config[status] ?? config.draft;
   return (
@@ -156,12 +159,12 @@ export default function VendorListingDetailPage() {
 
   const handleToggleStatus = async () => {
     if (!listing || toggling) return;
-    const newStatus = listing.status === 'published' ? 'paused' : 'published';
+    const newStatus = listing.status === 'active' ? 'paused' : 'active';
     setToggling(true);
     try {
       await listingsService.updateStatus(id, newStatus);
       setListing(prev => prev ? { ...prev, status: newStatus } : prev);
-      toast.success(newStatus === 'published' ? 'Listing published' : 'Listing paused');
+      toast.success(newStatus === 'active' ? 'Listing published' : 'Listing paused');
     } catch (err) {
       toast.error('Failed to update listing status');
     } finally {
@@ -186,9 +189,9 @@ export default function VendorListingDetailPage() {
 
   // ── Derived values ─────────────────────────────────────────────────────────
 
-  const photos   = listing?.photos ?? listing?.images ?? [];
-  const location = listing?.location?.city ?? listing?.city ?? '—';
-  const address  = listing?.location?.address;
+  const photos    = listing?.photos ?? [];
+  const city      = listing?.city ?? listing?.location ?? '—';
+  const address   = listing?.address;
   const amenities = listing?.amenities ?? [];
 
   // ── States ─────────────────────────────────────────────────────────────────
@@ -264,10 +267,10 @@ export default function VendorListingDetailPage() {
             <h1 className="text-lg font-black text-gray-900 leading-tight tracking-tight">
               {listing.title}
             </h1>
-            {(address || location !== '—') && (
+            {(address || city !== '—') && (
               <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
                 <MapPin size={11} />
-                {[address, location].filter(Boolean).join(', ')}
+                {[address, city].filter(Boolean).join(', ')}
               </p>
             )}
           </div>
@@ -283,14 +286,14 @@ export default function VendorListingDetailPage() {
               onClick={handleToggleStatus}
               disabled={toggling}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                listing.status === 'published'
+                listing.status === 'active'
                   ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
                   : 'bg-[#F5C842] text-[#2D3B45] hover:bg-yellow-400'
               }`}
             >
               {toggling ? (
                 <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : listing.status === 'published' ? (
+              ) : listing.status === 'active' ? (
                 <><Pause size={12} /> Pause</>
               ) : (
                 <><Play size={12} /> Publish</>
@@ -335,9 +338,9 @@ export default function VendorListingDetailPage() {
             <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Details</p>
               <div className="grid grid-cols-2 gap-2">
-                <DetailItem icon={MapPin}       label="Location"  value={location} />
+                <DetailItem icon={MapPin}       label="Location"  value={[city, address].filter(Boolean).join(', ') || '—'} />
                 <DetailItem icon={Users}        label="Capacity"  value={listing.capacity ? `${listing.capacity} guests` : '—'} />
-                <DetailItem icon={DollarSign}   label="Starting price" value={listing.startingPrice ? `KSh ${listing.startingPrice.toLocaleString()}` : '—'} />
+                <DetailItem icon={DollarSign}   label="Starting price" value={listing.basePrice ? `KSh ${listing.basePrice.toLocaleString()} ${listing.currency ?? 'KES'}` : '—'} />
                 <DetailItem icon={Star}         label="Rating"    value={listing.rating ? `${listing.rating.toFixed(1)} / 5.0 (${listing.reviewCount ?? 0})` : 'No ratings yet'} />
               </div>
             </div>
@@ -375,14 +378,14 @@ export default function VendorListingDetailPage() {
                 onClick={handleToggleStatus}
                 disabled={toggling}
                 className={`w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                  listing.status === 'published'
+                  listing.status === 'active'
                     ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
                     : 'bg-[#F5C842] text-[#2D3B45] hover:bg-yellow-400'
                 }`}
               >
                 {toggling ? (
                   <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : listing.status === 'published' ? (
+                ) : listing.status === 'active' ? (
                   <><Pause size={13} /> Pause Listing</>
                 ) : (
                   <><Play size={13} /> Publish Listing</>
@@ -412,16 +415,18 @@ export default function VendorListingDetailPage() {
 
             {/* Status tip */}
             <div className={`rounded-2xl p-4 text-xs leading-relaxed ${
-              listing.status === 'published'
+              listing.status === 'active'
                 ? 'bg-emerald-50 border border-emerald-100 text-emerald-700'
                 : listing.status === 'paused'
                 ? 'bg-amber-50 border border-amber-100 text-amber-700'
                 : 'bg-blue-50 border border-blue-100 text-blue-700'
             }`}>
-              {listing.status === 'published' ? (
+              {listing.status === 'active' ? (
                 <><strong>Live</strong> — your listing is visible to customers and accepting bookings.</>
               ) : listing.status === 'paused' ? (
                 <><strong>Paused</strong> — your listing is hidden. Click Publish to make it visible again.</>
+              ) : listing.status === 'deleted' ? (
+                <><strong>Deleted</strong> — this listing has been removed.</>
               ) : (
                 <><strong>Draft</strong> — publish your listing to start accepting bookings.</>
               )}
@@ -462,14 +467,14 @@ export default function VendorListingDetailPage() {
             onClick={handleToggleStatus}
             disabled={toggling}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-xl transition ${
-              listing.status === 'published'
+              listing.status === 'active'
                 ? 'bg-amber-50 text-amber-700 border border-amber-200'
                 : 'bg-[#F5C842] text-[#2D3B45]'
             }`}
           >
             {toggling ? (
               <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : listing.status === 'published' ? (
+            ) : listing.status === 'active' ? (
               <><Pause size={13} /> Pause</>
             ) : (
               <><Play size={13} /> Publish</>
