@@ -1,6 +1,6 @@
-// It hooks into the authentication system, providing user state and auth functions to the app
 'use client';
 
+// lib/auth/auth.context.tsx
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
@@ -12,119 +12,138 @@ export interface User {
   email: string;
   role: UserRole;
 }
-// Define the shape of the authentication context
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
-  token: string | null;
 }
 
 interface RegisterData {
   email: string;
   password: string;
-  fullName: string;
-  phoneNumber: string;
-  userType: 'customer' | 'vendor';
+  phone: string;           // ✅ matches backend schema (phone not phoneNumber)
+  role: 'customer' | 'vendor';
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_KEY = 'accessToken';
+const TOKEN_KEY         = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL      = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+// Role → redirect map
+const ROLE_REDIRECT: Record<UserRole, string> = {
+  vendor:   '/vendor/dashboard',
+  admin:    '/admin/dashboard',
+  customer: '/store',
+};
 
 function parseToken(token: string): User | null {
   try {
-    const decoded = jwtDecode(token) as any;
-    
-    // Check if token is expired
-    if (decoded.exp && decoded.exp < Date.now() / 1000) {
-      return null;
-    }
-    
-    return {
-      userId: decoded.userId,
-      email: decoded.email,
-      role: decoded.role,
-    };
-  } catch (error) {
+    const decoded = jwtDecode<any>(token);
+    if (decoded.exp && decoded.exp < Date.now() / 1000) return null;
+    return { userId: decoded.userId, email: decoded.email, role: decoded.role };
+  } catch {
     return null;
   }
 }
-// Main authentication provider component
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user,      setUser]      = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
+  const [token,     setToken]     = useState<string | null>(null);
   const router = useRouter();
 
-  // Initialize auth state on mount
+  // ── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const storedToken = localStorage.getItem(TOKEN_KEY);
-        
-        if (storedToken) {
-          const parsedUser = parseToken(storedToken);
-          
-          if (parsedUser) {
-            setToken(storedToken);
-            setUser(parsedUser);
+        const stored = localStorage.getItem(TOKEN_KEY);
+        if (stored) {
+          const parsed = parseToken(stored);
+          if (parsed) {
+            setToken(stored);
+            setUser(parsed);
           } else {
-            // Token expired, try to refresh
-            await refreshToken();
+            // silently refresh; if it fails we stay logged out
+            await attemptRefresh();
           }
         }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
+      } catch {
+        // not authenticated — that's fine
       } finally {
         setIsLoading(false);
       }
     };
-
     initAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Logging in 
+  // ── Internal helpers ──────────────────────────────────────────────────────
+  const persistTokens = (accessToken: string, refresh?: string) => {
+    localStorage.setItem(TOKEN_KEY, accessToken);
+    if (refresh) localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+  };
+
+  const clearTokens = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+  };
+
+  const setAuth = (accessToken: string) => {
+    const parsed = parseToken(accessToken);
+    if (!parsed) throw new Error('Invalid token received');
+    setToken(accessToken);
+    setUser(parsed);
+    return parsed;
+  };
+
+  const attemptRefresh = async () => {
+    const refreshTokenValue = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!refreshTokenValue) return;
+
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ refreshToken: refreshTokenValue }),
+    });
+    if (!res.ok) throw new Error('Refresh failed');
+
+    const { token: newToken } = await res.json();
+    localStorage.setItem(TOKEN_KEY, newToken);
+    setAuth(newToken);
+  };
+
+  // ── Public API ────────────────────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body:    JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        console.log('Login failed from backend:', error);
-        throw new Error(error.message || 'Login failed');
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || err.error || 'Invalid credentials');
       }
 
-      const data = await response.json();
-      const { token: accessToken, refreshToken } = data;
+      // Backend returns: { token, user }  (no separate refreshToken in your schema)
+      const data = await res.json();
+      const accessToken: string = data.token ?? data.accessToken;
 
-      // Store tokens
-      localStorage.setItem(TOKEN_KEY, accessToken);
-      if (refreshToken) {
-        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-      }
+      persistTokens(accessToken, data.refreshToken);
+      const parsed = setAuth(accessToken);
 
-      // Parse and set user
-      const parsedUser = parseToken(accessToken);
-      if (parsedUser) {
-        setToken(accessToken);
-        setUser(parsedUser);
-        router.push('/dashboard');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+      // Role-based redirect
+      router.push(ROLE_REDIRECT[parsed.role] ?? '/store');
     } finally {
       setIsLoading(false);
     }
@@ -133,40 +152,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(async (data: RegisterData) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body:    JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Registration failed');
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || err.error || 'Registration failed');
       }
 
-      const result = await response.json();
-      
-      // If registration returns tokens, auto-login
-      if (result.token) {
-        const { token: accessToken, refreshToken } = result;
-        localStorage.setItem(TOKEN_KEY, accessToken);
-        if (refreshToken) {
-          localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-        }
+      const result = await res.json();
+      const accessToken: string = result.token ?? result.accessToken;
 
-        const parsedUser = parseToken(accessToken);
-        if (parsedUser) {
-          setToken(accessToken);
-          setUser(parsedUser);
-          router.push('/dashboard');
-        }
+      if (accessToken) {
+        persistTokens(accessToken, result.refreshToken);
+        const parsed = setAuth(accessToken);
+        router.push(ROLE_REDIRECT[parsed.role] ?? '/store');
       } else {
-        // Redirect to login if registration doesn't return tokens
-        router.push('/auth/login');
+        // Registration without auto-login → go to login
+        router.push('/auth/login?registered=1');
       }
-    } catch (error) {
-      console.error('Register error:', error);
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -174,70 +181,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshToken = useCallback(async () => {
     try {
-      const refreshTokenValue = localStorage.getItem(REFRESH_TOKEN_KEY);
-      
-      if (!refreshTokenValue) {
-        throw new Error('No refresh token available');
-      }
-
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: refreshTokenValue }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Token refresh failed');
-      }
-
-      const data = await response.json();
-      const { token: accessToken } = data;
-
-      localStorage.setItem(TOKEN_KEY, accessToken);
-      const parsedUser = parseToken(accessToken);
-      
-      if (parsedUser) {
-        setToken(accessToken);
-        setUser(parsedUser);
-      }
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      logout();
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      await attemptRefresh();
+    } catch {
+      clearTokens();
       setToken(null);
       setUser(null);
       router.push('/auth/login');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  const value: AuthContextType = {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    login,
-    register,
-    logout,
-    refreshToken,
-    token,
-  };
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch { /* silent */ }
+    finally {
+      clearTokens();
+      setToken(null);
+      setUser(null);
+      router.push('/auth/login');
+    }
+  }, [token, router]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, token, login, register, logout, refreshToken }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }

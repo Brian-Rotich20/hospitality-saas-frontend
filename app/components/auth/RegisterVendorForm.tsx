@@ -66,9 +66,8 @@ export function RegisterVendorForm() {
       await registerUser({
         email: data.email,
         password: data.password,
-        fullName: data.fullName,
-        phoneNumber: data.phoneNumber,
-        userType: 'vendor',
+        phone: data.phoneNumber,
+        role: 'vendor',
       });
     } catch (err) {
       const errorMessage =

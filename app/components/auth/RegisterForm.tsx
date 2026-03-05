@@ -19,7 +19,7 @@ const registerSchema = z
       .string()
       .min(1, 'Email is required')
       .email('Invalid email address'),
-    phoneNumber: z
+    phone: z
       .string()
       .min(9, 'Phone number must be at least 9 digits'),
     password: z
@@ -57,9 +57,8 @@ export function RegisterForm() {
       await registerUser({
         email: data.email,
         password: data.password,
-        fullName: data.fullName,
-        phoneNumber: data.phoneNumber,
-        userType: 'customer',
+        phone: data.phone,
+        role: 'customer',
       });
     } catch (err) {
       const errorMessage =
@@ -148,12 +147,12 @@ export function RegisterForm() {
             id="phoneNumber"
             type="tel"
             placeholder="+254 700 000 000"
-            {...register('phoneNumber')}
+            {...register('phone')}
             className={`
               w-full pl-10 pr-4 py-2.5 rounded-lg border
               focus:outline-none focus:ring-2 focus:ring-primary-500
               ${
-                errors.phoneNumber
+                errors.phone
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300'
               }
@@ -161,8 +160,8 @@ export function RegisterForm() {
             disabled={isLoading}
           />
         </div>
-        {errors.phoneNumber && (
-          <p className="text-red-600 text-sm mt-1">{errors.phoneNumber.message}</p>
+        {errors.phone && (
+          <p className="text-red-600 text-sm mt-1">{errors.phone.message}</p>
         )}
       </div>
 

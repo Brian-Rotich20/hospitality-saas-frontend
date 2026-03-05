@@ -18,7 +18,7 @@ export default function CustomerLayout({
   // Verify user is customer role
   React.useEffect(() => {
     if (!isLoading && user?.role !== 'customer') {
-      router.push('/dashboard');
+      router.push('/store');
     }
   }, [user, isLoading, router]);
 
