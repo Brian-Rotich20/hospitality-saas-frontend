@@ -50,8 +50,8 @@ function NavInner({ onClose }: { onClose?: () => void }) {
         <Link href="/vendor/dashboard" onClick={onClose} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>V</div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em', lineHeight: 1.2 }}>VenueHub</div>
-            <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase' }}>Vendor Portal</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em', lineHeight: 1.2 }}>LinkMall</div>
+            <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase' }}>Vendor Dashboard</div>
           </div>
         </Link>
         {onClose && (

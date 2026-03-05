@@ -113,7 +113,7 @@ export default function VendorListingsPage() {
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 4px', letterSpacing: '-0.02em' }}>My Listings</h1>
           <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Manage your venues and services</p>
         </div>
-        <Link href="/vendor/listings/create" style={{ padding: '9px 18px', background: '#111827', color: '#fff', borderRadius: 9, textDecoration: 'none', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        <Link href="/vendor/listings/new" style={{ padding: '9px 18px', background: '#111827', color: '#fff', borderRadius: 9, textDecoration: 'none', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <Plus size={14} /> New Listing
         </Link>
       </div>
@@ -152,7 +152,7 @@ export default function VendorListingsPage() {
             {listings.length === 0 ? 'Create your first listing to start receiving bookings' : 'Try a different search or filter'}
           </p>
           {listings.length === 0 && (
-            <Link href="/vendor/listings/create" style={{ padding: '9px 20px', background: '#111827', color: '#fff', borderRadius: 9, textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
+            <Link href="/vendor/listings/new" style={{ padding: '9px 20px', background: '#111827', color: '#fff', borderRadius: 9, textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
               Create First Listing
             </Link>
           )}
@@ -194,7 +194,7 @@ export default function VendorListingsPage() {
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <Link href={`/listings/${listing.id}`} title="View public page" style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#6B7280' }}>
+                  <Link href={`/vendor/listings/${listing.id}`} title="View public page" style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#6B7280' }}>
                     <Eye size={14} />
                   </Link>
                   <Link href={`/vendor/listings/${listing.id}/edit`} title="Edit" style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#6B7280' }}>
