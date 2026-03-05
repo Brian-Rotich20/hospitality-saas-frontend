@@ -61,18 +61,7 @@ function NavInner({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
-      {/* User pill */}
-      <div style={S.pill}>
-        <div style={S.pillBox}>
-          <div style={S.avatar}>{initial}</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{handle}</div>
-            <div style={{ fontSize: 10, color: '#10B981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} /> Active
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       {/* Nav sections */}
       <nav style={S.nav}>

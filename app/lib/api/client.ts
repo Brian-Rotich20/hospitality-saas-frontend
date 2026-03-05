@@ -1,4 +1,4 @@
-// Fetch wrapper for API calls
+// Fetch wrapper for API calls for client-side with automatic token handling and refresh
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
