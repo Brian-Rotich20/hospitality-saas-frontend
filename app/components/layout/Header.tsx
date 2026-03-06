@@ -27,7 +27,7 @@ const CATEGORIES = [
 
 const NAV_LINKS = [
   { href: '/',          Icon: Home,          label: 'Home'        },
-  { href: '/',     Icon: Search,        label: 'Browse'      },
+  { href: '/listings',     Icon: Search,        label: 'Browse'      },
   { href: '/saved',     Icon: Heart,         label: 'Saved'       },
   { href: '/messages',  Icon: Mail,          label: 'Inbox',  badge: 3 },
   { href: '/bookings',  Icon: CalendarCheck, label: 'Bookings'    },

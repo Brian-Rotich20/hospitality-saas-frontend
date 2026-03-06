@@ -19,7 +19,7 @@ export function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link
-      href={`/${listing.id}`}
+      href={`/listings/${listing.id}`}
       className="group block bg-white rounded-2xl border border-gray-100 overflow-hidden
         hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 no-underline"
     >
