@@ -50,7 +50,7 @@ function NavInner({ onClose }: { onClose?: () => void }) {
         <Link href="/vendor/dashboard" onClick={onClose} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>V</div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em', lineHeight: 1.2 }}>LinkMall</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em', lineHeight: 1.2 }}>LinkMart</div>
             <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase' }}>Vendor Dashboard</div>
           </div>
         </Link>
@@ -112,7 +112,7 @@ export function VendorSidebar() {
       <div className="vs-mobile-bar" style={{ display: 'none', position: 'sticky', top: 0, zIndex: 40, background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '12px 16px', alignItems: 'center', justifyContent: 'space-between', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
         <Link href="/vendor/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>V</div>
-          <span style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>LinkMall</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>LinkMart</span>
         </Link>
         <button onClick={() => setOpen(true)} style={{ padding: 6, border: 'none', background: 'none', cursor: 'pointer' }}>
           <Menu size={20} color="#374151" />

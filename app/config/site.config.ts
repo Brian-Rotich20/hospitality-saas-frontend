@@ -1,7 +1,7 @@
 // Site configuration values
 export const siteConfig = {
-    name: "LinkMall",
+    name: "LinkMart",
     description: "A modern e-commerce platform for selling products online.",
-    url: "https://linkmall.com",
-    ogImage: "https://linkmall.com/og-image.jpg",
+    url: "https://linkmart.com",
+    ogImage: "https://linkmart.com/og-image.jpg",
 };

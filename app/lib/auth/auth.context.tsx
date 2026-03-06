@@ -42,7 +42,7 @@ const API_BASE_URL      = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3
 const ROLE_REDIRECT: Record<string, string> = {
   vendor:   '/vendor/dashboard',
   admin:    '/admin/dashboard',
-  customer: '/store',
+  customer: '',
 };
 
 function parseToken(token: string): User | null {

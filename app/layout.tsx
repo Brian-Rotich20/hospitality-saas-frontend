@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LinkMall",
+  title: "LinkMart",
   description: "A platform for linking businesses with customers in the hospitality industry",
 };
 

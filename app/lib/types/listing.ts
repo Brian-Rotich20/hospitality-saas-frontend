@@ -33,7 +33,6 @@ export interface Listing {
   rating?: number;
   reviewCount?: number;
 
-  instantBooking: boolean;
   minBookingDuration: number;
   maxBookingDuration: number;
   leadTime: number;

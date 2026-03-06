@@ -19,7 +19,7 @@ export function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link
-      href={`/store/${listing.id}`}
+      href={`/${listing.id}`}
       className="group block bg-white rounded-2xl border border-gray-100 overflow-hidden
         hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 no-underline"
     >
@@ -45,13 +45,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           font-bold px-2 py-0.5 rounded-full capitalize">
           {label}
         </span>
-        {/* Instant booking pill */}
-        {listing.instantBooking && (
-          <span className="absolute top-2.5 right-2.5 bg-[#F5C842] text-[#2D3B45] text-[10px]
-            font-black px-2 py-0.5 rounded-full">
-            Instant
-          </span>
-        )}
+
       </div>
 
       {/* Body */}

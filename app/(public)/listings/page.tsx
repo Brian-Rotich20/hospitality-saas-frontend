@@ -4,7 +4,7 @@ import  StoreContent  from '../../components/listings/StoreContent';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 export const metadata = {
-  title: 'LinkMall — Browse Venues & Services',
+  title: 'LinkMart — Browse Venues & Services',
   description: 'Discover and book verified venues, caterers, and hospitality vendors across Kenya.',
 };
 
