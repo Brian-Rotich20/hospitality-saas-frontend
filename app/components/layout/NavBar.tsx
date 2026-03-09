@@ -8,7 +8,7 @@ import {
   Home, Search, Heart, CalendarCheck, Bell,
   Menu, X, LogOut, User, Store, Bookmark,
 } from 'lucide-react';
-import { SearchBar } from './Searchbar';
+import { SearchBar } from './SearchBar';
 import { UserMenu } from './UserMenu';
 import { MobileDrawer } from './MobileDrawer';
 
