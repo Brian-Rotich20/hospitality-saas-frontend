@@ -2,8 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Star, Users, Package } from 'lucide-react';
-import type { Listing } from '@/lib/types/listing';
-import { resolveListingPrice } from '@/lib/types/listing';
+import type { Listing } from '../../lib/types/listing';
+import { resolveListingPrice } from '../../lib/types/listing';
 
 interface ListingCardProps { listing: Listing; }
 

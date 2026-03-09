@@ -2,8 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Package, MessageCircle, Zap } from 'lucide-react';
-import type { Product } from '@/lib/types/listing';
-import { resolveProductPrice } from '@/lib/types/listing';
+import type { Product } from '../../lib/types/listing';
+import { resolveProductPrice } from '../../lib/types/listing';
 
 interface ProductCardProps { product: Product; }
 
