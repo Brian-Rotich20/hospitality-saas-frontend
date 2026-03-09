@@ -3,7 +3,7 @@
 import React from 'react';
 import { useAuth } from '../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
-import { Sidebar } from '../components/layout/Sidebar';
+import { Sidebar } from '../components/layout/SideBar';
 import { MobileNav } from '../components/layout/MobileNav';
 import { CustomerNav } from '../components/layout/CustomerNav';
 

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "LinkMart",
-  description: "A platform for linking businesses with customers in the hospitality industry",
+  description: "Discover and book verified venues, caterers and hospitality vendor across Kenya",
 };
 
 export default function RootLayout({

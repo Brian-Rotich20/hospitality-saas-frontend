@@ -50,7 +50,7 @@ export function RegisterForm() {
 
         <div className="text-center mb-6">
           <span className="text-white font-black text-xl tracking-tight">
-            link<span className="text-[#F5C842]">mall</span>
+            Link<span className="text-[#F5C842]">Mart</span>
           </span>
         </div>
 

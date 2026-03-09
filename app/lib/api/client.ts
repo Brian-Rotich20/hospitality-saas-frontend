@@ -1,134 +1,103 @@
-// Fetch wrapper for API calls for client-side with automatic token handling and refresh
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 interface ApiError {
   message: string;
-  code?: string;
+  code?:   string;
   status?: number;
 }
 
 interface ApiResponse<T> {
-  data: T;
-  success: boolean;
+  data:     T;
+  success:  boolean;
   message?: string;
 }
 
 class ApiClient {
-  private client: AxiosInstance;
+  private client:       AxiosInstance;
   private isRefreshing = false;
-  private failedQueue: Array<{
+  private failedQueue:  Array<{
     onSuccess: (token: string) => void;
-    onFailed: (error: Error) => void;
+    onFailed:  (error: Error) => void;
   }> = [];
+
+  // ✅ Access token kept in memory — set by auth context after login/refresh
+  private accessToken: string | null = null;
 
   constructor() {
     this.client = axios.create({
-      baseURL: API_BASE_URL,
-      timeout: 90000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      baseURL:         API_BASE_URL,
+      timeout:         90000,
+      withCredentials: true, // ✅ always send cookies (refresh token)
+      headers:         { 'Content-Type': 'application/json' },
     });
 
-    // Request interceptor
-    this.client.interceptors.request.use(
-      (config) => {
-        const token = this.getToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
+    this.client.interceptors.request.use(config => {
+      if (this.accessToken) {
+        config.headers.Authorization = `Bearer ${this.accessToken}`;
+      }
+      return config;
+    });
 
-    // Response interceptor
     this.client.interceptors.response.use(
-      (response) => response,
-      (error) => this.handleError(error)
+      response => response,
+      error    => this.handleError(error),
     );
   }
 
-  private getToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('accessToken');
-    }
-    return null;
-  }
-
-  private setToken(token: string): void {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', token);
-    }
-  }
-
-  private removeToken(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-    }
+  // Called by AuthContext after login/register/refresh
+  setAccessToken(token: string | null) {
+    this.accessToken = token;
   }
 
   private processQueue(error: Error | null, token: string | null = null) {
-    this.failedQueue.forEach((prom) => {
-      if (error) {
-        prom.onFailed(error);
-      } else if (token) {
-        prom.onSuccess(token);
-      }
+    this.failedQueue.forEach(p => {
+      if (error) p.onFailed(error);
+      else if (token) p.onSuccess(token);
     });
-
     this.failedQueue = [];
   }
 
   private async handleError(error: AxiosError<any>) {
-    const originalRequest = error.config as any;
+    const original = error.config as any;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !original._retry) {
       if (this.isRefreshing) {
         return new Promise((resolve, reject) => {
           this.failedQueue.push({
-            onSuccess: (token: string) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              resolve(this.client(originalRequest));
+            onSuccess: token => {
+              original.headers.Authorization = `Bearer ${token}`;
+              resolve(this.client(original));
             },
-            onFailed: (err: Error) => {
-              reject(err);
-            },
+            onFailed: err => reject(err),
           });
         });
       }
 
-      originalRequest._retry = true;
-      this.isRefreshing = true;
+      original._retry    = true;
+      this.isRefreshing  = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          throw new Error('No refresh token');
-        }
-
-        const response = await this.client.post('/auth/refresh-token', {
-          refreshToken,
+        // ✅ Correct endpoint + credentials for httpOnly cookie
+        const res = await this.client.post('/auth/refresh', {}, {
+          withCredentials: true,
         });
 
-        const { token } = response.data;
-        this.setToken(token);
-        originalRequest.headers.Authorization = `Bearer ${token}`;
+        // ✅ Correct response field
+        const newToken = res.data?.data?.accessToken;
+        if (!newToken) throw new Error('No token in refresh response');
 
-        this.processQueue(null, token);
-        return this.client(originalRequest);
+        this.accessToken = newToken;
+        original.headers.Authorization = `Bearer ${newToken}`;
+        this.processQueue(null, newToken);
+        return this.client(original);
       } catch (err) {
-        this.removeToken();
+        this.accessToken = null;
         this.processQueue(err as Error, null);
-
-        // Redirect to login
         if (typeof window !== 'undefined') {
           window.location.href = '/auth/login';
         }
-
         return Promise.reject(err);
       } finally {
         this.isRefreshing = false;
@@ -139,110 +108,56 @@ class ApiClient {
   }
 
   private formatError(error: AxiosError<any>): ApiError {
-    const message =
-      error.response?.data?.error ||
-      error.response?.data?.message ||
-      error.message ||
-      'An unexpected error occurred';
-
     return {
-      message,
-      code: error.response?.data?.code,
-      status: error.response?.status,
+      message: error.response?.data?.error || error.response?.data?.message || error.message || 'An unexpected error occurred',
+      code:    error.response?.data?.code,
+      status:  error.response?.status,
     };
   }
 
-  async get<T>(
-    url: string,
-    config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
-    const response = await this.client.get<ApiResponse<T>>(url, config);
-    return response.data;
+  async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    const res = await this.client.get<ApiResponse<T>>(url, config);
+    return res.data;
   }
 
-  async post<T>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
-    const response = await this.client.post<ApiResponse<T>>(url, data, config);
-    return response.data;
+  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    const res = await this.client.post<ApiResponse<T>>(url, data, config);
+    return res.data;
   }
 
-  async put<T>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
-    const response = await this.client.put<ApiResponse<T>>(url, data, config);
-    return response.data;
+  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    const res = await this.client.put<ApiResponse<T>>(url, data, config);
+    return res.data;
   }
 
-  async patch<T>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
-    const response = await this.client.patch<ApiResponse<T>>(url, data, config);
-    return response.data;
+  async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    const res = await this.client.patch<ApiResponse<T>>(url, data, config);
+    return res.data;
   }
 
-  async delete<T>(
-    url: string,
-    config?: AxiosRequestConfig
-  ): Promise<ApiResponse<T>> {
-    const response = await this.client.delete<ApiResponse<T>>(url, config);
-    return response.data;
+  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    const res = await this.client.delete<ApiResponse<T>>(url, config);
+    return res.data;
   }
 
-  // Specialized methods for file uploads
-  async uploadFile<T>(
-    url: string,
-    file: File,
-    additionalData?: Record<string, any>
-  ): Promise<ApiResponse<T>> {
+  async uploadFile<T>(url: string, file: File, additionalData?: Record<string, any>): Promise<ApiResponse<T>> {
     const formData = new FormData();
     formData.append('file', file);
-
     if (additionalData) {
-      Object.entries(additionalData).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
+      Object.entries(additionalData).forEach(([k, v]) => formData.append(k, v));
     }
-
-    return this.post<T>(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return this.post<T>(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
   }
 
-  async uploadMultipleFiles<T>(
-    url: string,
-    files: File[],
-    additionalData?: Record<string, any>
-  ): Promise<ApiResponse<T>> {
+  async uploadMultipleFiles<T>(url: string, files: File[], additionalData?: Record<string, any>): Promise<ApiResponse<T>> {
     const formData = new FormData();
-
-    files.forEach((file) => {
-      formData.append('files', file);
-    });
-
+    files.forEach(f => formData.append('files', f));
     if (additionalData) {
-      Object.entries(additionalData).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
+      Object.entries(additionalData).forEach(([k, v]) => formData.append(k, v));
     }
-
-    return this.post<T>(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return this.post<T>(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
   }
 }
 
 export const apiClient = new ApiClient();
-
-// Export for convenience
 export default apiClient;

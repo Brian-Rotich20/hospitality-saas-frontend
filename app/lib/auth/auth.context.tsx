@@ -1,229 +1,223 @@
 'use client';
 
-// lib/auth/auth.context.tsx
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import toast from 'react-hot-toast';
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 type UserRole = 'customer' | 'vendor' | 'admin';
 
 export interface User {
-  userId: string;
-  email: string;
-  role: UserRole;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshToken: () => Promise<void>;
+  userId:    string;
+  email:     string;
+  role:      UserRole;
+  vendorId?: string;  // ✅ present if role === 'vendor'
+  fullName?: string;
 }
 
 interface RegisterData {
-  email: string;
+  fullName: string;  // ✅ added
+  email:    string;
   password: string;
-  phone: string;
-  role: 'customer' | 'vendor';
+  phone:    string;
+  // no role — always customer
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthContextType {
+  user:            User | null;
+  isLoading:       boolean;
+  isAuthenticated: boolean;
+  token:           string | null;  // access token in memory only
+  login:           (email: string, password: string) => Promise<void>;
+  register:        (data: RegisterData) => Promise<void>;
+  logout:          () => Promise<void>;
+  refreshToken:    () => Promise<void>;
+}
 
-const TOKEN_KEY         = 'accessToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
-const API_BASE_URL      = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-// FIX 5: fallback to /store if role is missing/unknown
-const ROLE_REDIRECT: Record<string, string> = {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+const ROLE_REDIRECT: Record<UserRole, string> = {
   vendor:   '/vendor/dashboard',
   admin:    '/admin/dashboard',
-  customer: '',
+  customer: '/store',
 };
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseToken(token: string): User | null {
   try {
     const decoded = jwtDecode<any>(token);
     if (decoded.exp && decoded.exp < Date.now() / 1000) return null;
     return {
-      userId: decoded.userId,
-      email:  decoded.email,
-      // FIX 5: default to customer if role missing from token
-      role:   decoded.role ?? 'customer',
+      userId:   decoded.userId,
+      email:    decoded.email,
+      role:     decoded.role ?? 'customer',
+      vendorId: decoded.vendorId,
     };
   } catch {
     return null;
   }
 }
 
+// ── Context ───────────────────────────────────────────────────────────────────
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user,      setUser]      = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [token,     setToken]     = useState<string | null>(null);
+  // ✅ Access token lives in memory only — never localStorage
+  const accessTokenRef          = useRef<string | null>(null);
+  const [user,      setUser]    = useState<User | null>(null);
+  const [token,     setToken]   = useState<string | null>(null);
+  const [isLoading, setLoading] = useState(true);
   const router = useRouter();
 
-  // ── Init ─────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const stored = localStorage.getItem(TOKEN_KEY);
-        if (stored) {
-          const parsed = parseToken(stored);
-          if (parsed) {
-            setToken(stored);
-            setUser(parsed);
-          } else {
-            await attemptRefresh();
-          }
-        }
-      } catch {
-        // not authenticated — fine
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    initAuth();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const persistTokens = (accessToken: string, refresh?: string) => {
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    if (refresh) localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
-  };
-
-  const clearTokens = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-  };
-
-  // FIX 2: returns parsed user so callers can use it immediately
-  const setAuth = (accessToken: string): User => {
+  // ── Set auth state from access token ─────────────────────────────────────
+  const setAuth = useCallback((accessToken: string): User => {
     const parsed = parseToken(accessToken);
     if (!parsed) throw new Error('Invalid token received from server');
+    accessTokenRef.current = accessToken;
     setToken(accessToken);
     setUser(parsed);
     return parsed;
-  };
+  }, []);
 
-  const attemptRefresh = async () => {
-    const refreshTokenValue = localStorage.getItem(REFRESH_TOKEN_KEY);
-    if (!refreshTokenValue) return;
-    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ refreshToken: refreshTokenValue }),
-    });
-    if (!res.ok) throw new Error('Refresh failed');
-    const { token: newToken } = await res.json();
-    localStorage.setItem(TOKEN_KEY, newToken);
-    setAuth(newToken);
-  };
+  const clearAuth = useCallback(() => {
+    accessTokenRef.current = null;
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  // ── Silent refresh — uses httpOnly cookie automatically ───────────────────
+  const attemptRefresh = useCallback(async (): Promise<string | null> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method:      'POST',
+        credentials: 'include', // ✅ sends httpOnly cookie
+        headers:     { 'Content-Type': 'application/json' },
+      });
+
+      if (!res.ok) return null;
+
+      const json        = await res.json();
+      const accessToken = json.data?.accessToken;
+      if (!accessToken) return null;
+
+      setAuth(accessToken);
+      return accessToken;
+    } catch {
+      return null;
+    }
+  }, [setAuth]);
+
+  // ── Init — try silent refresh on mount ───────────────────────────────────
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await attemptRefresh();
+      } catch {
+        // not authenticated — fine
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
+  }, [attemptRefresh]);
 
   // ── login ─────────────────────────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
+    setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email, password }),
+        method:      'POST',
+        credentials: 'include', // ✅ receives httpOnly refresh cookie
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify({ email, password }),
       });
 
-      // FIX 1+4: parse error body before throwing so message reaches the form
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || err.error || 'Invalid credentials');
+        throw new Error(err.error || err.message || 'Invalid credentials');
       }
 
-      const data         = await res.json();
-      const accessToken  = data.token ?? data.accessToken;
-
+      const json        = await res.json();
+      const accessToken = json.data?.accessToken;
       if (!accessToken) throw new Error('No token received from server');
 
-      persistTokens(accessToken, data.refreshToken);
       const parsed = setAuth(accessToken);
-
       toast.success('Signed in successfully');
-      router.push(ROLE_REDIRECT[parsed.role] ?? '/store');
+      router.push(ROLE_REDIRECT[parsed.role]);
     } catch (err) {
-      // FIX 1+4: re-throw so LoginForm.onSubmit catch block receives it
       throw err;
     } finally {
-      // FIX 1+4: ALWAYS reset loading, even on error
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [router]);
+  }, [router, setAuth]);
 
   // ── register ──────────────────────────────────────────────────────────────
   const register = useCallback(async (data: RegisterData) => {
-    setIsLoading(true);
+    setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/auth/register`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(data),
+        method:      'POST',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify(data),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || err.error || 'Registration failed');
+        throw new Error(err.error || err.message || 'Registration failed');
       }
 
-      const result      = await res.json();
-      const accessToken = result.token ?? result.accessToken;
+      const json        = await res.json();
+      const accessToken = json.data?.accessToken;
+      if (!accessToken) throw new Error('No token received');
 
-      if (accessToken) {
-        persistTokens(accessToken, result.refreshToken);
-        const parsed = setAuth(accessToken);
-        toast.success('Account created successfully');
-        router.push(ROLE_REDIRECT[parsed.role] ?? '/store');
-      } else {
-        router.push('/auth/login?registered=1');
-      }
+      const parsed = setAuth(accessToken);
+      toast.success('Account created successfully');
+      router.push(ROLE_REDIRECT[parsed.role]);
     } catch (err) {
       throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [router]);
-
-  // ── refreshToken ──────────────────────────────────────────────────────────
-  const refreshToken = useCallback(async () => {
-    try {
-      await attemptRefresh();
-    } catch {
-      clearTokens();
-      setToken(null);
-      setUser(null);
-      router.push('/auth/login');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, setAuth]);
 
   // ── logout ────────────────────────────────────────────────────────────────
   const logout = useCallback(async () => {
     try {
       await fetch(`${API_BASE_URL}/auth/logout`, {
-        method:  'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        method:      'POST',
+        credentials: 'include',
+        headers:     { Authorization: `Bearer ${accessTokenRef.current}` },
       });
     } catch { /* silent */ }
     finally {
-      clearTokens();
-      setToken(null);
-      setUser(null);
+      clearAuth();
       toast.success('Signed out');
       router.push('/auth/login');
     }
-  }, [token, router]);
+  }, [router, clearAuth]);
+
+  // ── refreshToken (manual — called by api client on 401) ───────────────────
+  const refreshToken = useCallback(async () => {
+    const result = await attemptRefresh();
+    if (!result) {
+      clearAuth();
+      router.push('/auth/login');
+    }
+  }, [attemptRefresh, clearAuth, router]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, token, login, register, logout, refreshToken }}>
+    <AuthContext.Provider value={{
+      user, isLoading, token,
+      isAuthenticated: !!user,
+      login, register, logout, refreshToken,
+    }}>
       {children}
     </AuthContext.Provider>
   );
