@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { listingsService, productsService } from '@/lib/api/endpoints';
-import type { Listing, Product, ListingFilters, ProductFilters } from '@/lib/types/listing';
+import { listingsService, productsService } from '../../lib/api/endpoints';
+import type { Listing, Product, ListingFilters, ProductFilters } from '../../lib/types/listing';
 import { ListingCard } from './ListingCard';
 import { ProductCard } from './ProductCard';
 import { Package, RefreshCw, LayoutGrid, ShoppingBag, Calendar } from 'lucide-react';

@@ -19,7 +19,7 @@ export const API_ENDPOINTS = {
     UPDATE:          (id: string)   => `/listings/${id}`,
     DELETE:          (id: string)   => `/listings/${id}`,
     UPDATE_STATUS:   (id: string)   => `/listings/${id}/status`,
-    MY_LISTINGS:     '/listings/me',
+    MY_LISTINGS:     '/me',
   },
 
   // ✅ New — dynamic categories from DB

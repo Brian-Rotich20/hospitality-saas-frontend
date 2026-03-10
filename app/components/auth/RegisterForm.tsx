@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '../../lib/auth/auth.context';
+import { useAuth } from '@/lib/auth/auth.context';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const registerSchema = z.object({
+const schema = z.object({
   fullName: z.string().min(2, 'At least 2 characters'),
   email:    z.string().min(1, 'Email is required').email('Invalid email'),
   phone:    z.string().regex(/^(\+254|0)[17]\d{8}$/, 'Enter a valid Kenyan number'),
@@ -21,24 +21,32 @@ const registerSchema = z.object({
 }).refine(d => d.password === d.confirmPassword, {
   message: 'Passwords do not match', path: ['confirmPassword'],
 });
-type RegisterFormData = z.infer<typeof registerSchema>;
 
-// Shared input class builder
+type FormData = z.infer<typeof schema>;
+
 const inp = (err: boolean) =>
-  `w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition ${err ? 'border-red-400' : 'border-gray-200'}`;
+  `w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300
+   focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition
+   ${err ? 'border-red-400' : 'border-gray-200'}`;
 
 export function RegisterForm() {
   const { register: registerUser, isLoading } = useAuth();
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
   });
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const onSubmit = async (data: FormData) => {
     try {
-      await registerUser({ email: data.email, password: data.password, phone: data.phone, role: 'customer' });
+      // ✅ No role field — backend always registers as customer
+      await registerUser({
+        fullName: data.fullName,
+        email:    data.email,
+        password: data.password,
+        phone:    data.phone,
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Registration failed. Please try again.');
     }
@@ -50,7 +58,7 @@ export function RegisterForm() {
 
         <div className="text-center mb-6">
           <span className="text-white font-black text-xl tracking-tight">
-            Link<span className="text-[#F5C842]">Mart</span>
+            link<span className="text-[#F5C842]">mall</span>
           </span>
         </div>
 
@@ -94,25 +102,28 @@ export function RegisterForm() {
               <label className="block text-xs font-semibold text-gray-600 mb-1">Password</label>
               <div className="relative">
                 <Lock className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type={showPass ? 'text' : 'password'} placeholder="••••••••" {...register('password')} disabled={isLoading}
+                <input type={showPass ? 'text' : 'password'} placeholder="••••••••"
+                  {...register('password')} disabled={isLoading}
                   className={`${inp(!!errors.password)} pr-8`} />
-                <button type="button" onClick={() => setShowPass(v => !v)} className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500">
+                <button type="button" onClick={() => setShowPass(v => !v)}
+                  className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500">
                   {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
               {errors.password
                 ? <p className="text-red-500 text-[10px] mt-0.5">{errors.password.message}</p>
-                : <p className="text-[10px] text-gray-300 mt-0.5">8+ chars · uppercase · number</p>
-              }
+                : <p className="text-[10px] text-gray-300 mt-0.5">8+ chars · uppercase · number</p>}
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Confirm Password</label>
               <div className="relative">
                 <Lock className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type={showConfirm ? 'text' : 'password'} placeholder="••••••••" {...register('confirmPassword')} disabled={isLoading}
+                <input type={showConfirm ? 'text' : 'password'} placeholder="••••••••"
+                  {...register('confirmPassword')} disabled={isLoading}
                   className={`${inp(!!errors.confirmPassword)} pr-8`} />
-                <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500">
+                <button type="button" onClick={() => setShowConfirm(v => !v)}
+                  className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500">
                   {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
@@ -120,7 +131,8 @@ export function RegisterForm() {
             </div>
 
             <button type="submit" disabled={isLoading}
-              className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1">
+              className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold
+                transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1">
               {isLoading
                 ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating account...</>
                 : 'Create Account'}
