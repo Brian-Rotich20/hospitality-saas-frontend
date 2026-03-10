@@ -82,6 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     accessTokenRef.current = accessToken;
     setToken(accessToken);
     setUser(parsed);
+
+  document.cookie = `user_role=${parsed.role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+  document.cookie = `access_token=${accessToken}; path=/; max-age=900; SameSite=Lax`;
+
     return parsed;
   }, []);
 
@@ -89,6 +93,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     accessTokenRef.current = null;
     setToken(null);
     setUser(null);
+
+    document.cookie = 'user_role=; path=/; max-age=0';
+    document.cookie = 'access_token=; path=/; max-age=0';
   }, []);
 
   // ── Silent refresh — uses httpOnly cookie automatically ───────────────────
