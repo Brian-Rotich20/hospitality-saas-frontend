@@ -1,15 +1,18 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
+import { VendorTopbar }  from '../components/vendor/VendorTopbar';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
-import { VendorSidebar } from '../components/layout/VendorSidebar';
+import { Sidebar }       from '../components/layout/SideBar';
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
-
+  const [mobileOpen, setMobileOpen] = useState(false);
+ 
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated)        { router.push('/auth/login'); return; }
@@ -20,10 +23,17 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   if (!isAuthenticated || user?.role !== 'vendor')  return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex">
-      <VendorSidebar />
-      {/* Main content — lg:ml-[228px] matches sidebar width */}
-      <div className="flex-1 lg:ml-[228px] min-h-screen flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Sidebar — handles its own desktop/mobile rendering */}
+      <Sidebar
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
+
+      {/* Main content area */}
+      <div className="lg:ml-[228px] min-h-screen flex flex-col">
+        {/* Topbar gets the toggle function for mobile hamburger */}
+        <VendorTopbar onMobileMenuToggle={() => setMobileOpen(v => !v)} />
         <main className="flex-1 p-6 max-w-[1100px] w-full mx-auto">
           {children}
         </main>

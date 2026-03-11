@@ -12,24 +12,23 @@ type UserRole = 'customer' | 'vendor' | 'admin';
 export interface User {
   userId:    string;
   email:     string;
-  role:      UserRole;
-  vendorId?: string;  // ✅ present if role === 'vendor'
   fullName?: string;
+  role:      UserRole;
+  vendorId?: string;
 }
 
 interface RegisterData {
-  fullName: string;  // ✅ added
+  fullName: string;
   email:    string;
   password: string;
   phone:    string;
-  // no role — always customer
 }
 
 interface AuthContextType {
   user:            User | null;
   isLoading:       boolean;
   isAuthenticated: boolean;
-  token:           string | null;  // access token in memory only
+  token:           string | null;
   login:           (email: string, password: string) => Promise<void>;
   register:        (data: RegisterData) => Promise<void>;
   logout:          () => Promise<void>;
@@ -46,7 +45,19 @@ const ROLE_REDIRECT: Record<UserRole, string> = {
   customer: '/store',
 };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Cookie helper — works on both localhost and production (https) ────────────
+function setCookie(name: string, value: string, maxAge: number) {
+  const isSecure  = window.location.protocol === 'https:';
+  const sameSite  = isSecure ? 'Strict' : 'Lax';
+  const securePart = isSecure ? '; Secure' : '';
+  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=${sameSite}${securePart}`;
+}
+
+function clearCookie(name: string) {
+  document.cookie = `${name}=; path=/; max-age=0`;
+}
+
+// ── Token parser ──────────────────────────────────────────────────────────────
 
 function parseToken(token: string): User | null {
   try {
@@ -55,6 +66,7 @@ function parseToken(token: string): User | null {
     return {
       userId:   decoded.userId,
       email:    decoded.email,
+      fullName: decoded.fullName,
       role:     decoded.role ?? 'customer',
       vendorId: decoded.vendorId,
     };
@@ -68,42 +80,44 @@ function parseToken(token: string): User | null {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // ✅ Access token lives in memory only — never localStorage
   const accessTokenRef          = useRef<string | null>(null);
   const [user,      setUser]    = useState<User | null>(null);
   const [token,     setToken]   = useState<string | null>(null);
   const [isLoading, setLoading] = useState(true);
   const router = useRouter();
 
-  // ── Set auth state from access token ─────────────────────────────────────
+  // ── Set auth state ────────────────────────────────────────────────────────
   const setAuth = useCallback((accessToken: string): User => {
     const parsed = parseToken(accessToken);
     if (!parsed) throw new Error('Invalid token received from server');
+
     accessTokenRef.current = accessToken;
     setToken(accessToken);
     setUser(parsed);
 
-  document.cookie = `user_role=${parsed.role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
-  document.cookie = `access_token=${accessToken}; path=/; max-age=900; SameSite=Lax`;
+    // ✅ user_role: 7 days — read by middleware for route protection
+    setCookie('user_role',    parsed.role,  7 * 24 * 60 * 60);
+    // ✅ access_token: 15 min — read by Server Components for data fetching
+    setCookie('access_token', accessToken,  15 * 60);
 
     return parsed;
   }, []);
 
+  // ── Clear auth state ──────────────────────────────────────────────────────
   const clearAuth = useCallback(() => {
     accessTokenRef.current = null;
     setToken(null);
     setUser(null);
-
-    document.cookie = 'user_role=; path=/; max-age=0';
-    document.cookie = 'access_token=; path=/; max-age=0';
+    clearCookie('user_role');
+    clearCookie('access_token');
   }, []);
 
-  // ── Silent refresh — uses httpOnly cookie automatically ───────────────────
+  // ── Silent refresh ────────────────────────────────────────────────────────
   const attemptRefresh = useCallback(async (): Promise<string | null> => {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method:      'POST',
-        credentials: 'include', // ✅ sends httpOnly cookie
+        credentials: 'include',
         headers:     { 'Content-Type': 'application/json' },
       });
 
@@ -113,26 +127,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const accessToken = json.data?.accessToken;
       if (!accessToken) return null;
 
-      setAuth(accessToken);
+      setAuth(accessToken); // ✅ also resets access_token cookie
       return accessToken;
     } catch {
       return null;
     }
   }, [setAuth]);
 
-  // ── Init — try silent refresh on mount ───────────────────────────────────
+  // ── Init — on every page load/refresh, try silent refresh ─────────────────
+  // This is the ONLY place we recover session after a refresh.
+  // Middleware lets the request through based on user_role cookie.
+  // Then here we restore the in-memory access token via refresh endpoint.
   useEffect(() => {
-    const init = async () => {
-      try {
-        await attemptRefresh();
-      } catch {
-        // not authenticated — fine
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, [attemptRefresh]);
+    attemptRefresh().finally(() => setLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auto-refresh 1 minute before access token expires (every 14 min) ─────
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      attemptRefresh();
+    }, 14 * 60 * 1000); // 14 minutes
+    return () => clearInterval(interval);
+  }, [user, attemptRefresh]);
 
   // ── login ─────────────────────────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
@@ -140,7 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method:      'POST',
-        credentials: 'include', // ✅ receives httpOnly refresh cookie
+        credentials: 'include',
         headers:     { 'Content-Type': 'application/json' },
         body:        JSON.stringify({ email, password }),
       });
@@ -157,8 +174,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const parsed = setAuth(accessToken);
       toast.success('Signed in successfully');
       router.push(ROLE_REDIRECT[parsed.role]);
-    } catch (err) {
-      throw err;
     } finally {
       setLoading(false);
     }
@@ -187,8 +202,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const parsed = setAuth(accessToken);
       toast.success('Account created successfully');
       router.push(ROLE_REDIRECT[parsed.role]);
-    } catch (err) {
-      throw err;
     } finally {
       setLoading(false);
     }
@@ -210,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [router, clearAuth]);
 
-  // ── refreshToken (manual — called by api client on 401) ───────────────────
+  // ── refreshToken (called by api client on 401) ────────────────────────────
   const refreshToken = useCallback(async () => {
     const result = await attemptRefresh();
     if (!result) {

@@ -27,7 +27,11 @@ function getLabel(pathname: string): string {
   return 'Vendor Portal';
 }
 
-export function VendorTopbar() {
+  interface Props {
+  onMobileMenuToggle: () => void;
+  } 
+  
+export function VendorTopbar({ onMobileMenuToggle }: Props) {
   const { user, logout } = useAuth();
   const pathname   = usePathname();
   const [menu, setMenu] = useState(false);

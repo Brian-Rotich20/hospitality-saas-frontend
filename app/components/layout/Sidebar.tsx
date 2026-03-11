@@ -1,166 +1,163 @@
+// components/layout/Sidebar.tsx
+// ✅ Client Component — uses auth context for user info + logout
+// Supports vendor, admin, customer roles
+// Mobile: hidden off-canvas drawer toggled by VendorTopbar/Header
+// Desktop: fixed left sidebar
+
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '../../lib/auth/auth.context';
 import {
-  LayoutDashboard,
-  Package,
-  Calendar,
-  FileText,
-  BarChart3,
-  Users,
-  CheckCircle,
-  LogOut,
-  User,
+  LayoutDashboard, Package, Calendar, BarChart3,
+  Users, LogOut, User, Settings, ShoppingBag,
+  ChevronRight, X,
 } from 'lucide-react';
 
-type UserRole = 'customer' | 'vendor' | 'admin';
+// ── Nav config per role ───────────────────────────────────────────────────────
+type Role = 'customer' | 'vendor' | 'admin';
 
 interface NavItem {
-  href: string;
+  href:  string;
   label: string;
-  icon: React.ReactNode;
+  Icon:  React.ElementType;
 }
 
-const navigationByRole: Record<UserRole, NavItem[]> = {
-  customer: [
-    {
-      href: '/dashboard',
-      label: 'Dashboard',
-      icon: <LayoutDashboard size={20} />,
-    },
-    {
-      href: '/bookings',
-      label: 'My Bookings',
-      icon: <Calendar size={20} />,
-    },
-    {
-      href: '/profile',
-      label: 'Profile',
-      icon: <User size={20} />,
-    },
-  ],
+const NAV: Record<Role, NavItem[]> = {
   vendor: [
-    {
-      href: '/vendor/dashboard',
-      label: 'Dashboard',
-      icon: <LayoutDashboard size={20} />,
-    },
-    {
-      href: '/vendor/listings',
-      label: 'My Listings',
-      icon: <Package size={20} />,
-    },
-    {
-      href: '/vendor/bookings',
-      label: 'Bookings',
-      icon: <Calendar size={20} />,
-    },
-    {
-      href: '/vendor/profile',
-      label: 'Profile',
-      icon: <User size={20} />,
-    },
-    {
-      href: '/vendor/analytics',
-      label: 'Analytics',
-      icon: <BarChart3 size={20} />,
-    },
+    { href: '/vendor/dashboard', label: 'Dashboard',   Icon: LayoutDashboard },
+    { href: '/vendor/listings',  label: 'My Listings',  Icon: Package         },
+    { href: '/vendor/bookings',  label: 'Bookings',     Icon: Calendar        },
+    { href: '/vendor/analytics', label: 'Analytics',    Icon: BarChart3       },
+    { href: '/vendor/settings/profile',  label: 'Settings',     Icon: Settings        },
   ],
   admin: [
-    {
-      href: '/admin/dashboard',
-      label: 'Dashboard',
-      icon: <LayoutDashboard size={20} />,
-    },
-    {
-      href: '/admin/vendors',
-      label: 'Vendors',
-      icon: <Users size={20} />,
-    },
-    {
-      href: '/admin/bookings',
-      label: 'Bookings',
-      icon: <Calendar size={20} />,
-    },
-    {
-      href: '/admin/listings',
-      label: 'Listings',
-      icon: <Package size={20} />,
-    },
-    {
-      href: '/admin/analytics',
-      label: 'Analytics',
-      icon: <BarChart3 size={20} />,
-    },
+    { href: '/admin/dashboard',  label: 'Dashboard',    Icon: LayoutDashboard },
+    { href: '/admin/vendors',    label: 'Vendors',       Icon: Users           },
+    { href: '/admin/listings',   label: 'Listings',      Icon: Package         },
+    { href: '/admin/bookings',   label: 'Bookings',      Icon: Calendar        },
+    { href: '/admin/analytics',  label: 'Analytics',     Icon: BarChart3       },
+  ],
+  customer: [
+    { href: '/dashboard',        label: 'Dashboard',    Icon: LayoutDashboard },
+    { href: '/bookings',         label: 'My Bookings',  Icon: Calendar        },
+    { href: '/profile',          label: 'Profile',      Icon: User            },
   ],
 };
 
+// ── Props ─────────────────────────────────────────────────────────────────────
 interface SidebarProps {
-  role?: UserRole;
+  mobileOpen:    boolean;
+  onMobileClose: () => void;
 }
 
-export function Sidebar({ role = 'customer' }: SidebarProps) {
+// ── Component ─────────────────────────────────────────────────────────────────
+export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const { user, logout } = useAuth();
-  const pathname = usePathname();
-  const navItems = navigationByRole[role];
+  const pathname         = usePathname();
+  const role             = (user?.role ?? 'customer') as Role;
+  const navItems         = NAV[role] ?? NAV.customer;
 
-  const isActive = (href: string) => {
-    return pathname.startsWith(href);
-  };
+  // Active check — exact match for dashboard, prefix for others
+  const isActive = (href: string) =>
+    href.endsWith('dashboard') ? pathname === href : pathname.startsWith(href);
 
-  return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen">
-      {/* User Profile Section */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-            <User size={24} className="text-primary-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">
-              {user?.email?.split('@')[0]}
-            </p>
-            <p className="text-xs text-gray-500 capitalize">{role}</p>
-          </div>
-        </div>
-      </div>
+  // ── Sidebar inner content (shared between mobile + desktop) ──────────────
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
 
-      {/* Navigation Menu */}
-      <nav className="flex-1 px-4 py-6 overflow-y-auto">
-        <div className="space-y-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`
-                flex items-center space-x-3 px-4 py-3 rounded-lg transition
-                ${
-                  isActive(item.href)
-                    ? 'bg-primary-50 text-primary-600 font-semibold'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }
-              `}
-            >
-              {item.icon}
-              <span className="text-sm">{item.label}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
-
-      {/* Logout Button */}
-      <div className="p-4 border-t border-gray-200">
-        <button
-          onClick={logout}
-          className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition"
-        >
-          <LogOut size={20} />
-          <span className="text-sm font-medium">Logout</span>
+      {/* Logo */}
+      <div className="flex items-center justify-between px-5 py-5 border-b border-gray-100">
+        <Link href={role === 'vendor' ? '/vendor/dashboard' : role === 'admin' ? '/admin/dashboard' : '/store'}
+          className="text-lg font-black tracking-tight text-[#2D3B45] no-underline">
+          link<span className="text-[#F5C842]">mall</span>
+        </Link>
+        {/* Mobile close button */}
+        <button onClick={onMobileClose}
+          className="lg:hidden w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition text-gray-500">
+          <X size={16} />
         </button>
       </div>
-    </aside>
+
+      {/* User info */}
+      <div className="px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-[#2D3B45] flex items-center justify-center shrink-0">
+            <span className="text-[#F5C842] text-xs font-black">
+              {(user?.fullName ?? user?.email ?? 'U').charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-gray-900 truncate">
+              {user?.fullName ?? user?.email?.split('@')[0] ?? 'User'}
+            </p>
+            <p className="text-[10px] text-gray-400 capitalize">{role}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav links */}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
+        {navItems.map(({ href, label, Icon }) => {
+          const active = isActive(href);
+          return (
+            <Link key={href} href={href} onClick={onMobileClose}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold no-underline transition-colors
+                ${active
+                  ? 'bg-[#2D3B45] text-white'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+              <Icon size={15} className="shrink-0" />
+              <span className="flex-1">{label}</span>
+              {active && <ChevronRight size={12} className="opacity-60" />}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Browse store link */}
+      <div className="px-3 pb-2">
+        <Link href="/store" onClick={onMobileClose}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-400
+            hover:bg-gray-100 hover:text-gray-700 no-underline transition-colors">
+          <ShoppingBag size={15} className="shrink-0" />
+          Browse Store
+        </Link>
+      </div>
+
+      {/* Logout */}
+      <div className="px-3 pb-5 pt-1 border-t border-gray-100">
+        <button onClick={() => { logout(); onMobileClose(); }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold
+            text-red-500 hover:bg-red-50 transition-colors">
+          <LogOut size={15} className="shrink-0" />
+          Logout
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* ── Desktop sidebar — fixed, always visible ── */}
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[228px] bg-white border-r border-gray-100 z-40">
+        <SidebarContent />
+      </aside>
+
+      {/* ── Mobile overlay ── */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      {/* ── Mobile drawer ── */}
+      <aside className={`fixed left-0 top-0 h-screen w-[228px] bg-white border-r border-gray-100 z-50 lg:hidden
+        transform transition-transform duration-200 ease-in-out
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <SidebarContent />
+      </aside>
+    </>
   );
 }
