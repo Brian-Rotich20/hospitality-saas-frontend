@@ -5,10 +5,10 @@
 import { notFound }          from 'next/navigation';
 import Link                  from 'next/link';
 import { ArrowLeft, Shield } from 'lucide-react';
-import { ListingGallery }    from '@/components/listings/ListingGallery';
-import { ListingInfo }       from '@/components/listings/ListingInfo';
-import { BookingCard }       from '@/components/listings/BookingCard';
-import { resolveListingPrice } from '@/lib/types/listing';
+import { ListingGallery }    from '../../../components/listings/ListingGallery';
+import { ListingInfo }       from '../../../components/listings/ListingQuickInfo';
+import { BookingCard }       from '../../../components/listings/BookingCard';
+import { resolveListingPrice } from '../../../lib/types/listing';
 
 async function fetchListing(id: string) {
   const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
