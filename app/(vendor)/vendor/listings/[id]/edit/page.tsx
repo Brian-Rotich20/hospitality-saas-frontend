@@ -6,7 +6,7 @@ import { useAuth } from '../../../../../lib/auth/auth.context';
 import { useRouter, useParams } from 'next/navigation';
 import { listingsService, uploadService } from '../../../../../lib/api/endpoints';
 import { Listing } from '../../../../../lib/types';
-import { ListingForm } from '../../../../../components/vendor/ListingForm';
+
 import { LoadingSpinner } from '../../../../../components/common/LoadingSpinner';
 import { AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 
@@ -146,12 +146,6 @@ export default function EditListingPage() {
         </div>
       )}
 
-      <ListingForm
-        initialData={listing}
-        onSubmit={handleSubmit}
-        loading={saveLoading}
-        isEditing={true}
-      />
     </div>
   );
 }
