@@ -6,7 +6,7 @@ import { useAuth } from '../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
 import { VendorTopbar }  from '../components/vendor/VendorTopbar';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
-import { SideBar }       from '../components/layout/SideBar';
+import { Sidebar }       from '../components/layout/Sidebar';
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -25,7 +25,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Sidebar — handles its own desktop/mobile rendering */}
-      <SideBar
+      <Sidebar
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />

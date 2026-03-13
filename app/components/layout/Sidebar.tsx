@@ -53,7 +53,7 @@ interface SidebarProps {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SideBar({ mobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const pathname         = usePathname();
   const role             = (user?.role ?? 'customer') as Role;
