@@ -56,56 +56,51 @@ export default function AvailabilityPage() {
     }
   };
 
-  const handleBlockDates = async () => {
-    if (!startDate || !endDate) {
-      setError('Please select both start and end dates');
-      return;
-    }
+// Fix handleBlockDates — generate date array between start and end
+const handleBlockDates = async () => {
+  if (!startDate || !endDate) {
+    setError('Please select both start and end dates');
+    return;
+  }
 
-    // Validate dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+  const start = new Date(startDate);
+  const end   = new Date(endDate);
 
-    if (end <= start) {
-      setError('End date must be after start date');
-      return;
-    }
+  if (end <= start) {
+    setError('End date must be after start date');
+    return;
+  }
 
-    try {
-      setError(null);
-      
-      // Call API with ISO date strings
-      await availabilityService.blockDates(id, startDate, endDate);
+  // ✅ Generate all dates between start and end inclusive
+  const dates: string[] = [];
+  const current = new Date(start);
+  while (current <= end) {
+    dates.push(current.toISOString().split('T')[0]); // YYYY-MM-DD
+    current.setDate(current.getDate() + 1);
+  }
 
-      // Add to local blocked dates
-      setBlockedDates((prev) => [...prev, startDate, endDate]);
-      
-      setSuccess('Dates blocked successfully');
-      setStartDate('');
-      setEndDate('');
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      console.error('Error blocking dates:', err);
-      setError('Failed to block dates');
-    }
-  };
+  try {
+    setError(null);
+    await availabilityService.blockDates(id, dates); // ✅ (listingId, dates[])
+    setBlockedDates(prev => [...prev, ...dates]);
+    setSuccess('Dates blocked successfully');
+    setStartDate('');
+    setEndDate('');
+    setTimeout(() => setSuccess(null), 3000);
+  } catch (err) {
+    setError('Failed to block dates');
+  }
+};
 
+// Fix handleUnblockDates — wrap single date in array
   const handleUnblockDates = async (dateToRemove: string) => {
     try {
       setError(null);
-
-      // Call API to unblock
-      // This assumes unblockDates endpoint exists
-      await availabilityService.unblockDates(id, dateToRemove, dateToRemove);
-
-      setBlockedDates((prev) => prev.filter((d) => d !== dateToRemove));
+      await availabilityService.unblockDates(id, [dateToRemove]); // ✅ (listingId, dates[])
+      setBlockedDates(prev => prev.filter(d => d !== dateToRemove));
       setSuccess('Date unblocked successfully');
-
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Error unblocking date:', err);
       setError('Failed to unblock date');
     }
   };

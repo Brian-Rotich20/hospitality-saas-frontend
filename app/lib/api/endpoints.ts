@@ -229,6 +229,24 @@ export const bookingsService = {
     apiClient.patch(API_ENDPOINTS.BOOKINGS.CANCEL(id), { reason }),
 };
 
+export const availabilityService = {
+  get: (listingId: string, startDate: string, endDate: string) =>
+    apiClient.get(API_ENDPOINTS.AVAILABILITY.GET(listingId), {
+      params: { startDate, endDate },
+    }),
+ 
+  getCalendar: (listingId: string, startDate: string, endDate: string) =>
+    apiClient.get(API_ENDPOINTS.AVAILABILITY.GET_CALENDAR(listingId), {
+      params: { startDate, endDate },
+    }),
+ 
+  blockDates: (listingId: string, dates: string[], reason?: string) =>
+    apiClient.post(API_ENDPOINTS.AVAILABILITY.BLOCK_DATES(listingId), { dates, reason }),
+ 
+  unblockDates: (listingId: string, dates: string[]) =>
+    apiClient.post(API_ENDPOINTS.AVAILABILITY.UNBLOCK_DATES(listingId), { dates }),
+};
+
 // ── Vendors ───────────────────────────────────────────────────────────────────
 export const vendorsService = {
   apply:           (data: any) =>
