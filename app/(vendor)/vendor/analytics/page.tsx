@@ -48,7 +48,7 @@ export default function VendorAnalyticsPage() {
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true); setError(null);
-      const res      = await bookingsService.getVendorBookings(1, 200);
+      const res      = await bookingsService.getVendorBookings( 200);
       const bookings: any[] = Array.isArray(res.data) ? res.data : (res.data as any)?.data ?? [];
 
       // Filter by timeframe
