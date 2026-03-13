@@ -53,7 +53,7 @@ interface SidebarProps {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
+export function SideBar({ mobileOpen, onMobileClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const pathname         = usePathname();
   const role             = (user?.role ?? 'customer') as Role;
@@ -140,7 +140,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   return (
     <>
       {/* ── Desktop sidebar — fixed, always visible ── */}
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[228px] bg-white border-r border-gray-100 z-40">
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-57 bg-white border-r border-gray-100 z-40">
         <SidebarContent />
       </aside>
 
@@ -153,7 +153,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       )}
 
       {/* ── Mobile drawer ── */}
-      <aside className={`fixed left-0 top-0 h-screen w-[228px] bg-white border-r border-gray-100 z-50 lg:hidden
+      <aside className={`fixed left-0 top-0 h-screen w-57 bg-white border-r border-gray-100 z-50 lg:hidden
         transform transition-transform duration-200 ease-in-out
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent />
