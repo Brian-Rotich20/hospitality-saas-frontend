@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { useAuth } from '../lib/auth/auth.context';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sidebar } from '../components/layout/SideBar';
+import { Sidebar } from '../components/layout/Sidebar';
 import { MobileNav } from '../components/layout/MobileNav';
 import { CustomerNav } from '../components/layout/CustomerNav';
 
@@ -14,6 +15,7 @@ export default function CustomerLayout({
 }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Verify user is customer role
   React.useEffect(() => {
@@ -34,7 +36,10 @@ export default function CustomerLayout({
     <div className="flex h-screen bg-gray-50">
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 border-r border-gray-200 bg-white">
-        <Sidebar role="customer" />
+      <Sidebar
+            mobileOpen={mobileOpen}
+            onMobileClose={() => setMobileOpen(false)}
+          />
       </div>
 
       {/* Mobile Sidebar */}
