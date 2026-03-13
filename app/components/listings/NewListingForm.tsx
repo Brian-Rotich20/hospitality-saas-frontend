@@ -1,9 +1,6 @@
-// components/vendor/listings/NewListingForm.tsx
-// ✅ Client Component — all form interaction here, no data fetching
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,8 +8,8 @@ import { z } from 'zod';
 import { listingsService } from '../../lib/api/endpoints';
 import type { Category } from '../../lib/types/listing';
 import {
-  MapPin, DollarSign, Users, Image, Tag, AlignLeft,
-  Plus, X, ChevronRight, Info,
+  MapPin, DollarSign, Users, Upload, X, ChevronRight,
+  Info, Plus, ImageIcon, Loader2, AlertCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -35,27 +32,32 @@ const schema = z.object({
   maxBookingDuration: z.coerce.number().min(1).default(30),
   leadTime:           z.coerce.number().min(0).default(1),
 }).refine(data => {
-  if (data.pricingType !== 'contact' && data.pricingType !== 'package') {
-    return !!data.price;
-  }
-  if (data.pricingType === 'package') {
-    return !!data.minPrice && !!data.maxPrice;
-  }
+  if (data.pricingType !== 'contact' && data.pricingType !== 'package') return !!data.price;
+  if (data.pricingType === 'package') return !!data.minPrice && !!data.maxPrice;
   return true;
 }, { message: 'Price is required for this pricing type', path: ['price'] });
 
 type FormData = z.infer<typeof schema>;
 
 const PRICING_TYPES = [
-  { value: 'per_hour',   label: 'Per Hour'   },
-  { value: 'per_day',    label: 'Per Day'    },
-  { value: 'per_night',  label: 'Per Night'  },
-  { value: 'per_person', label: 'Per Person' },
-  { value: 'package',    label: 'Package'    },
-  { value: 'contact',    label: 'Contact for Price' },
+  { value: 'per_hour',   label: 'Per Hour'          },
+  { value: 'per_day',    label: 'Per Day'            },
+  { value: 'per_night',  label: 'Per Night'          },
+  { value: 'per_person', label: 'Per Person'         },
+  { value: 'package',    label: 'Package'            },
+  { value: 'contact',    label: 'Contact for Price'  },
 ];
 
-// ── Shared input style ────────────────────────────────────────────────────────
+const COMMON_AMENITIES = [
+  'WiFi', 'Parking', 'AC', 'Projector', 'Sound System', 'Catering',
+  'Security', 'Generator', 'Pool', 'Gym', 'Bar', 'Kitchen',
+];
+
+const MAX_PHOTOS    = 10;
+const MAX_SIZE_MB   = 5;
+const ACCEPT_TYPES  = ['image/jpeg', 'image/png', 'image/webp'];
+
+// ── Shared styles ─────────────────────────────────────────────────────────────
 const inp = (err?: boolean) =>
   `w-full px-3 py-2.5 text-sm rounded-xl border bg-white text-gray-900 placeholder-gray-400
    focus:outline-none focus:ring-2 focus:ring-[#2D3B45] focus:border-transparent transition
@@ -82,29 +84,16 @@ function ErrorMsg({ msg }: { msg?: string }) {
   return msg ? <p className="text-red-500 text-[11px] mt-1">{msg}</p> : null;
 }
 
-// ── Amenity chips ─────────────────────────────────────────────────────────────
-const COMMON_AMENITIES = [
-  'WiFi', 'Parking', 'AC', 'Projector', 'Sound System', 'Catering',
-  'Security', 'Generator', 'Pool', 'Gym', 'Bar', 'Kitchen',
-];
-
-interface AmenitiesPickerProps {
-  value:    string[];
-  onChange: (v: string[]) => void;
-}
-
-function AmenitiesPicker({ value, onChange }: AmenitiesPickerProps) {
+// ── Amenities picker ──────────────────────────────────────────────────────────
+function AmenitiesPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
   const [custom, setCustom] = useState('');
 
-  const toggle = (item: string) => {
+  const toggle = (item: string) =>
     onChange(value.includes(item) ? value.filter(a => a !== item) : [...value, item]);
-  };
 
   const addCustom = () => {
     const trimmed = custom.trim();
-    if (trimmed && !value.includes(trimmed)) {
-      onChange([...value, trimmed]);
-    }
+    if (trimmed && !value.includes(trimmed)) onChange([...value, trimmed]);
     setCustom('');
   };
 
@@ -121,22 +110,17 @@ function AmenitiesPicker({ value, onChange }: AmenitiesPickerProps) {
           </button>
         ))}
       </div>
-      {/* Custom amenity */}
       <div className="flex gap-2">
-        <input
-          value={custom}
-          onChange={e => setCustom(e.target.value)}
+        <input value={custom} onChange={e => setCustom(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustom())}
           placeholder="Add custom amenity..."
           className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white
-            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2D3B45] transition"
-        />
+            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2D3B45] transition" />
         <button type="button" onClick={addCustom}
           className="px-3 py-2 bg-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-200 transition">
           <Plus size={13} />
         </button>
       </div>
-      {/* Selected custom chips */}
       {value.filter(a => !COMMON_AMENITIES.includes(a)).length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
           {value.filter(a => !COMMON_AMENITIES.includes(a)).map(a => (
@@ -153,73 +137,192 @@ function AmenitiesPicker({ value, onChange }: AmenitiesPickerProps) {
   );
 }
 
-// ── Photo URLs input ───────────────────────────────────────────────────────────
-interface PhotoInputProps {
-  value:    string[];
-  onChange: (v: string[]) => void;
+// ── Photo uploader — replaces PhotoInput ─────────────────────────────────────
+interface UploadedPhoto {
+  localId:   string;
+  url:       string;
+  uploading: boolean;
+  error?:    string;
 }
 
-function PhotoInput({ value, onChange }: PhotoInputProps) {
-  const [url, setUrl] = useState('');
+function PhotoUploader({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [photos,   setPhotos]   = useState<UploadedPhoto[]>(
+    value.map(url => ({ url, uploading: false, localId: url }))
+  );
+  const [dragging, setDragging] = useState(false);
+  const inputRef               = useRef<HTMLInputElement>(null);
+  const remaining              = MAX_PHOTOS - photos.filter(p => !p.error).length;
 
-  const add = () => {
-    const trimmed = url.trim();
-    if (trimmed && !value.includes(trimmed)) {
-      onChange([...value, trimmed]);
+  const syncUrls = (updated: UploadedPhoto[]) => {
+    onChange(updated.filter(p => p.url && !p.uploading && !p.error).map(p => p.url));
+  };
+
+  const uploadFile = useCallback(async (file: File, localId: string) => {
+    const formData = new FormData();
+    formData.append('image', file); // ✅ field name matches backend
+
+    try {
+      const res = await fetch('/api/upload/image', { // ✅ correct endpoint
+        method: 'POST',
+        body:   formData,
+        // ⚠️ No Content-Type header — browser sets multipart boundary automatically
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || 'Upload failed');
+      }
+
+      const json = await res.json();
+      const url: string = json.data?.url ?? json.url;
+      if (!url) throw new Error('No URL returned');
+
+      setPhotos(prev => {
+        const updated = prev.map(p =>
+          p.localId === localId ? { ...p, url, uploading: false } : p
+        );
+        syncUrls(updated);
+        return updated;
+      });
+    } catch (err) {
+      const error = err instanceof Error ? err.message : 'Upload failed';
+      setPhotos(prev =>
+        prev.map(p => p.localId === localId ? { ...p, uploading: false, error } : p)
+      );
     }
-    setUrl('');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const processFiles = useCallback((files: File[]) => {
+    const valid = files.filter(f =>
+      ACCEPT_TYPES.includes(f.type) && f.size <= MAX_SIZE_MB * 1024 * 1024
+    );
+    const slots     = Math.min(valid.length, remaining);
+    if (!slots) return;
+
+    const newPhotos: UploadedPhoto[] = valid.slice(0, slots).map(f => ({
+      url: '', uploading: true,
+      localId: `${f.name}-${Date.now()}-${Math.random()}`,
+    }));
+
+    setPhotos(prev => [...prev, ...newPhotos]);
+    newPhotos.forEach((p, i) => uploadFile(valid[i], p.localId));
+  }, [remaining, uploadFile]);
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false);
+    processFiles(Array.from(e.dataTransfer.files));
+  };
+
+  const removePhoto = (localId: string) => {
+    setPhotos(prev => {
+      const updated = prev.filter(p => p.localId !== localId);
+      syncUrls(updated);
+      return updated;
+    });
   };
 
   return (
-    <div>
-      <div className="flex gap-2 mb-3">
-        <input
-          value={url}
-          onChange={e => setUrl(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), add())}
-          placeholder="Paste image URL..."
-          className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white
-            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2D3B45] transition"
-        />
-        <button type="button" onClick={add}
-          className="px-4 py-2.5 bg-[#2D3B45] text-white rounded-xl text-xs font-bold hover:bg-[#3a4d5a] transition">
-          Add
-        </button>
-      </div>
-      {value.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {value.map((src, i) => (
-            <div key={src} className="relative group aspect-video rounded-xl overflow-hidden bg-gray-100">
-              <img src={src} alt="" className="w-full h-full object-cover" />
-              {i === 0 && (
-                <span className="absolute top-1.5 left-1.5 text-[9px] font-black bg-[#F5C842] text-[#2D3B45] px-1.5 py-0.5 rounded-md">
+    <div className="space-y-3">
+      {/* Drop zone */}
+      {remaining > 0 && (
+        <div
+          onClick={() => inputRef.current?.click()}
+          onDragOver={e => { e.preventDefault(); setDragging(true);  }}
+          onDragLeave={e => { e.preventDefault(); setDragging(false); }}
+          onDrop={onDrop}
+          className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer
+            transition-colors duration-150 select-none
+            ${dragging
+              ? 'border-[#2D3B45] bg-[#2D3B45]/5'
+              : 'border-gray-200 hover:border-[#2D3B45] hover:bg-gray-50'}`}>
+          <input ref={inputRef} type="file" accept={ACCEPT_TYPES.join(',')}
+            multiple className="sr-only"
+            onChange={e => { processFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
+
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-colors
+            ${dragging ? 'bg-[#2D3B45] text-white' : 'bg-gray-100 text-gray-400'}`}>
+            <Upload size={20} />
+          </div>
+          <p className="text-sm font-bold text-gray-700 mb-1">
+            {dragging ? 'Drop photos here' : 'Drag & drop photos here'}
+          </p>
+          <p className="text-xs text-gray-400 mb-3">
+            or <span className="text-[#2D3B45] font-bold underline">browse from your device</span>
+          </p>
+          <p className="text-[11px] text-gray-300">
+            JPEG · PNG · WebP &nbsp;·&nbsp; Max {MAX_SIZE_MB}MB each &nbsp;·&nbsp; {remaining} slot{remaining !== 1 ? 's' : ''} left
+          </p>
+        </div>
+      )}
+
+      {/* Thumbnails grid */}
+      {photos.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {photos.map((photo, i) => (
+            <div key={photo.localId}
+              className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 group">
+
+              {/* Uploading */}
+              {photo.uploading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 z-10">
+                  <Loader2 size={18} className="text-[#2D3B45] animate-spin mb-1" />
+                  <span className="text-[10px] text-gray-500 font-semibold">Uploading...</span>
+                </div>
+              )}
+
+              {/* Error */}
+              {photo.error && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-50 z-10 p-2">
+                  <AlertCircle size={16} className="text-red-400 mb-1" />
+                  <span className="text-[9px] text-red-500 font-semibold text-center leading-tight line-clamp-2">
+                    {photo.error}
+                  </span>
+                </div>
+              )}
+
+              {/* Preview */}
+              {photo.url && !photo.uploading && !photo.error && (
+                <img src={photo.url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+              )}
+
+              {/* Placeholder */}
+              {!photo.url && !photo.uploading && !photo.error && (
+                <div className="w-full h-full flex items-center justify-center">
+                  <ImageIcon size={18} className="text-gray-300" />
+                </div>
+              )}
+
+              {/* Cover badge on first successful photo */}
+              {i === 0 && photo.url && !photo.error && (
+                <span className="absolute top-1.5 left-1.5 text-[9px] font-black
+                  bg-[#F5C842] text-[#2D3B45] px-1.5 py-0.5 rounded-md z-20">
                   COVER
                 </span>
               )}
-              <button
-                type="button"
-                onClick={() => onChange(value.filter((_, idx) => idx !== i))}
-                className="absolute top-1.5 right-1.5 w-5 h-5 bg-red-500 text-white rounded-full
-                  flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+
+              {/* Remove */}
+              <button type="button" onClick={() => removePhoto(photo.localId)}
+                className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/60 text-white rounded-full
+                  flex items-center justify-center opacity-0 group-hover:opacity-100
+                  transition-opacity z-20 hover:bg-red-500">
                 <X size={10} />
               </button>
             </div>
           ))}
         </div>
       )}
-      <p className="text-[11px] text-gray-400 mt-2 flex items-center gap-1">
-        <Info size={11} /> First image becomes the cover photo
+
+      <p className="text-[11px] text-gray-400 flex items-center gap-1">
+        <ImageIcon size={11} />
+        {photos.filter(p => p.url && !p.error).length} of {MAX_PHOTOS} photos added
+        {photos.filter(p => p.url && !p.error).length > 0 && ' · First photo is the cover'}
       </p>
     </div>
   );
 }
 
 // ── Main form ─────────────────────────────────────────────────────────────────
-interface Props {
-  categories: Category[];
-}
-
-export function NewListingForm({ categories }: Props) {
+export function NewListingForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const [amenities, setAmenities] = useState<string[]>([]);
   const [photos,    setPhotos]    = useState<string[]>([]);
@@ -229,12 +332,8 @@ export function NewListingForm({ categories }: Props) {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      pricingType:        'per_day',
-      currency:           'KES',
-      instantBooking:     false,
-      minBookingDuration: 1,
-      maxBookingDuration: 30,
-      leadTime:           1,
+      pricingType: 'per_day', currency: 'KES',
+      instantBooking: false, minBookingDuration: 1, maxBookingDuration: 30, leadTime: 1,
     },
   });
 
@@ -244,40 +343,21 @@ export function NewListingForm({ categories }: Props) {
     setSaving(true);
     try {
       const payload = {
-        title:              data.title,
-        description:        data.description,
-        categoryId:         data.categoryId,
-        location: {
-          city:    data.city,
-          address: data.address,
-          county:  data.county,
-          country: 'Kenya',
-        },
-        capacity:           data.capacity,
-        pricingType:        data.pricingType,
-        price:              data.price,
-        minPrice:           data.minPrice,
-        maxPrice:           data.maxPrice,
-        currency:           data.currency,
-        photos,
-        coverPhoto:         photos[0],
-        amenities,
-        instantBooking:     data.instantBooking,
-        minBookingDuration: data.minBookingDuration,
-        maxBookingDuration: data.maxBookingDuration,
-        leadTime:           data.leadTime,
+        title: data.title, description: data.description, categoryId: data.categoryId,
+        location: { city: data.city, address: data.address, county: data.county, country: 'Kenya' },
+        capacity: data.capacity, pricingType: data.pricingType,
+        price: data.price, minPrice: data.minPrice, maxPrice: data.maxPrice,
+        currency: data.currency, photos, coverPhoto: photos[0], amenities,
+        instantBooking: data.instantBooking,
+        minBookingDuration: data.minBookingDuration, maxBookingDuration: data.maxBookingDuration,
+        leadTime: data.leadTime,
       };
 
       const res = await listingsService.create(payload);
-      const id  = res.data?.id ?? res.data?.id;
+      const id  = res.data?.id ?? (res.data as any)?.data?.id;
 
-      // If vendor chose to publish immediately, update status
       if (saveAs === 'active' && id) {
-        try {
-          await listingsService.updateStatus(id, 'active');
-        } catch {
-          // non-fatal — listing created as draft, vendor can publish later
-        }
+        await listingsService.updateStatus(id, 'active').catch(() => {});
       }
 
       toast.success(saveAs === 'active' ? 'Listing published!' : 'Listing saved as draft');
@@ -292,10 +372,9 @@ export function NewListingForm({ categories }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
 
-      {/* ── Basic Info ─────────────────────────────────────────────────────── */}
+      {/* Basic Info */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6">
         <SectionTitle>Basic Information</SectionTitle>
-
         <div className="space-y-4">
           <div>
             <Label required>Listing Title</Label>
@@ -303,7 +382,6 @@ export function NewListingForm({ categories }: Props) {
               className={inp(!!errors.title)} />
             <ErrorMsg msg={errors.title?.message} />
           </div>
-
           <div>
             <Label required>Description</Label>
             <textarea {...register('description')} rows={4}
@@ -311,54 +389,43 @@ export function NewListingForm({ categories }: Props) {
               className={`${inp(!!errors.description)} resize-none`} />
             <ErrorMsg msg={errors.description?.message} />
           </div>
-
           <div>
             <Label required>Category</Label>
-            <select {...register('categoryId')}
-              className={`${inp(!!errors.categoryId)} cursor-pointer`}>
+            <select {...register('categoryId')} className={`${inp(!!errors.categoryId)} cursor-pointer`}>
               <option value="">Select a category...</option>
-              {categories.map((c: Category) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <ErrorMsg msg={errors.categoryId?.message} />
           </div>
         </div>
       </div>
 
-      {/* ── Location ───────────────────────────────────────────────────────── */}
+      {/* Location */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6">
         <SectionTitle>Location</SectionTitle>
-
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label required>City</Label>
             <div className="relative">
               <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
-              <input {...register('city')} placeholder="Nairobi"
-                className={`${inp(!!errors.city)} pl-8`} />
+              <input {...register('city')} placeholder="Nairobi" className={`${inp(!!errors.city)} pl-8`} />
             </div>
             <ErrorMsg msg={errors.city?.message} />
           </div>
-
           <div>
             <Label>County</Label>
-            <input {...register('county')} placeholder="Nairobi County"
-              className={inp()} />
+            <input {...register('county')} placeholder="Nairobi County" className={inp()} />
           </div>
-
           <div className="col-span-2">
             <Label>Address / Area</Label>
-            <input {...register('address')} placeholder="Westlands, Parklands, Karen..."
-              className={inp()} />
+            <input {...register('address')} placeholder="Westlands, Parklands, Karen..." className={inp()} />
           </div>
         </div>
       </div>
 
-      {/* ── Pricing ────────────────────────────────────────────────────────── */}
+      {/* Pricing */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6">
         <SectionTitle>Pricing</SectionTitle>
-
         <div className="space-y-4">
           <div>
             <Label required>Pricing Type</Label>
@@ -368,9 +435,7 @@ export function NewListingForm({ categories }: Props) {
                 return (
                   <label key={value}
                     className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer text-xs font-bold transition-colors
-                      ${checked
-                        ? 'border-[#2D3B45] bg-[#2D3B45]/5 text-[#2D3B45]'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+                      ${checked ? 'border-[#2D3B45] bg-[#2D3B45]/5 text-[#2D3B45]' : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}>
                     <input type="radio" value={value} {...register('pricingType')} className="sr-only" />
                     <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex items-center justify-center
                       ${checked ? 'border-[#2D3B45]' : 'border-gray-300'}`}>
@@ -384,15 +449,13 @@ export function NewListingForm({ categories }: Props) {
             <ErrorMsg msg={errors.pricingType?.message} />
           </div>
 
-          {/* Price fields — conditional on pricing type */}
           {pricingType === 'package' ? (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label required>Min Price (KSh)</Label>
                 <div className="relative">
                   <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
-                  <input type="number" {...register('minPrice')} placeholder="50,000"
-                    className={`${inp(!!errors.minPrice)} pl-8`} />
+                  <input type="number" {...register('minPrice')} placeholder="50,000" className={`${inp(!!errors.minPrice)} pl-8`} />
                 </div>
                 <ErrorMsg msg={errors.minPrice?.message} />
               </div>
@@ -400,8 +463,7 @@ export function NewListingForm({ categories }: Props) {
                 <Label required>Max Price (KSh)</Label>
                 <div className="relative">
                   <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
-                  <input type="number" {...register('maxPrice')} placeholder="200,000"
-                    className={`${inp(!!errors.maxPrice)} pl-8`} />
+                  <input type="number" {...register('maxPrice')} placeholder="200,000" className={`${inp(!!errors.maxPrice)} pl-8`} />
                 </div>
                 <ErrorMsg msg={errors.maxPrice?.message} />
               </div>
@@ -411,8 +473,7 @@ export function NewListingForm({ categories }: Props) {
               <Label required>Price (KSh)</Label>
               <div className="relative">
                 <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
-                <input type="number" {...register('price')} placeholder="e.g. 15000"
-                  className={`${inp(!!errors.price)} pl-8`} />
+                <input type="number" {...register('price')} placeholder="e.g. 15000" className={`${inp(!!errors.price)} pl-8`} />
               </div>
               <ErrorMsg msg={errors.price?.message} />
             </div>
@@ -425,43 +486,34 @@ export function NewListingForm({ categories }: Props) {
         </div>
       </div>
 
-      {/* ── Capacity & Booking Rules ────────────────────────────────────────── */}
+      {/* Capacity & Booking Rules */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6">
         <SectionTitle>Capacity & Booking Rules</SectionTitle>
-
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label>Max Capacity</Label>
             <div className="relative">
               <Users size={14} className="absolute left-3 top-3 text-gray-400" />
-              <input type="number" {...register('capacity')} placeholder="e.g. 200"
-                className={`${inp(!!errors.capacity)} pl-8`} />
+              <input type="number" {...register('capacity')} placeholder="e.g. 200" className={`${inp(!!errors.capacity)} pl-8`} />
             </div>
             <ErrorMsg msg={errors.capacity?.message} />
           </div>
-
           <div>
             <Label>Lead Time (days)</Label>
-            <input type="number" {...register('leadTime')} placeholder="1"
-              className={inp(!!errors.leadTime)} />
+            <input type="number" {...register('leadTime')} placeholder="1" className={inp(!!errors.leadTime)} />
             <p className="text-[11px] text-gray-400 mt-1">Advance notice required</p>
           </div>
-
           <div>
             <Label>Min Booking (days)</Label>
-            <input type="number" {...register('minBookingDuration')} placeholder="1"
-              className={inp()} />
+            <input type="number" {...register('minBookingDuration')} placeholder="1" className={inp()} />
           </div>
-
           <div>
             <Label>Max Booking (days)</Label>
-            <input type="number" {...register('maxBookingDuration')} placeholder="30"
-              className={inp()} />
+            <input type="number" {...register('maxBookingDuration')} placeholder="30" className={inp()} />
           </div>
         </div>
-
         <div className="mt-4">
-          <label className="flex items-center gap-3 cursor-pointer group">
+          <label className="flex items-center gap-3 cursor-pointer">
             <div className="relative">
               <input type="checkbox" {...register('instantBooking')} className="sr-only peer" />
               <div className="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-[#2D3B45] transition-colors" />
@@ -475,32 +527,26 @@ export function NewListingForm({ categories }: Props) {
         </div>
       </div>
 
-      {/* ── Amenities ──────────────────────────────────────────────────────── */}
+      {/* Amenities */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6">
         <SectionTitle>Amenities</SectionTitle>
         <AmenitiesPicker value={amenities} onChange={setAmenities} />
       </div>
 
-      {/* ── Photos ─────────────────────────────────────────────────────────── */}
+      {/* ── Photos — replaced PhotoInput with PhotoUploader ── */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6">
         <SectionTitle>Photos</SectionTitle>
-        <PhotoInput value={photos} onChange={setPhotos} />
+        <PhotoUploader value={photos} onChange={setPhotos} />
       </div>
 
-      {/* ── Submit ─────────────────────────────────────────────────────────── */}
+      {/* Submit */}
       <div className="flex gap-3 pb-8">
-        <button
-          type="submit"
-          disabled={saving}
-          onClick={() => setSaveAs('draft')}
+        <button type="submit" disabled={saving} onClick={() => setSaveAs('draft')}
           className="flex-1 py-3 border-2 border-[#2D3B45] text-[#2D3B45] rounded-xl text-sm font-black
             hover:bg-[#2D3B45]/5 transition disabled:opacity-50">
           {saving && saveAs === 'draft' ? 'Saving...' : 'Save as Draft'}
         </button>
-        <button
-          type="submit"
-          disabled={saving}
-          onClick={() => setSaveAs('active')}
+        <button type="submit" disabled={saving} onClick={() => setSaveAs('active')}
           className="flex-1 py-3 bg-[#2D3B45] text-white rounded-xl text-sm font-black
             hover:bg-[#3a4d5a] transition disabled:opacity-50 flex items-center justify-center gap-2">
           {saving && saveAs === 'active'
