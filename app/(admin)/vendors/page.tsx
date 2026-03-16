@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { cookies }             from 'next/headers';
-import { VendorManagementClient } from '@/components/admin/VendorManagementClient';
+import { VendorManagementClient } from '../../components/admin/VendorManagementClient';
 
 async function fetchVendors(token: string) {
   const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
