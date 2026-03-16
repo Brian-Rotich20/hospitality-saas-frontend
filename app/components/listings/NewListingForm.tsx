@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { listingsService } from '../../lib/api/endpoints';
-import type { Category } from '../../lib/types/listing';
+import { useRouter }        from 'next/navigation';
+import { useForm }          from 'react-hook-form';
+import { zodResolver }      from '@hookform/resolvers/zod';
+import { z }                from 'zod';
+import { useAuth }          from '../../lib/auth/auth.context';   // ✅ added
+import { listingsService }  from '../../lib/api/endpoints';
+import type { Category }    from '../../lib/types/listing';
 import {
   MapPin, DollarSign, Users, Upload, X, ChevronRight,
   Info, Plus, ImageIcon, Loader2, AlertCircle,
@@ -21,7 +22,7 @@ const schema = z.object({
   city:               z.string().min(2,  'Required'),
   address:            z.string().optional(),
   county:             z.string().optional(),
-  capacity:           z.coerce.number().min(1, 'At least 1').max(10000).optional(),
+  capacity:           z.coerce.number().min(1).max(10000).optional(),
   pricingType:        z.enum(['per_hour', 'per_day', 'per_night', 'per_person', 'package', 'contact']),
   price:              z.coerce.number().positive('Must be positive').optional(),
   minPrice:           z.coerce.number().positive().optional(),
@@ -40,12 +41,12 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const PRICING_TYPES = [
-  { value: 'per_hour',   label: 'Per Hour'          },
-  { value: 'per_day',    label: 'Per Day'            },
-  { value: 'per_night',  label: 'Per Night'          },
-  { value: 'per_person', label: 'Per Person'         },
-  { value: 'package',    label: 'Package'            },
-  { value: 'contact',    label: 'Contact for Price'  },
+  { value: 'per_hour',   label: 'Per Hour'         },
+  { value: 'per_day',    label: 'Per Day'           },
+  { value: 'per_night',  label: 'Per Night'         },
+  { value: 'per_person', label: 'Per Person'        },
+  { value: 'package',    label: 'Package'           },
+  { value: 'contact',    label: 'Contact for Price' },
 ];
 
 const COMMON_AMENITIES = [
@@ -53,9 +54,9 @@ const COMMON_AMENITIES = [
   'Security', 'Generator', 'Pool', 'Gym', 'Bar', 'Kitchen',
 ];
 
-const MAX_PHOTOS    = 10;
-const MAX_SIZE_MB   = 5;
-const ACCEPT_TYPES  = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_PHOTOS   = 10;
+const MAX_SIZE_MB  = 5;
+const ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
 const inp = (err?: boolean) =>
@@ -66,7 +67,7 @@ const inp = (err?: boolean) =>
 function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
     <label className="block text-xs font-black text-gray-600 uppercase tracking-wide mb-1.5">
-      {children} {required && <span className="text-red-400 normal-case font-normal">*</span>}
+      {children}{required && <span className="text-red-400 normal-case font-normal ml-1">*</span>}
     </label>
   );
 }
@@ -137,7 +138,7 @@ function AmenitiesPicker({ value, onChange }: { value: string[]; onChange: (v: s
   );
 }
 
-// ── Photo uploader — replaces PhotoInput ─────────────────────────────────────
+// ── Photo uploader ────────────────────────────────────────────────────────────
 interface UploadedPhoto {
   localId:   string;
   url:       string;
@@ -145,7 +146,14 @@ interface UploadedPhoto {
   error?:    string;
 }
 
-function PhotoUploader({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+// ✅ token prop added
+function PhotoUploader({
+  value, onChange, token,
+}: {
+  value:    string[];
+  onChange: (v: string[]) => void;
+  token:    string | null;
+}) {
   const [photos,   setPhotos]   = useState<UploadedPhoto[]>(
     value.map(url => ({ url, uploading: false, localId: url }))
   );
@@ -153,29 +161,30 @@ function PhotoUploader({ value, onChange }: { value: string[]; onChange: (v: str
   const inputRef               = useRef<HTMLInputElement>(null);
   const remaining              = MAX_PHOTOS - photos.filter(p => !p.error).length;
 
-  const syncUrls = (updated: UploadedPhoto[]) => {
+  const syncUrls = (updated: UploadedPhoto[]) =>
     onChange(updated.filter(p => p.url && !p.uploading && !p.error).map(p => p.url));
-  };
 
+  // ✅ Authorization header added
   const uploadFile = useCallback(async (file: File, localId: string) => {
     const formData = new FormData();
-    formData.append('image', file); // ✅ field name matches backend
+    formData.append('image', file);
 
     try {
-      const res = await fetch('/api/upload/image', { // ✅ correct endpoint
-        method: 'POST',
-        body:   formData,
-        // ⚠️ No Content-Type header — browser sets multipart boundary automatically
+      const res = await fetch('/api/upload/image', {
+        method:  'POST',
+        body:    formData,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        // ⚠️ No Content-Type — browser sets multipart/form-data boundary automatically
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || 'Upload failed');
+        throw new Error(err.error || err.message || `Upload failed (${res.status})`);
       }
 
       const json = await res.json();
       const url: string = json.data?.url ?? json.url;
-      if (!url) throw new Error('No URL returned');
+      if (!url) throw new Error('No URL returned from upload');
 
       setPhotos(prev => {
         const updated = prev.map(p =>
@@ -190,13 +199,13 @@ function PhotoUploader({ value, onChange }: { value: string[]; onChange: (v: str
         prev.map(p => p.localId === localId ? { ...p, uploading: false, error } : p)
       );
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token]); // ✅ token in deps
 
   const processFiles = useCallback((files: File[]) => {
     const valid = files.filter(f =>
       ACCEPT_TYPES.includes(f.type) && f.size <= MAX_SIZE_MB * 1024 * 1024
     );
-    const slots     = Math.min(valid.length, remaining);
+    const slots = Math.min(valid.length, remaining);
     if (!slots) return;
 
     const newPhotos: UploadedPhoto[] = valid.slice(0, slots).map(f => ({
@@ -223,7 +232,6 @@ function PhotoUploader({ value, onChange }: { value: string[]; onChange: (v: str
 
   return (
     <div className="space-y-3">
-      {/* Drop zone */}
       {remaining > 0 && (
         <div
           onClick={() => inputRef.current?.click()}
@@ -238,7 +246,6 @@ function PhotoUploader({ value, onChange }: { value: string[]; onChange: (v: str
           <input ref={inputRef} type="file" accept={ACCEPT_TYPES.join(',')}
             multiple className="sr-only"
             onChange={e => { processFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
-
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-colors
             ${dragging ? 'bg-[#2D3B45] text-white' : 'bg-gray-100 text-gray-400'}`}>
             <Upload size={20} />
@@ -250,27 +257,22 @@ function PhotoUploader({ value, onChange }: { value: string[]; onChange: (v: str
             or <span className="text-[#2D3B45] font-bold underline">browse from your device</span>
           </p>
           <p className="text-[11px] text-gray-300">
-            JPEG · PNG · WebP &nbsp;·&nbsp; Max {MAX_SIZE_MB}MB each &nbsp;·&nbsp; {remaining} slot{remaining !== 1 ? 's' : ''} left
+            JPEG · PNG · WebP · Max {MAX_SIZE_MB}MB · {remaining} slot{remaining !== 1 ? 's' : ''} left
           </p>
         </div>
       )}
 
-      {/* Thumbnails grid */}
       {photos.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {photos.map((photo, i) => (
             <div key={photo.localId}
               className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 group">
-
-              {/* Uploading */}
               {photo.uploading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 z-10">
                   <Loader2 size={18} className="text-[#2D3B45] animate-spin mb-1" />
                   <span className="text-[10px] text-gray-500 font-semibold">Uploading...</span>
                 </div>
               )}
-
-              {/* Error */}
               {photo.error && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-50 z-10 p-2">
                   <AlertCircle size={16} className="text-red-400 mb-1" />
@@ -279,28 +281,20 @@ function PhotoUploader({ value, onChange }: { value: string[]; onChange: (v: str
                   </span>
                 </div>
               )}
-
-              {/* Preview */}
               {photo.url && !photo.uploading && !photo.error && (
                 <img src={photo.url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
               )}
-
-              {/* Placeholder */}
               {!photo.url && !photo.uploading && !photo.error && (
                 <div className="w-full h-full flex items-center justify-center">
                   <ImageIcon size={18} className="text-gray-300" />
                 </div>
               )}
-
-              {/* Cover badge on first successful photo */}
               {i === 0 && photo.url && !photo.error && (
                 <span className="absolute top-1.5 left-1.5 text-[9px] font-black
                   bg-[#F5C842] text-[#2D3B45] px-1.5 py-0.5 rounded-md z-20">
                   COVER
                 </span>
               )}
-
-              {/* Remove */}
               <button type="button" onClick={() => removePhoto(photo.localId)}
                 className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/60 text-white rounded-full
                   flex items-center justify-center opacity-0 group-hover:opacity-100
@@ -323,11 +317,12 @@ function PhotoUploader({ value, onChange }: { value: string[]; onChange: (v: str
 
 // ── Main form ─────────────────────────────────────────────────────────────────
 export function NewListingForm({ categories }: { categories: Category[] }) {
-  const router = useRouter();
-  const [amenities, setAmenities] = useState<string[]>([]);
-  const [photos,    setPhotos]    = useState<string[]>([]);
-  const [saving,    setSaving]    = useState(false);
-  const [saveAs,    setSaveAs]    = useState<'draft' | 'active'>('draft');
+  const router        = useRouter();
+  const { token }     = useAuth(); // ✅ get token for upload auth
+  const [amenities,   setAmenities] = useState<string[]>([]);
+  const [photos,      setPhotos]    = useState<string[]>([]);
+  const [saving,      setSaving]    = useState(false);
+  const [saveAs,      setSaveAs]    = useState<'draft' | 'active'>('draft');
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -349,7 +344,8 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
         price: data.price, minPrice: data.minPrice, maxPrice: data.maxPrice,
         currency: data.currency, photos, coverPhoto: photos[0], amenities,
         instantBooking: data.instantBooking,
-        minBookingDuration: data.minBookingDuration, maxBookingDuration: data.maxBookingDuration,
+        minBookingDuration: data.minBookingDuration,
+        maxBookingDuration: data.maxBookingDuration,
         leadTime: data.leadTime,
       };
 
@@ -455,7 +451,8 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
                 <Label required>Min Price (KSh)</Label>
                 <div className="relative">
                   <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
-                  <input type="number" {...register('minPrice')} placeholder="50,000" className={`${inp(!!errors.minPrice)} pl-8`} />
+                  <input type="number" {...register('minPrice')} placeholder="50,000"
+                    className={`${inp(!!errors.minPrice)} pl-8`} />
                 </div>
                 <ErrorMsg msg={errors.minPrice?.message} />
               </div>
@@ -463,7 +460,8 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
                 <Label required>Max Price (KSh)</Label>
                 <div className="relative">
                   <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
-                  <input type="number" {...register('maxPrice')} placeholder="200,000" className={`${inp(!!errors.maxPrice)} pl-8`} />
+                  <input type="number" {...register('maxPrice')} placeholder="200,000"
+                    className={`${inp(!!errors.maxPrice)} pl-8`} />
                 </div>
                 <ErrorMsg msg={errors.maxPrice?.message} />
               </div>
@@ -473,7 +471,8 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
               <Label required>Price (KSh)</Label>
               <div className="relative">
                 <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
-                <input type="number" {...register('price')} placeholder="e.g. 15000" className={`${inp(!!errors.price)} pl-8`} />
+                <input type="number" {...register('price')} placeholder="e.g. 15000"
+                  className={`${inp(!!errors.price)} pl-8`} />
               </div>
               <ErrorMsg msg={errors.price?.message} />
             </div>
@@ -494,7 +493,8 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
             <Label>Max Capacity</Label>
             <div className="relative">
               <Users size={14} className="absolute left-3 top-3 text-gray-400" />
-              <input type="number" {...register('capacity')} placeholder="e.g. 200" className={`${inp(!!errors.capacity)} pl-8`} />
+              <input type="number" {...register('capacity')} placeholder="e.g. 200"
+                className={`${inp(!!errors.capacity)} pl-8`} />
             </div>
             <ErrorMsg msg={errors.capacity?.message} />
           </div>
@@ -533,10 +533,10 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
         <AmenitiesPicker value={amenities} onChange={setAmenities} />
       </div>
 
-      {/* ── Photos — replaced PhotoInput with PhotoUploader ── */}
+      {/* Photos — ✅ token passed for upload auth */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6">
         <SectionTitle>Photos</SectionTitle>
-        <PhotoUploader value={photos} onChange={setPhotos} />
+        <PhotoUploader value={photos} onChange={setPhotos} token={token} />
       </div>
 
       {/* Submit */}

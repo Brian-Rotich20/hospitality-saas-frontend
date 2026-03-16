@@ -118,7 +118,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method:      'POST',
         credentials: 'include',
-        headers:     { 'Content-Type': 'application/json' },
+        // ✅ No Content-Type header — body is empty, Fastify rejects
+        // application/json with empty body (FST_ERR_CTP_EMPTY_JSON_BODY)
       });
 
       if (!res.ok) return null;
