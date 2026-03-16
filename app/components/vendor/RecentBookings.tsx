@@ -16,7 +16,7 @@ const DOT: Record<string, string> = {
   pending:   'bg-amber-400',
   confirmed: 'bg-emerald-500',
   declined:  'bg-red-500',
-  cancelled: 'bg-gray-400',
+  cancelled: 'bg-gray-500',
   completed: 'bg-purple-500',
 };
 
