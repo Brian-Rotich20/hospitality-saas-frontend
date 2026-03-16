@@ -1,54 +1,26 @@
+// app/(admin)/layout.tsx
+// ✅ Client Component — manages mobile sidebar state only
+// Auth/role protection handled by middleware.ts
+
 'use client';
 
-import React from 'react';
-import { useAuth } from '../lib/auth/auth.context';
-import { useRouter } from 'next/navigation';
-import { AdminSidebar } from '../components/layout/AdminSidebar';
-import { MobileNav } from '../components/layout/MobileNav';
+import { useState }      from 'react';
+import { Sidebar }       from '../components/layout/Sidebar';
+import { AdminTopbar }   from '../components/admin/AdminTopbar';
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  // Verify user is admin role
-  React.useEffect(() => {
-    if (!isLoading && user?.role !== 'admin') {
-      router.push('/dashboard');
-    }
-  }, [user, isLoading, router]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 border-r border-gray-200 bg-white">
-        <AdminSidebar />
-      </div>
-
-      {/* Mobile Sidebar */}
-      <div className="md:hidden">
-        <MobileNav role="admin" isOpen={false} onClose={function (): void {
-          throw new Error('Function not implemented.');
-        } } />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-8">
-            {children}
-          </div>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <Sidebar
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
+      <div className="lg:ml-[228px] min-h-screen flex flex-col">
+        <AdminTopbar onMobileMenuToggle={() => setMobileOpen(v => !v)} />
+        <main className="flex-1 p-6 max-w-[1200px] w-full mx-auto">
+          {children}
         </main>
       </div>
     </div>
