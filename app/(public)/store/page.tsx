@@ -1,8 +1,13 @@
 // app/(public)/store/page.tsx
-// ✅ Server Component — listings browse page, this IS the home experience
-import { Suspense }          from 'react';
-import StoreContent          from '../../components/listings/StoreContent';
-import { LoadingSpinner }    from '../../components/common/LoadingSpinner';
+// ✅ force-dynamic — never statically generate, always render on request
+// This prevents build timeout from Render backend cold start
+
+import { Suspense }       from 'react';
+import StoreContent       from '../../components/listings/StoreContent';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+
+// ✅ Critical — prevents Next.js from trying to fetch at build time
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title:       'LinkMall — Browse Venues & Services',
