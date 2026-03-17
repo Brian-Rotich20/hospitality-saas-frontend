@@ -33,7 +33,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: '/vendor/settings/profile',  label: 'Settings',     Icon: Settings        },
   ],
   admin: [
-    { href: '/admin/dashboard',  label: 'Dashboard',    Icon: LayoutDashboard },
+    { href: '/admin-dashboard',  label: 'Dashboard',    Icon: LayoutDashboard },
     { href: '/admin/vendors',    label: 'Vendors',       Icon: Users           },
     { href: '/admin/listings',   label: 'Listings',      Icon: Package         },
     { href: '/admin/bookings',   label: 'Bookings',      Icon: Calendar        },
