@@ -1,4 +1,4 @@
-// app/(admin)/admin-dashboard/page.tsx
+// app/(admin)/admin/dashboard/page.tsx
 export const dynamic = 'force-dynamic';
 
 import { cookies }       from 'next/headers';

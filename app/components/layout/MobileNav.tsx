@@ -69,7 +69,7 @@ const navigationByRole: Record<UserRole, NavItem[]> = {
   ],
   admin: [
     {
-      href: '/admin-dashboard',
+      href: '/admin/dashboard',
       label: 'Dashboard',
       icon: <LayoutDashboard size={20} />,
     },

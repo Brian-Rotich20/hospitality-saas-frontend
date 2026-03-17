@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const VENDOR_PREFIX  = '/vendor';
-const ADMIN_PREFIXES = ['/admin', '/admin/dashboard', '/admin-analytics'];
+const ADMIN_PREFIXES = ['/admin', '/admin/dashboard', '/admin/analytics'];
 const AUTH_PATHS     = ['/auth/login', '/auth/register', '/auth/register-vendor'];
 
 export function middleware(request: NextRequest) {
