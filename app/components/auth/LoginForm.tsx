@@ -6,8 +6,9 @@ import { useAuth } from '../../lib/auth/auth.context';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useSearchParams } from 'next/navigation';
 
 const loginSchema = z.object({
   email:    z.string().min(1, 'Email is required').email('Invalid email address'),
@@ -18,6 +19,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const { login, isLoading } = useAuth();
   const [showPass, setShowPass] = useState(false);
+  const searchParams = useSearchParams();
+  const message = searchParams.get('message')
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -34,7 +37,16 @@ export function LoginForm() {
   return (
     <div className="min-h-screen bg-[#2D3B45] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-
+        
+          {/* Message */}
+        {message === 'application-submitted' && (
+          <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5 mb-4">
+            <CheckCircle size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-emerald-700 leading-relaxed">
+              <strong>Application submitted!</strong> Sign in once approved by our team.
+            </p>
+          </div>
+        )}
         {/* Logo */}
         <div className="text-center mb-6">
           <span className="text-white font-black text-xl tracking-tight">

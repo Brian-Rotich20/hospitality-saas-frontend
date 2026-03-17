@@ -1,22 +1,17 @@
 'use client';
 
-// Vendor registration is a TWO-STEP flow:
-// Step 1: Create account (same as customer) via /auth/register
-// Step 2: Apply as vendor via /vendors/apply with business details
-// This is because backend locks /auth/register to role:'customer' only.
-
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '../../lib/auth/auth.context';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { User, Mail, Phone, Lock, Building2, Eye, EyeOff, MapPin, ChevronRight } from 'lucide-react';
-import { vendorsService } from '../../lib/api/endpoints';
 import toast from 'react-hot-toast';
 
-// ── Step 1: Account details ───────────────────────────────────────────────────
+const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
+
+// ── Schemas ───────────────────────────────────────────────────────────────────
 const accountSchema = z.object({
   fullName: z.string().min(2, 'At least 2 characters'),
   email:    z.string().min(1, 'Required').email('Invalid email'),
@@ -30,7 +25,6 @@ const accountSchema = z.object({
   message: 'Passwords do not match', path: ['confirmPassword'],
 });
 
-// ── Step 2: Business details ──────────────────────────────────────────────────
 const businessSchema = z.object({
   businessName:   z.string().min(3, 'At least 3 characters'),
   description:    z.string().min(20, 'At least 20 characters').max(500),
@@ -57,51 +51,97 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function RegisterVendorForm() {
-  const { register: registerUser, isLoading } = useAuth();
-  const router  = useRouter();
+  const router = useRouter();
+
   const [step,        setStep]        = useState<1 | 2>(1);
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [submitting,  setSubmitting]  = useState(false);
+  const [loading,     setLoading]     = useState(false);
 
-  const accountForm = useForm<AccountData>({ resolver: zodResolver(accountSchema) });
+  // ✅ Store token in memory between steps — NOT in auth context
+  // so auth context doesn't redirect us to /store after register
+  const [tempToken, setTempToken] = useState<string | null>(null);
+
+  const accountForm  = useForm<AccountData>({  resolver: zodResolver(accountSchema)  });
   const businessForm = useForm<BusinessData>({ resolver: zodResolver(businessSchema) });
 
-  // ── Step 1: Register account then move to step 2 ──────────────────────────
+  // ── Step 1: Register account — call API directly, skip auth context redirect ──
   const onAccountSubmit = async (data: AccountData) => {
+    setLoading(true);
     try {
-      // ✅ Register as customer first (backend enforces this)
-      await registerUser({
-        fullName: data.fullName,
-        email:    data.email,
-        password: data.password,
-        phone:    data.phone,
+      const res = await fetch(`${API}/auth/register`, {
+        method:      'POST',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify({
+          fullName: data.fullName,
+          email:    data.email,
+          password: data.password,
+          phone:    data.phone,
+        }),
       });
-      // After register, auth context sets the token — move to step 2
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || json.message || 'Registration failed');
+      }
+
+      const accessToken = json.data?.accessToken;
+      if (!accessToken) throw new Error('No token received');
+
+      // ✅ Store token for step 2 use — don't go through auth context
+      // auth context would redirect to /store since role is 'customer'
+      setTempToken(accessToken);
       setStep(2);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+      toast.error(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ── Step 2: Apply as vendor ───────────────────────────────────────────────
+  // ── Step 2: Apply as vendor using the temp token ──────────────────────────
   const onBusinessSubmit = async (data: BusinessData) => {
-    setSubmitting(true);
+    if (!tempToken) {
+      toast.error('Session expired. Please go back and try again.');
+      setStep(1);
+      return;
+    }
+
+    setLoading(true);
     try {
-      await vendorsService.apply({
-        businessName:   data.businessName,
-        description:    data.description,
-        phoneNumber:    data.phoneNumber,
-        whatsappNumber: data.whatsappNumber || undefined,
-        city:           data.city,
-        county:         data.county,
+      const res = await fetch(`${API}/vendors/apply`, {
+        method:  'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization:  `Bearer ${tempToken}`, // ✅ use temp token directly
+        },
+        body: JSON.stringify({
+          businessName:   data.businessName,
+          description:    data.description,
+          phoneNumber:    data.phoneNumber,
+          whatsappNumber: data.whatsappNumber || undefined,
+          city:           data.city,
+          county:         data.county || undefined,
+        }),
       });
-      toast.success('Application submitted! We\'ll review and approve within 24 hours.');
-      router.push('/store');
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || json.message || 'Application failed');
+      }
+
+      toast.success('Application submitted! You\'ll be notified once reviewed.');
+
+      // ✅ Now redirect to login so they get a fresh session
+      // (their role is still 'customer' until admin approves)
+      router.push('/auth/login?message=application-submitted');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to submit application.');
+      toast.error(err instanceof Error ? err.message : 'Failed to submit application');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -132,7 +172,7 @@ export function RegisterVendorForm() {
 
         <div className="bg-white rounded-2xl p-6 shadow-xl">
 
-          {/* ── STEP 1: Account ── */}
+          {/* ── STEP 1 ── */}
           {step === 1 && (
             <>
               <h2 className="text-base font-bold text-gray-900 mb-1">Become a vendor</h2>
@@ -143,30 +183,39 @@ export function RegisterVendorForm() {
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Full Name</label>
                   <div className="relative">
                     <User className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                    <input type="text" placeholder="John Doe" {...accountForm.register('fullName')} disabled={isLoading}
+                    <input type="text" placeholder="John Doe"
+                      {...accountForm.register('fullName')} disabled={loading}
                       className={inp(!!accountForm.formState.errors.fullName)} />
                   </div>
-                  {accountForm.formState.errors.fullName && <p className="text-red-500 text-[10px] mt-0.5">{accountForm.formState.errors.fullName.message}</p>}
+                  {accountForm.formState.errors.fullName && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{accountForm.formState.errors.fullName.message}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                    <input type="email" placeholder="vendor@business.com" {...accountForm.register('email')} disabled={isLoading}
+                    <input type="email" placeholder="vendor@business.com"
+                      {...accountForm.register('email')} disabled={loading}
                       className={inp(!!accountForm.formState.errors.email)} />
                   </div>
-                  {accountForm.formState.errors.email && <p className="text-red-500 text-[10px] mt-0.5">{accountForm.formState.errors.email.message}</p>}
+                  {accountForm.formState.errors.email && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{accountForm.formState.errors.email.message}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Phone</label>
                   <div className="relative">
                     <Phone className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                    <input type="tel" placeholder="+254 712 345 678" {...accountForm.register('phone')} disabled={isLoading}
+                    <input type="tel" placeholder="+254 712 345 678"
+                      {...accountForm.register('phone')} disabled={loading}
                       className={inp(!!accountForm.formState.errors.phone)} />
                   </div>
-                  {accountForm.formState.errors.phone && <p className="text-red-500 text-[10px] mt-0.5">{accountForm.formState.errors.phone.message}</p>}
+                  {accountForm.formState.errors.phone && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{accountForm.formState.errors.phone.message}</p>
+                  )}
                 </div>
 
                 <div>
@@ -174,7 +223,7 @@ export function RegisterVendorForm() {
                   <div className="relative">
                     <Lock className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
                     <input type={showPass ? 'text' : 'password'} placeholder="••••••••"
-                      {...accountForm.register('password')} disabled={isLoading}
+                      {...accountForm.register('password')} disabled={loading}
                       className={`${inp(!!accountForm.formState.errors.password)} pr-8`} />
                     <button type="button" onClick={() => setShowPass(v => !v)}
                       className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500">
@@ -191,20 +240,22 @@ export function RegisterVendorForm() {
                   <div className="relative">
                     <Lock className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
                     <input type={showConfirm ? 'text' : 'password'} placeholder="••••••••"
-                      {...accountForm.register('confirmPassword')} disabled={isLoading}
+                      {...accountForm.register('confirmPassword')} disabled={loading}
                       className={`${inp(!!accountForm.formState.errors.confirmPassword)} pr-8`} />
                     <button type="button" onClick={() => setShowConfirm(v => !v)}
                       className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500">
                       {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
-                  {accountForm.formState.errors.confirmPassword && <p className="text-red-500 text-[10px] mt-0.5">{accountForm.formState.errors.confirmPassword.message}</p>}
+                  {accountForm.formState.errors.confirmPassword && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{accountForm.formState.errors.confirmPassword.message}</p>
+                  )}
                 </div>
 
-                <button type="submit" disabled={isLoading}
+                <button type="submit" disabled={loading}
                   className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold
                     transition disabled:opacity-50 flex items-center justify-center gap-2 mt-1">
-                  {isLoading
+                  {loading
                     ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>
                     : <>Continue <ChevronRight size={13} /></>}
                 </button>
@@ -212,49 +263,60 @@ export function RegisterVendorForm() {
             </>
           )}
 
-          {/* ── STEP 2: Business details ── */}
+          {/* ── STEP 2 ── */}
           {step === 2 && (
             <>
               <h2 className="text-base font-bold text-gray-900 mb-1">Business details</h2>
               <p className="text-xs text-gray-400 mb-4">Tell us about your business</p>
 
               <form onSubmit={businessForm.handleSubmit(onBusinessSubmit)} className="space-y-3">
-
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Business Name</label>
                   <div className="relative">
                     <Building2 className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                    <input type="text" placeholder="Your Business Name" {...businessForm.register('businessName')} disabled={submitting}
+                    <input type="text" placeholder="Your Business Name"
+                      {...businessForm.register('businessName')} disabled={loading}
                       className={inp(!!businessForm.formState.errors.businessName)} />
                   </div>
-                  {businessForm.formState.errors.businessName && <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.businessName.message}</p>}
+                  {businessForm.formState.errors.businessName && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.businessName.message}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
-                  <textarea placeholder="Describe your business and services..." {...businessForm.register('description')} disabled={submitting} rows={3}
+                  <textarea placeholder="Describe your business and services..."
+                    {...businessForm.register('description')} disabled={loading} rows={3}
                     className={`w-full px-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300
                       focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition resize-none
                       ${businessForm.formState.errors.description ? 'border-red-400' : 'border-gray-200'}`} />
-                  {businessForm.formState.errors.description && <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.description.message}</p>}
+                  {businessForm.formState.errors.description && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.description.message}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Business Phone</label>
                   <div className="relative">
                     <Phone className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                    <input type="tel" placeholder="+254 712 345 678" {...businessForm.register('phoneNumber')} disabled={submitting}
+                    <input type="tel" placeholder="+254 712 345 678"
+                      {...businessForm.register('phoneNumber')} disabled={loading}
                       className={inp(!!businessForm.formState.errors.phoneNumber)} />
                   </div>
-                  {businessForm.formState.errors.phoneNumber && <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.phoneNumber.message}</p>}
+                  {businessForm.formState.errors.phoneNumber && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.phoneNumber.message}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">WhatsApp Number <span className="text-gray-300">(optional)</span></label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    WhatsApp <span className="text-gray-300 font-normal">(optional)</span>
+                  </label>
                   <div className="relative">
                     <Phone className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                    <input type="tel" placeholder="+254 712 345 678" {...businessForm.register('whatsappNumber')} disabled={submitting}
-                      className={inp(!!businessForm.formState.errors.whatsappNumber)} />
+                    <input type="tel" placeholder="+254 712 345 678"
+                      {...businessForm.register('whatsappNumber')} disabled={loading}
+                      className={inp(false)} />
                   </div>
                 </div>
 
@@ -264,30 +326,37 @@ export function RegisterVendorForm() {
                   <label className="block text-xs font-semibold text-gray-600 mb-1">City</label>
                   <div className="relative">
                     <MapPin className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                    <input type="text" placeholder="Nairobi" {...businessForm.register('city')} disabled={submitting}
+                    <input type="text" placeholder="Nairobi"
+                      {...businessForm.register('city')} disabled={loading}
                       className={inp(!!businessForm.formState.errors.city)} />
                   </div>
-                  {businessForm.formState.errors.city && <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.city.message}</p>}
+                  {businessForm.formState.errors.city && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.city.message}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">County <span className="text-gray-300">(optional)</span></label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    County <span className="text-gray-300 font-normal">(optional)</span>
+                  </label>
                   <div className="relative">
                     <MapPin className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                    <input type="text" placeholder="Nairobi County" {...businessForm.register('county')} disabled={submitting}
+                    <input type="text" placeholder="Nairobi County"
+                      {...businessForm.register('county')} disabled={loading}
                       className={inp(false)} />
                   </div>
                 </div>
 
                 <div className="flex gap-2 pt-1">
-                  <button type="button" onClick={() => setStep(1)} disabled={submitting}
-                    className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-bold hover:border-gray-400 transition">
+                  <button type="button" onClick={() => setStep(1)} disabled={loading}
+                    className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs
+                      font-bold hover:border-gray-400 transition disabled:opacity-50">
                     Back
                   </button>
-                  <button type="submit" disabled={submitting}
+                  <button type="submit" disabled={loading}
                     className="flex-1 py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold
                       transition disabled:opacity-50 flex items-center justify-center gap-2">
-                    {submitting
+                    {loading
                       ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting...</>
                       : 'Submit Application'}
                   </button>
