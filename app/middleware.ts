@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const VENDOR_PREFIX  = '/vendor';
-const ADMIN_PREFIXES = ['/admin', '/admin-dashboard', '/admin-analytics'];
+const ADMIN_PREFIXES = ['/admin', '/admin/dashboard', '/admin-analytics'];
 const AUTH_PATHS     = ['/auth/login', '/auth/register', '/auth/register-vendor'];
 
 export function middleware(request: NextRequest) {
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
   // ── Auth pages — skip if already logged in ────────────────────────────────
   if (AUTH_PATHS.some(p => pathname.startsWith(p))) {
     if (role === 'vendor')   return NextResponse.redirect(new URL('/vendor/dashboard',   request.url));
-    if (role === 'admin')    return NextResponse.redirect(new URL('/admin-dashboard',     request.url));
+    if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard',     request.url));
     if (role === 'customer') return NextResponse.redirect(new URL('/store',               request.url));
   }
 
@@ -37,7 +37,7 @@ export const config = {
   matcher: [
     '/vendor/:path*',
     '/admin/:path*',
-    '/admin-dashboard/:path*',
+    '/admin/dashboard/:path*',
     '/admin-analytics/:path*',
     '/auth/:path*',
   ],

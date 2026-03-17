@@ -5,8 +5,8 @@
 'use client';
 
 import { useState }      from 'react';
-import { Sidebar }       from '../components/layout/Sidebar';
-import { AdminTopbar }   from '../components/admin/AdminTopbar';
+import { Sidebar }       from '../../components/layout/Sidebar';
+import { AdminTopbar }   from '../../components/admin/AdminTopbar';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);

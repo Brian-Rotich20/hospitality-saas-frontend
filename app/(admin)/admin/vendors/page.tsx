@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { cookies }                from 'next/headers';
-import { VendorManagementClient } from '../../components/admin/VendorManagementClient';
+import { VendorManagementClient } from '../../../components/admin/VendorManagementClient';
 import { AlertCircle }            from 'lucide-react';
 
 async function fetchVendors(token: string) {
