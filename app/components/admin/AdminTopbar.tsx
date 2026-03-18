@@ -1,4 +1,4 @@
-// components/admin/AdminTopbar.tsx
+// components/admin/AdminTopbar.tsx — update PAGE_TITLES to match new URLs
 'use client';
 
 import { usePathname } from 'next/navigation';
