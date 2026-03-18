@@ -2,8 +2,8 @@
 export const dynamic = 'force-dynamic';
 
 import { cookies }                from 'next/headers';
-import { serverFetch }            from '@/lib/api/server';
-import { VendorManagementClient } from '@/components/admin/VendorManagementClient';
+import { serverFetch }            from '../../../lib/api/server';
+import { VendorManagementClient } from '../../../components/admin/VendorManagementClient';
 import { AlertCircle }            from 'lucide-react';
 
 export default async function AdminVendorsPage() {
@@ -13,7 +13,7 @@ export default async function AdminVendorsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Vendor Management</h1>
+        <h1 className="text-2xl font-black text-gray-800 tracking-tight mb-1">Vendor Management</h1>
         <p className="text-sm text-gray-500">Review applications, approve or reject vendors.</p>
       </div>
 
