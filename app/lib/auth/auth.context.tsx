@@ -47,16 +47,18 @@ const ROLE_REDIRECT: Record<UserRole, string> = {
 
 // ── Cookie helper — works on both localhost and production (https) ────────────
 function setCookie(name: string, value: string, maxAge: number) {
-  const isSecure  = window.location.protocol === 'https:';
-  const sameSite  = isSecure ? 'Strict' : 'Lax';
+  const isSecure   = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const sameSite   = isSecure ? 'Strict' : 'Lax';
   const securePart = isSecure ? '; Secure' : '';
-  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=${sameSite}${securePart}`;
+  document.cookie  = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=${sameSite}${securePart}`;
 }
-
+ 
 function clearCookie(name: string) {
+  // Clear with ALL possible path/domain combinations to ensure removal
   document.cookie = `${name}=; path=/; max-age=0`;
+  document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
+  document.cookie = `${name}=; path=/; max-age=0; SameSite=None; Secure`;
 }
-
 // ── Token parser ──────────────────────────────────────────────────────────────
 
 function parseToken(token: string): User | null {

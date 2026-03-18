@@ -6,7 +6,7 @@ export const API_ENDPOINTS = {
     REGISTER:        '/auth/register',
     LOGOUT:          '/auth/logout',
     LOGOUT_ALL:      '/auth/logout-all',
-    REFRESH:         '/auth/refresh',        // ✅ fixed — was /auth/refresh-token
+    REFRESH:         '/auth/refresh',         
     ME:              '/auth/me',
   },
 

@@ -33,7 +33,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: '/vendor/settings/profile',  label: 'Settings',     Icon: Settings        },
   ],
   admin: [
-    { href: '/admin-dashboard',  label: 'Dashboard',    Icon: LayoutDashboard },
+    { href: '/admin/dashboard',  label: 'Dashboard',    Icon: LayoutDashboard },
     { href: '/admin/vendors',    label: 'Vendors',       Icon: Users           },
     { href: '/admin/listings',   label: 'Listings',      Icon: Package         },
     { href: '/admin/bookings',   label: 'Bookings',      Icon: Calendar        },
@@ -71,7 +71,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       <div className="flex items-center justify-between px-5 py-5 border-b border-gray-100">
         <Link href={role === 'vendor' ? '/vendor/dashboard' : role === 'admin' ? '/admin/dashboard' : '/store'}
           className="text-lg font-black tracking-tight text-[#2D3B45] no-underline">
-          link<span className="text-[#F5C842]">mall</span>
+          Link<span className="text-[#F5C842]">Mart</span>
         </Link>
         {/* Mobile close button */}
         <button onClick={onMobileClose}
