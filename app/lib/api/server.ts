@@ -1,15 +1,5 @@
 // lib/api/server.ts
-// ✅ SERVER-ONLY — never import this in client components
-// Use this for ALL server-side fetch() calls in Server Components
 
-/**
- * Returns the direct backend URL for server-side fetches.
- * 
- * WHY: NEXT_PUBLIC_API_URL = '/api' only works in the browser
- * where Next.js rewrites proxy /api/* → Render backend.
- * On the server, /api/* hits Next.js itself → 404.
- * Server components must call the backend directly.
- */
 export function getServerApiUrl(): string {
   const url = process.env.BACKEND_URL;
   if (!url) {
