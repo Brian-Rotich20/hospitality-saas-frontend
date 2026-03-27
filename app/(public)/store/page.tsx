@@ -10,7 +10,7 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title:       'LinkMall — Browse Venues & Services',
+  title:       'LinkMart — Browse Venues & Services',
   description: 'Discover and book verified venues, caterers, and hospitality vendors across Kenya.',
 };
 

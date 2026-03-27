@@ -22,7 +22,6 @@ export const API_ENDPOINTS = {
     MY_LISTINGS:     '/me',
   },
 
-  // ✅ New — dynamic categories from DB
   CATEGORIES: {
     GET_ALL:         '/categories',
     GET_TREE:        '/categories/tree',

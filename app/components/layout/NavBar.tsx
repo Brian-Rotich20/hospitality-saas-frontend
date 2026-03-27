@@ -47,7 +47,7 @@ export function NavBar() {
             <span className="text-[#F5C842] font-black text-xs">LM</span>
           </div>
           <span className="text-base font-black text-[#2D3B45] tracking-tight hidden sm:block">
-            link<span className="text-[#F5C842]">mall</span>
+            Link<span className="text-[#F5C842]">Mart</span>
           </span>
         </Link>
 

@@ -93,7 +93,7 @@ export async function generateMetadata({ params }: Props) {
   const listing = await fetchListing(id);
   if (!listing) return { title: 'Listing not found' };
   return {
-    title:       `${listing.title} | LinkMall`,
+    title:       `${listing.title} | LinkMart`,
     description: listing.description?.slice(0, 155),
     openGraph:   { images: listing.photos?.[0] ? [listing.photos[0]] : [] },
   };

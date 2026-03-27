@@ -51,7 +51,7 @@ export function BookingCard({
 
   const whatsappUrl = whatsapp
     ? `https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(
-        `Hi, I'm interested in booking your listing on LinkMall. Can you share more details?`
+        `Hi, I'm interested in booking your listing on LinkMart. Can you share more details?`
       )}`
     : null;
 

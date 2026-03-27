@@ -53,6 +53,7 @@ export async function serverFetch<T = any>(
       let msg = `${res.status} ${res.statusText}`;
       try {
         const json = JSON.parse(text);
+         console.error(`[serverFetch] error body:`, JSON.stringify(json, null, 2));
         msg = json.error ?? json.message ?? msg;
       } catch { /* not JSON */ }
       console.error(`[serverFetch] ${url} → ${res.status}:`, msg);

@@ -44,15 +44,7 @@ export default async function AdminVendorsPage() {
         </p>
       </div>
 
-      {error && (
-        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-4 mb-5">
-          <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-bold text-red-700 mb-0.5">Could not load vendors</p>
-            <p className="text-xs text-red-600 font-mono">{error}</p>
-          </div>
-        </div>
-      )}
+
 
       <VendorManagementClient initialVendors={merged} />
     </div>

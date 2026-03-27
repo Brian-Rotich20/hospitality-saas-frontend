@@ -1,5 +1,5 @@
 'use client';
-
+import { apiClient } from '../../lib/api/client';
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
@@ -97,9 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(accessToken);
     setUser(parsed);
 
-    // ✅ user_role: 7 days — read by middleware for route protection
+    apiClient.setAccessToken(accessToken); // Update API client with new token, sync to axios client
     setCookie('user_role',    parsed.role,  7 * 24 * 60 * 60);
-    // ✅ access_token: 15 min — read by Server Components for data fetching
     setCookie('access_token', accessToken,  15 * 60);
 
     return parsed;
@@ -110,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     accessTokenRef.current = null;
     setToken(null);
     setUser(null);
+    apiClient.setAccessToken(null); // Clear token from API client, sync to axios client
     clearCookie('user_role');
     clearCookie('access_token');
   }, []);
@@ -120,8 +120,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method:      'POST',
         credentials: 'include',
-        // ✅ No Content-Type header — body is empty, Fastify rejects
-        // application/json with empty body (FST_ERR_CTP_EMPTY_JSON_BODY)
       });
 
       if (!res.ok) return null;
@@ -136,16 +134,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   }, [setAuth]);
+  useEffect(() => {  //Only attempt refresh if we have a user_role cookie (i.e. user was logged in)
+    const hasSession = document.cookie.includes('user_role=');
+    if(hasSession){
+      attemptRefresh().finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+    
+  }, []); 
 
-  // ── Init — on every page load/refresh, try silent refresh ─────────────────
-  // This is the ONLY place we recover session after a refresh.
-  // Middleware lets the request through based on user_role cookie.
-  // Then here we restore the in-memory access token via refresh endpoint.
-  useEffect(() => {
-    attemptRefresh().finally(() => setLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Auto-refresh 1 minute before access token expires (every 14 min) ─────
+ 
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => {
@@ -153,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, 14 * 60 * 1000); // 14 minutes
     return () => clearInterval(interval);
   }, [user, attemptRefresh]);
+
 
   // ── login ─────────────────────────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
@@ -233,6 +233,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearAuth();
       router.push('/auth/login');
     }
+  }, [attemptRefresh, clearAuth, router]);
+
+  useEffect(() => {
+    apiClient.setRefreshHandler(async () => {
+      const result = await attemptRefresh();
+      if(!result){
+        clearAuth();
+      router.push('/auth/login');
+      throw new Error('Session expired');
+      }
+    })
   }, [attemptRefresh, clearAuth, router]);
 
   return (

@@ -5,7 +5,7 @@ import { useRouter }        from 'next/navigation';
 import { useForm }          from 'react-hook-form';
 import { zodResolver }      from '@hookform/resolvers/zod';
 import { z }                from 'zod';
-import { useAuth }          from '../../lib/auth/auth.context';   // ✅ added
+import { useAuth }          from '../../lib/auth/auth.context';  
 import { listingsService }  from '../../lib/api/endpoints';
 import type { Category }    from '../../lib/types/listing';
 import {
@@ -58,7 +58,7 @@ const MAX_PHOTOS   = 10;
 const MAX_SIZE_MB  = 5;
 const ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-// ── Shared styles ─────────────────────────────────────────────────────────────
+// ── Shared styles 
 const inp = (err?: boolean) =>
   `w-full px-3 py-2.5 text-sm rounded-xl border bg-white text-gray-900 placeholder-gray-400
    focus:outline-none focus:ring-2 focus:ring-[#2D3B45] focus:border-transparent transition
@@ -85,7 +85,7 @@ function ErrorMsg({ msg }: { msg?: string }) {
   return msg ? <p className="text-red-500 text-[11px] mt-1">{msg}</p> : null;
 }
 
-// ── Amenities picker ──────────────────────────────────────────────────────────
+// ── Amenities picker 
 function AmenitiesPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
   const [custom, setCustom] = useState('');
 
@@ -138,7 +138,7 @@ function AmenitiesPicker({ value, onChange }: { value: string[]; onChange: (v: s
   );
 }
 
-// ── Photo uploader ────────────────────────────────────────────────────────────
+// ── Photo uploader 
 interface UploadedPhoto {
   localId:   string;
   url:       string;
@@ -146,7 +146,6 @@ interface UploadedPhoto {
   error?:    string;
 }
 
-// ✅ token prop added
 function PhotoUploader({
   value, onChange, token,
 }: {
@@ -174,7 +173,6 @@ function PhotoUploader({
         method:  'POST',
         body:    formData,
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        // ⚠️ No Content-Type — browser sets multipart/form-data boundary automatically
       });
 
       if (!res.ok) {
