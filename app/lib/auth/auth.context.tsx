@@ -1,11 +1,13 @@
 'use client';
+
 import { apiClient } from '../../lib/api/client';
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, {
+  createContext, useContext, useEffect,
+  useState, useCallback, useRef
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import toast from 'react-hot-toast';
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 type UserRole = 'customer' | 'vendor' | 'admin';
 
@@ -35,8 +37,6 @@ interface AuthContextType {
   refreshToken:    () => Promise<void>;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 const ROLE_REDIRECT: Record<UserRole, string> = {
@@ -45,21 +45,21 @@ const ROLE_REDIRECT: Record<UserRole, string> = {
   customer: '/store',
 };
 
-// ── Cookie helper — works on both localhost and production (https) ────────────
 function setCookie(name: string, value: string, maxAge: number) {
   const isSecure   = typeof window !== 'undefined' && window.location.protocol === 'https:';
-  const sameSite   = isSecure ? 'Strict' : 'Lax';
+  const sameSite   = isSecure ? 'None' : 'Lax';
   const securePart = isSecure ? '; Secure' : '';
   document.cookie  = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=${sameSite}${securePart}`;
 }
- 
+
 function clearCookie(name: string) {
-  // Clear with ALL possible path/domain combinations to ensure removal
-  document.cookie = `${name}=; path=/; max-age=0`;
-  document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
-  document.cookie = `${name}=; path=/; max-age=0; SameSite=None; Secure`;
+  const isSecure   = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const sameSite   = isSecure ? 'None' : 'Lax';
+  const securePart = isSecure ? '; Secure' : '';
+  document.cookie  = `${name}=; path=/; max-age=0; SameSite=${sameSite}${securePart}`;
+  document.cookie  = `${name}=; path=/; max-age=0; SameSite=Lax`;
+  document.cookie  = `${name}=; path=/; max-age=0; SameSite=None; Secure`;
 }
-// ── Token parser ──────────────────────────────────────────────────────────────
 
 function parseToken(token: string): User | null {
   try {
@@ -77,18 +77,19 @@ function parseToken(token: string): User | null {
   }
 }
 
-// ── Context ───────────────────────────────────────────────────────────────────
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const accessTokenRef          = useRef<string | null>(null);
+  const accessTokenRef    = useRef<string | null>(null);
+  const isRefreshingRef   = useRef(false);           // ✅ dedupe concurrent refresh calls
+  const intervalRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const [user,      setUser]    = useState<User | null>(null);
   const [token,     setToken]   = useState<string | null>(null);
   const [isLoading, setLoading] = useState(true);
   const router = useRouter();
 
-  // ── Set auth state ────────────────────────────────────────────────────────
+  // ── setAuth ─────────────────────────────────────────────────────────────
   const setAuth = useCallback((accessToken: string): User => {
     const parsed = parseToken(accessToken);
     if (!parsed) throw new Error('Invalid token received from server');
@@ -96,26 +97,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     accessTokenRef.current = accessToken;
     setToken(accessToken);
     setUser(parsed);
-
-    apiClient.setAccessToken(accessToken); // Update API client with new token, sync to axios client
-    setCookie('user_role',    parsed.role,  7 * 24 * 60 * 60);
-    setCookie('access_token', accessToken,  15 * 60);
+    apiClient.setAccessToken(accessToken);
+    setCookie('user_role',    parsed.role, 7 * 24 * 60 * 60);
+    setCookie('access_token', accessToken, 15 * 60);
 
     return parsed;
   }, []);
 
-  // ── Clear auth state ──────────────────────────────────────────────────────
+  // ── clearAuth ────────────────────────────────────────────────────────────
   const clearAuth = useCallback(() => {
     accessTokenRef.current = null;
     setToken(null);
     setUser(null);
-    apiClient.setAccessToken(null); // Clear token from API client, sync to axios client
+    apiClient.setAccessToken(null);
     clearCookie('user_role');
     clearCookie('access_token');
+
+    // ✅ stop interval immediately on logout
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, []);
 
-  // ── Silent refresh ────────────────────────────────────────────────────────
+  // ── attemptRefresh ───────────────────────────────────────────────────────
   const attemptRefresh = useCallback(async (): Promise<string | null> => {
+    // ✅ CRITICAL: prevent two simultaneous refresh calls hitting Redis
+    if (isRefreshingRef.current) {
+      // Wait for the in-flight refresh to finish instead of firing a second one
+      return new Promise(resolve => {
+        const check = setInterval(() => {
+          if (!isRefreshingRef.current) {
+            clearInterval(check);
+            resolve(accessTokenRef.current);
+          }
+        }, 100);
+      });
+    }
+
+    isRefreshingRef.current = true;
     try {
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method:      'POST',
@@ -128,33 +148,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const accessToken = json.data?.accessToken;
       if (!accessToken) return null;
 
-      setAuth(accessToken); // ✅ also resets access_token cookie
+      setAuth(accessToken);
       return accessToken;
     } catch {
       return null;
+    } finally {
+      isRefreshingRef.current = false;  // ✅ always release the lock
     }
   }, [setAuth]);
-  useEffect(() => {  //Only attempt refresh if we have a user_role cookie (i.e. user was logged in)
+
+  // ── Init: attempt refresh only once, only if session exists ─────────────
+  useEffect(() => {
     const hasSession = document.cookie.includes('user_role=');
-    if(hasSession){
+    if (hasSession) {
       attemptRefresh().finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-    
-  }, []); 
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
- 
+  // ── Start auto-refresh interval ONLY after confirmed login ───────────────
+  // ✅ Depends on `user` — interval only exists while logged in
+  // ✅ Uses ref so interval callback always has latest attemptRefresh
+  const attemptRefreshRef = useRef(attemptRefresh);
   useEffect(() => {
-    if (!user) return;
-    const interval = setInterval(() => {
-      attemptRefresh();
-    }, 14 * 60 * 1000); // 14 minutes
-    return () => clearInterval(interval);
-  }, [user, attemptRefresh]);
+    attemptRefreshRef.current = attemptRefresh;
+  }, [attemptRefresh]);
 
+  useEffect(() => {
+    if (!user) {
+      // Not logged in — ensure no interval is running
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
 
-  // ── login ─────────────────────────────────────────────────────────────────
+    // User just logged in — start the interval
+    intervalRef.current = setInterval(() => {
+      attemptRefreshRef.current();
+    }, 14 * 60 * 1000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [user?.userId]); // ✅ only restarts if the actual user changes, not on every render
+
+  // ── Register refresh handler on apiClient ────────────────────────────────
+  useEffect(() => {
+    apiClient.setRefreshHandler(async () => {
+      const result = await attemptRefresh();
+      if (!result) {
+        clearAuth();
+        router.push('/auth/login');
+        throw new Error('Session expired');
+      }
+    });
+  }, [attemptRefresh, clearAuth, router]);
+
+  // ── login ────────────────────────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
@@ -182,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [router, setAuth]);
 
-  // ── register ──────────────────────────────────────────────────────────────
+  // ── register ─────────────────────────────────────────────────────────────
   const register = useCallback(async (data: RegisterData) => {
     setLoading(true);
     try {
@@ -226,24 +282,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [router, clearAuth]);
 
-  // ── refreshToken (called by api client on 401) ────────────────────────────
+  // ── refreshToken (public API for apiClient 401 handler) ──────────────────
   const refreshToken = useCallback(async () => {
     const result = await attemptRefresh();
     if (!result) {
       clearAuth();
       router.push('/auth/login');
     }
-  }, [attemptRefresh, clearAuth, router]);
-
-  useEffect(() => {
-    apiClient.setRefreshHandler(async () => {
-      const result = await attemptRefresh();
-      if(!result){
-        clearAuth();
-      router.push('/auth/login');
-      throw new Error('Session expired');
-      }
-    })
   }, [attemptRefresh, clearAuth, router]);
 
   return (

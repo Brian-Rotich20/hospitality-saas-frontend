@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtDecode }                 from 'jwt-decode';
 
+
 interface JWTPayload {
   userId: string;
   role:   'customer' | 'vendor' | 'admin';
@@ -25,6 +26,7 @@ function getRole(req: NextRequest): string | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const role         = getRole(request);
+
 
   // ── /admin/* — admin only ─────────────────────────────────────────────────
   if (pathname.startsWith('/admin')) {

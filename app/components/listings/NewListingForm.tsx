@@ -5,7 +5,7 @@ import { useRouter }        from 'next/navigation';
 import { useForm }          from 'react-hook-form';
 import { zodResolver }      from '@hookform/resolvers/zod';
 import { z }                from 'zod';
-import { useAuth }          from '../../lib/auth/auth.context';  
+import { useAuth }          from '../../lib/auth/auth.context';
 import { listingsService }  from '../../lib/api/endpoints';
 import type { Category }    from '../../lib/types/listing';
 import {
@@ -39,6 +39,8 @@ const schema = z.object({
 }, { message: 'Price is required for this pricing type', path: ['price'] });
 
 type FormData = z.infer<typeof schema>;
+
+const saveAsRef = useRef<'draft' | 'active'>('draft');
 
 const PRICING_TYPES = [
   { value: 'per_hour',   label: 'Per Hour'         },
@@ -320,7 +322,7 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
   const [amenities,   setAmenities] = useState<string[]>([]);
   const [photos,      setPhotos]    = useState<string[]>([]);
   const [saving,      setSaving]    = useState(false);
-  const [saveAs,      setSaveAs]    = useState<'draft' | 'active'>('draft');
+  // const [saveAs,      setSaveAs]    = useState<'draft' | 'active'>('draft');
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -350,11 +352,11 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
       const res = await listingsService.create(payload);
       const id  = res.data?.id ?? (res.data as any)?.data?.id;
 
-      if (saveAs === 'active' && id) {
-        await listingsService.updateStatus(id, 'active').catch(() => {});
-      }
+     if (saveAsRef.current === 'active' && id) {  // ✅ ref — always current value
+      await listingsService.updateStatus(id, 'active').catch(() => {});
+    }
 
-      toast.success(saveAs === 'active' ? 'Listing published!' : 'Listing saved as draft');
+      toast.success(saveAsRef.current === 'active' ? 'Listing published!' : 'Listing saved as draft');
       router.push('/vendor/listings');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create listing');
@@ -539,15 +541,21 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
 
       {/* Submit */}
       <div className="flex gap-3 pb-8">
-        <button type="submit" disabled={saving} onClick={() => setSaveAs('draft')}
+        <button
+          type="submit"
+          disabled={saving}
+          onClick={() => { saveAsRef.current = 'draft'; }}
           className="flex-1 py-3 border-2 border-[#2D3B45] text-[#2D3B45] rounded-xl text-sm font-black
             hover:bg-[#2D3B45]/5 transition disabled:opacity-50">
-          {saving && saveAs === 'draft' ? 'Saving...' : 'Save as Draft'}
+          {saving && saveAsRef.current === 'draft' ? 'Saving...' : 'Save as Draft'}
         </button>
-        <button type="submit" disabled={saving} onClick={() => setSaveAs('active')}
+        <button
+          type="submit"
+          disabled={saving}
+          onClick={() => { saveAsRef.current = 'active'; }}
           className="flex-1 py-3 bg-[#2D3B45] text-white rounded-xl text-sm font-black
             hover:bg-[#3a4d5a] transition disabled:opacity-50 flex items-center justify-center gap-2">
-          {saving && saveAs === 'active'
+          {saving && saveAsRef.current === 'active'
             ? 'Publishing...'
             : <><span>Publish Listing</span><ChevronRight size={15} /></>}
         </button>
