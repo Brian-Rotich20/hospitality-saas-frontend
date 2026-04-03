@@ -43,13 +43,26 @@ export function middleware(request: NextRequest) {
   }
 
   // ── Auth pages — redirect logged-in users away ────────────────────────────
+// Replace the auth pages block
+
   if (pathname.startsWith('/auth/login') ||
       pathname.startsWith('/auth/register')) {
-    if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-    if (role === 'vendor')   return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
-    if (role === 'customer') return NextResponse.redirect(new URL('/store',            request.url));
-  }
+    const accessToken = request.cookies.get('access_token')?.value;
+    let hasValidToken = false;
 
+    if (accessToken) {
+      try {
+        const decoded = jwtDecode<JWTPayload>(accessToken);
+        hasValidToken = decoded.exp > Date.now() / 1000;
+      } catch { /* invalid */ }
+    }
+
+    if (hasValidToken && role) {
+      if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      if (role === 'vendor')   return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
+      if (role === 'customer') return NextResponse.redirect(new URL('/store',            request.url));
+    }
+  }
   return NextResponse.next();
 }
 
