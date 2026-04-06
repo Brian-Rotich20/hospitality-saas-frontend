@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter }        from 'next/navigation';
 import { useForm }          from 'react-hook-form';
 import { zodResolver }      from '@hookform/resolvers/zod';
@@ -40,7 +40,6 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const saveAsRef = useRef<'draft' | 'active'>('draft');
 
 const PRICING_TYPES = [
   { value: 'per_hour',   label: 'Per Hour'         },
@@ -148,9 +147,7 @@ interface UploadedPhoto {
   error?:    string;
 }
 
-function PhotoUploader({
-  value, onChange, token,
-}: {
+function PhotoUploader({value, onChange, token,}: {
   value:    string[];
   onChange: (v: string[]) => void;
   token:    string | null;
@@ -162,8 +159,13 @@ function PhotoUploader({
   const inputRef               = useRef<HTMLInputElement>(null);
   const remaining              = MAX_PHOTOS - photos.filter(p => !p.error).length;
 
-  const syncUrls = (updated: UploadedPhoto[]) =>
-    onChange(updated.filter(p => p.url && !p.uploading && !p.error).map(p => p.url));
+  useEffect(() => {
+    const urls = photos
+      .filter(p => p.url && !p.uploading && !p.error)
+      .map(p => p.url);
+    onChange(urls);
+  }, [photos]);
+
 
   // ✅ Authorization header added
   const uploadFile = useCallback(async (file: File, localId: string) => {
@@ -186,21 +188,17 @@ function PhotoUploader({
       const url: string = json.data?.url ?? json.url;
       if (!url) throw new Error('No URL returned from upload');
 
-      setPhotos(prev => {
-        const updated = prev.map(p =>
-          p.localId === localId ? { ...p, url, uploading: false } : p
-        );
-        syncUrls(updated);
-        return updated;
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err.message : 'Upload failed';
-      setPhotos(prev =>
-        prev.map(p => p.localId === localId ? { ...p, uploading: false, error } : p)
-      );
-    }
-  }, [token]); // ✅ token in deps
-
+    setPhotos(prev =>
+            prev.map(p => p.localId === localId ? { ...p, url, uploading: false } : p)
+          );
+        } catch (err) {
+          const error = err instanceof Error ? err.message : 'Upload failed';
+          setPhotos(prev =>
+            prev.map(p => p.localId === localId ? { ...p, uploading: false, error } : p)
+          );
+        }
+      }, [token]);
+      
   const processFiles = useCallback((files: File[]) => {
     const valid = files.filter(f =>
       ACCEPT_TYPES.includes(f.type) && f.size <= MAX_SIZE_MB * 1024 * 1024
@@ -223,12 +221,8 @@ function PhotoUploader({
   };
 
   const removePhoto = (localId: string) => {
-    setPhotos(prev => {
-      const updated = prev.filter(p => p.localId !== localId);
-      syncUrls(updated);
-      return updated;
-    });
-  };
+      setPhotos(prev => prev.filter(p => p.localId !== localId));
+    };
 
   return (
     <div className="space-y-3">
@@ -319,6 +313,7 @@ function PhotoUploader({
 export function NewListingForm({ categories }: { categories: Category[] }) {
   const router        = useRouter();
   const { token }     = useAuth(); // ✅ get token for upload auth
+  const saveAsRef = useRef<'draft' | 'active'>('draft');
   const [amenities,   setAmenities] = useState<string[]>([]);
   const [photos,      setPhotos]    = useState<string[]>([]);
   const [saving,      setSaving]    = useState(false);
