@@ -170,9 +170,10 @@ export function VendorListingsClient({ initialListings }: { initialListings: Lis
 
                 {/* Actions */}
                 <div className="flex gap-1.5 shrink-0">
-                  <Link href={`/store/${listing.id}`} title="View public page"
-                    className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center
-                      text-gray-400 hover:text-[#2D3B45] hover:border-[#2D3B45] transition no-underline">
+                  <Link href={`/store/${listing.slug ?? listing.id}`} title="View public page"
+                   className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center
+                      text-gray-400 hover:text-[#2D3B45] hover:border-[#2D3B45] transition
+                      no-underline cursor-pointer">
                     <Eye size={13} />
                   </Link>
                   <Link href={`/vendor/listings/${listing.id}/edit`} title="Edit"
@@ -182,7 +183,7 @@ export function VendorListingsClient({ initialListings }: { initialListings: Lis
                   </Link>
                   <button
                     onClick={() => handleToggle(listing.id, listing.status)}
-                    disabled={actionId === listing.id || listing.status === 'draft'}
+                    disabled={actionId === listing.id}
                     title={listing.status === 'active' ? 'Pause' : 'Publish'}
                     className={`w-8 h-8 rounded-xl border flex items-center justify-center transition disabled:opacity-40
                       ${listing.status === 'active'
