@@ -44,13 +44,6 @@ export function ListingCard({ listing }: ListingCardProps) {
             <Package size={24} className="text-gray-300" />
           </div>
         )}
-        {/* Category badge */}
-        {listing.category && (
-          <span className="absolute top-2.5 left-2.5 bg-[#2D3B45]/90 text-white text-[10px]
-            font-bold px-2 py-0.5 rounded-full capitalize">
-            {listing.category.name}
-          </span>
-        )}
         {/* Instant booking badge */}
         {listing.instantBooking && (
           <span className="absolute top-2.5 right-2.5 bg-[#F5C842] text-[#2D3B45] text-[9px]
@@ -101,8 +94,8 @@ export function ListingCard({ listing }: ListingCardProps) {
             </p>
           </div>
           <span className="text-[10px] font-bold text-[#2D3B45] bg-[#F5C842] px-2.5 py-1
-            rounded-xl group-hover:bg-[#2D3B45] group-hover:text-[#F5C842] transition-colors">
-            View →
+            rounded-xl group-hover:bg-[#45452d] group-hover:text-[#F5C842] transition-colors">
+             →
           </span>
         </div>
       </div>
