@@ -24,12 +24,7 @@ export function UserMenu() {
         <Link href="/auth/login"
           className="px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-200
             rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-colors no-underline">
-          Log in
-        </Link>
-        <Link href="/auth/register"
-          className="px-3 py-1.5 text-xs font-bold text-[#2D3B45] bg-[#F5C842] rounded-xl
-            hover:bg-yellow-400 transition-colors no-underline">
-          Sign up
+          Sign in
         </Link>
       </div>
     );

@@ -110,9 +110,9 @@ export function LoginForm() {
           </form>
 
           <div className="flex items-center gap-2 my-4">
-            <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-[10px] text-gray-300 font-medium">New to LinkMart?</span>
-            <div className="flex-1 h-px bg-gray-100" />
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-[10px] text-gray-500 font-medium">New to LinkMart?</span>
+            <div className="flex-1 h-px bg-gray-200" />
           </div>
 
           <div className="grid grid-cols-2 gap-2">

@@ -38,6 +38,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: '/admin/listings',   label: 'Listings',      Icon: Package         },
     { href: '/admin/bookings',   label: 'Bookings',      Icon: Calendar        },
     { href: '/admin/analytics',  label: 'Analytics',     Icon: BarChart3       },
+    {href: '/admin/categories', label: 'Categories',    Icon: Settings        },
   ],
   customer: [
     { href: '/dashboard',        label: 'Dashboard',    Icon: LayoutDashboard },
