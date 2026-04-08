@@ -43,7 +43,7 @@ export function NavBar() {
 
         {/* ── Logo ── */}
         <Link href="/" className="flex items-center gap-2 shrink-0 no-underline">
-          <span className="text-sm sm:text-base font-black text-[#2D3B45] tracking-tight">
+          <span className="text-base sm:text-xl font-black text-[#2D3B45] tracking-tight">
             Link<span className="text-[#F5C842]">Mart</span>
           </span>
         </Link>
