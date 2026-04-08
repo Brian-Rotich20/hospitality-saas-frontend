@@ -92,8 +92,12 @@ function Store() {
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* ── Toolbar ── */}
-      <div className="bg-white border-b border-gray-100">
+     {/* ── Toolbar ── */}
+      <div
+        className="bg-white border-b border-gray-100 z-30"
+        style={{ position: 'sticky', top: 'calc(var(--header-h, 116px) + 56px)' }}
+        // ✅ --header-h (navbar+searchbar) + CategoryStrip h-14 (56px)
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">
 
           {/* Tabs */}
@@ -123,7 +127,7 @@ function Store() {
             {!loading && (
               <span className="text-xs text-gray-400 hidden sm:block">
                 {items.length} {tab === 'services' ? 'service' : 'product'}{items.length !== 1 ? 's' : ''}
-                {categorySlug && ` in ${categorySlug.replace(/_/g, ' ')}`}
+                {categorySlug && ` in ${categorySlug.replace(/-/g, ' ')}`}
               </span>
             )}
             <select
@@ -138,7 +142,6 @@ function Store() {
           </div>
         </div>
       </div>
-
       {/* ── Content ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
