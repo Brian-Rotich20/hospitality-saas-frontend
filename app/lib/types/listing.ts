@@ -20,6 +20,7 @@ export interface Category {
   name:      string;
   slug:      string;
   icon?:     string | undefined;
+  imageUrl?: string | undefined;
   parentId?: string | undefined;
   children?: Category[] | undefined;
 }

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   Plus, Pencil, Trash2, ChevronRight, ChevronDown,
   Loader2, X, Check, FolderOpen, Folder, Tag,
   Building2, Utensils, Camera, Music, Flower2,
-  Bus, MoreHorizontal, BookOpen, Sparkles, LayoutGrid,
+  Bus, MoreHorizontal, BookOpen, Sparkles, LayoutGrid, Upload,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiClient } from '../../lib/api/client';
@@ -56,18 +56,49 @@ interface ModalProps {
 }
 
 function CategoryModal({ mode, initial, parentId, parentName, allCategories, onClose, onSave }: ModalProps) {
-  const [name,     setName]     = useState(initial?.name ?? '');
-  const [slug,     setSlug]     = useState(initial?.slug ?? '');
-  const [icon,     setIcon]     = useState(initial?.icon ?? 'Sparkles');
-  const [selParent, setParent]  = useState(initial?.parentId ?? parentId ?? '');
-  const [saving,   setSaving]   = useState(false);
+  const [name,        setName]        = useState(initial?.name     ?? '');
+  const [slug,        setSlug]        = useState(initial?.slug     ?? '');
+  const [icon,        setIcon]        = useState(initial?.icon     ?? 'Sparkles');
+  const [imageUrl,    setImageUrl]    = useState(initial?.imageUrl ?? '');
+  const [selParent,   setParent]      = useState(initial?.parentId ?? parentId ?? '');
+  const [saving,      setSaving]      = useState(false);
+  const [uploading,   setUploading]   = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  // Auto-generate slug from name
   const handleName = (v: string) => {
     setName(v);
     if (!slugTouched) {
       setSlug(v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+    }
+  };
+
+  // ✅ Upload image via existing /api/upload/image endpoint
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Only JPEG, PNG, WebP allowed'); return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Max 5MB'); return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await apiClient.uploadFile<{ url: string }>(
+        '/upload/image', file
+      );
+      const url = (res as any).data?.url ?? (res as any).url;
+      if (!url) throw new Error('No URL returned');
+      setImageUrl(url);
+      toast.success('Image uploaded');
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Upload failed');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -78,8 +109,9 @@ function CategoryModal({ mode, initial, parentId, parentName, allCategories, onC
       await onSave({
         name:     name.trim(),
         slug:     slug.trim() || undefined,
-        icon:     icon || undefined,
-        parentId: selParent || undefined,
+        icon:     icon        || undefined,
+        imageUrl: imageUrl    || undefined,   // ✅ pass imageUrl
+        parentId: selParent   || undefined,
       });
       onClose();
     } catch (err: any) {
@@ -89,15 +121,14 @@ function CategoryModal({ mode, initial, parentId, parentName, allCategories, onC
     }
   };
 
-  // Flat list of top-level categories for parent selector
   const topLevel = allCategories.filter(c => !c.parentId && c.id !== initial?.id);
 
-  return (
+return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <h2 className="text-sm font-black text-gray-900">
             {mode === 'create' ? 'New Category' : 'Edit Category'}
           </h2>
@@ -118,8 +149,8 @@ function CategoryModal({ mode, initial, parentId, parentName, allCategories, onC
               value={name}
               onChange={e => handleName(e.target.value)}
               placeholder="e.g. Photography"
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white
-                outline-none focus:ring-2 focus:ring-[#2D3B45] focus:border-transparent transition"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
+                outline-none focus:ring-2 focus:ring-[#2D3B45] transition"
             />
           </div>
 
@@ -132,28 +163,114 @@ function CategoryModal({ mode, initial, parentId, parentName, allCategories, onC
               value={slug}
               onChange={e => { setSlug(e.target.value); setSlugTouched(true); }}
               placeholder="photography"
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50
-                font-mono outline-none focus:ring-2 focus:ring-[#2D3B45] focus:border-transparent transition"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
+                bg-gray-50 font-mono outline-none focus:ring-2 focus:ring-[#2D3B45] transition"
             />
-            <p className="text-[11px] text-gray-400 mt-1">
-              URL-safe: lowercase letters, numbers, hyphens only
-            </p>
           </div>
 
-          {/* Icon picker */}
+          {/* ✅ Image upload */}
           <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1.5">Icon</label>
+            <label className="block text-xs font-bold text-gray-600 mb-1.5">
+              Category Image
+              <span className="text-gray-400 font-normal ml-1">
+                (shown on mobile home grid)
+              </span>
+            </label>
+
+            {/* Preview + upload zone */}
+            <div
+              onClick={() => !uploading && fileRef.current?.click()}
+              className={`relative border-2 border-dashed rounded-2xl overflow-hidden
+                cursor-pointer transition-colors
+                ${uploading
+                  ? 'border-gray-200 bg-gray-50 cursor-wait'
+                  : imageUrl
+                    ? 'border-[#2D3B45]/30 hover:border-[#2D3B45]'
+                    : 'border-gray-200 hover:border-[#2D3B45] hover:bg-gray-50'}`}>
+
+              {imageUrl ? (
+                /* Image preview */
+                <div className="relative h-32">
+                  <img
+                    src={imageUrl}
+                    alt="Category"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/0 hover:bg-black/20
+                    transition flex items-center justify-center">
+                    <span className="opacity-0 hover:opacity-100 text-white text-xs
+                      font-bold bg-black/50 px-3 py-1.5 rounded-lg transition">
+                      Change image
+                    </span>
+                  </div>
+                  {/* Remove button */}
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setImageUrl(''); }}
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white
+                      rounded-full flex items-center justify-center hover:bg-red-600 transition">
+                    <X size={11} />
+                  </button>
+                </div>
+              ) : uploading ? (
+                /* Upload progress */
+                <div className="h-32 flex flex-col items-center justify-center gap-2">
+                  <Loader2 size={20} className="text-[#2D3B45] animate-spin" />
+                  <span className="text-xs text-gray-500 font-semibold">Uploading...</span>
+                </div>
+              ) : (
+                /* Empty state */
+                <div className="h-32 flex flex-col items-center justify-center gap-2">
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center
+                    justify-center text-gray-400">
+                    <Upload size={18} />
+                  </div>
+                  <p className="text-xs text-gray-500 font-semibold">
+                    Click to upload image
+                  </p>
+                  <p className="text-[11px] text-gray-400">
+                    JPEG · PNG · WebP · Max 5MB
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(file);
+                e.target.value = '';
+              }}
+            />
+
+            {/* Icon fallback note */}
+            {!imageUrl && (
+              <p className="text-[11px] text-amber-600 mt-1.5">
+                No image — icon will show as fallback in the store strip
+              </p>
+            )}
+          </div>
+
+          {/* Icon picker — fallback when no image */}
+          <div>
+            <label className="block text-xs font-bold text-gray-600 mb-1.5">
+              Fallback Icon
+              <span className="text-gray-400 font-normal ml-1">
+                (used on desktop strip if no image)
+              </span>
+            </label>
             <div className="grid grid-cols-6 gap-1.5">
               {ICON_OPTIONS.map(({ name: iconName, Icon, label }) => (
-                <button
-                  key={iconName}
-                  type="button"
-                  title={label}
+                <button key={iconName} type="button" title={label}
                   onClick={() => setIcon(iconName)}
                   className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition
                     ${icon === iconName
                       ? 'border-[#2D3B45] bg-[#2D3B45]/5 text-[#2D3B45]'
-                      : 'border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600'}`}>
+                      : 'border-gray-100 text-gray-400 hover:border-gray-300'}`}>
                   <Icon size={16} />
                   <span className="text-[9px] leading-none">{label}</span>
                 </button>
@@ -161,45 +278,41 @@ function CategoryModal({ mode, initial, parentId, parentName, allCategories, onC
             </div>
           </div>
 
-          {/* Parent category */}
+          {/* Parent */}
           <div>
             <label className="block text-xs font-bold text-gray-600 mb-1.5">
-              Parent Category <span className="text-gray-400 font-normal">(optional)</span>
+              Parent Category
+              <span className="text-gray-400 font-normal ml-1">(optional)</span>
             </label>
             <select
               value={selParent}
               onChange={e => setParent(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
                 outline-none focus:ring-2 focus:ring-[#2D3B45] transition cursor-pointer">
               <option value="">None — top-level category</option>
               {topLevel.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-            {selParent && (
-              <p className="text-[11px] text-amber-600 mt-1">
-                Subcategories are not shown in the main store strip — only top-level categories appear there.
-              </p>
-            )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex gap-2 px-6 pb-5">
-          <button
-            onClick={onClose}
+        <div className="flex gap-2 px-6 pb-5 sticky bottom-0 bg-white pt-2 border-t border-gray-100">
+          <button onClick={onClose}
             className="flex-1 py-2.5 border border-gray-200 rounded-xl text-xs font-bold
               text-gray-600 hover:border-gray-400 transition">
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            disabled={saving || !name.trim()}
+            disabled={saving || !name.trim() || uploading}
             className="flex-1 py-2.5 bg-[#2D3B45] text-white rounded-xl text-xs font-bold
-              hover:bg-[#3a4d5a] transition disabled:opacity-50 flex items-center justify-center gap-1.5">
+              hover:bg-[#3a4d5a] transition disabled:opacity-50
+              flex items-center justify-center gap-1.5">
             {saving
               ? <><Loader2 size={12} className="animate-spin" /> Saving...</>
-              : <><Check size={12} /> {mode === 'create' ? 'Create' : 'Save Changes'}</>}
+              : <><Check size={12} /> {mode === 'create' ? 'Create' : 'Save'}</>}
           </button>
         </div>
       </div>

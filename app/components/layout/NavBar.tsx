@@ -34,8 +34,6 @@ export function NavBar() {
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
-  // ✅ Set --header-h CSS variable whenever header resizes
-  // This is the single source of truth for all sticky children
   useEffect(() => {
     if (!headerRef.current) return;
     const observer = new ResizeObserver(entries => {
@@ -61,12 +59,12 @@ export function NavBar() {
 
         <Link href="/" className="flex items-center shrink-0 no-underline">
             <Image
-              src="/images/logo.png"        // ← adjust filename if different
+              src="/images/logo.png"        
               alt="LinkMart"
-              width={120}                   // display width — keeps aspect ratio (1000:232 ≈ 4.3:1)
-              height={28}                   // 120 / 4.31 ≈ 28px
-              className="h-7 w-auto"        // h-7 = 28px, width scales automatically
-              priority                      // ← preload since it's above the fold
+              width={120}                  
+              height={28}                   
+              className="h-7 w-auto"        
+              priority                      
             />
           </Link>
 
