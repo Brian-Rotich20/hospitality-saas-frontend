@@ -5,6 +5,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/auth.context';
+import Image from 'next/image';  
+import logo from '../../../public/images/logo.png'; 
 import {
   Home, Search, Heart, CalendarCheck, Bell, Menu, X,
 } from 'lucide-react';
@@ -57,11 +59,16 @@ export function NavBar() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
 
-        <Link href="/" className="flex items-center gap-2 shrink-0 no-underline">
-          <span className="text-base sm:text-xl font-black text-[#2D3B45] tracking-tight">
-            Link<span className="text-[#F5C842]">Mart</span>
-          </span>
-        </Link>
+        <Link href="/" className="flex items-center shrink-0 no-underline">
+            <Image
+              src="/images/logo.png"        // ← adjust filename if different
+              alt="LinkMart"
+              width={120}                   // display width — keeps aspect ratio (1000:232 ≈ 4.3:1)
+              height={28}                   // 120 / 4.31 ≈ 28px
+              className="h-7 w-auto"        // h-7 = 28px, width scales automatically
+              priority                      // ← preload since it's above the fold
+            />
+          </Link>
 
         <nav className="hidden lg:flex items-center flex-1 justify-center gap-0.5">
           {NAV_LINKS.map(({ href, Icon, label }) => (
