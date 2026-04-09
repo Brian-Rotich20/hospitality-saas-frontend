@@ -17,6 +17,7 @@ interface Category {
   slug:      string;
   icon?:     string;
   parentId?: string;
+  imageUrl?: string;
   children?: Category[];
 }
 
@@ -51,8 +52,9 @@ interface ModalProps {
   parentId?:  string;
   parentName?: string;
   allCategories: Category[];
+  imageUrl: string;
   onClose:    () => void;
-  onSave:     (data: { name: string; slug?: string; icon?: string; parentId?: string }) => Promise<void>;
+  onSave:     (data: { name: string; slug?: string; icon?: string; parentId?: string; imageUrl?: string; }) => Promise<void>;
 }
 
 function CategoryModal({ mode, initial, parentId, parentName, allCategories, onClose, onSave }: ModalProps) {
@@ -110,7 +112,7 @@ function CategoryModal({ mode, initial, parentId, parentName, allCategories, onC
         name:     name.trim(),
         slug:     slug.trim() || undefined,
         icon:     icon        || undefined,
-        imageUrl: imageUrl    || undefined,   // ✅ pass imageUrl
+        imageUrl: imageUrl    || undefined,   
         parentId: selParent   || undefined,
       });
       onClose();
@@ -561,24 +563,6 @@ export function CategoryManagerClient({ initialCategories }: { initialCategories
             font-bold rounded-xl hover:bg-[#3a4d5a] transition shrink-0">
           <Plus size={14} /> New Category
         </button>
-      </div>
-
-      {/* Info banner */}
-      <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 mb-4 flex gap-3">
-        <div className="w-5 h-5 rounded-full bg-amber-200 flex items-center justify-center shrink-0 mt-0.5">
-          <span className="text-[10px] font-black text-amber-800">i</span>
-        </div>
-        <div>
-          <p className="text-xs font-bold text-amber-800 mb-0.5">
-            How categories work on this platform
-          </p>
-          <p className="text-[11px] text-amber-700 leading-relaxed">
-            Top-level categories appear as pills in the store navigation strip.
-            Subcategories are used for fine-grained filtering inside a category.
-            Vendors assign categories when creating listings or products.
-            Changes appear in the store within 1 hour (cache TTL).
-          </p>
-        </div>
       </div>
 
       {/* Table */}

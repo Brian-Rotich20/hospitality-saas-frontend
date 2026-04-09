@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { listingsService, productsService } from '../../lib/api/endpoints';
-import type { Listing, Product, ListingFilters, ProductFilters } from '../../lib/types/listing';
-import { ListingCard } from './ListingCard';
-import { ProductCard } from './ProductCard';
-import { Package, RefreshCw, LayoutGrid, ShoppingBag, Calendar } from 'lucide-react';
+import { listingsService, productsService, categoriesService } from '../../lib/api/endpoints';
+import type { Listing, Product, ListingFilters, ProductFilters, Category } from '../../lib/types/listing';
+import { ListingCard }  from './ListingCard';
+import { ProductCard }  from './ProductCard';
+import { CategoryGrid } from '../layout/CategoryGrid';
+import {
+  Package, RefreshCw, ShoppingBag, Calendar,
+} from 'lucide-react';
 
-// ── Tab type ──────────────────────────────────────────────────────────────────
 type StoreTab = 'services' | 'products';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -29,7 +31,24 @@ function CardSkeleton() {
   );
 }
 
-// ── Main content ──────────────────────────────────────────────────────────────
+// ── Category grid skeleton ────────────────────────────────────────────────────
+function CategoryGridSkeleton() {
+  return (
+    <section className="py-6 px-4 lg:hidden">
+      <div className="h-5 bg-gray-100 rounded-lg w-40 mb-4 animate-pulse" />
+      <div className="grid grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-2 animate-pulse">
+            <div className="w-full aspect-square rounded-2xl bg-gray-100" />
+            <div className="h-3 bg-gray-100 rounded w-3/4" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── Main Store ────────────────────────────────────────────────────────────────
 function Store() {
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -38,12 +57,29 @@ function Store() {
   const searchQuery  = searchParams.get('search')   ?? undefined;
   const tabParam     = searchParams.get('tab') as StoreTab | null;
 
-  const [tab,       setTab]      = useState<StoreTab>(tabParam ?? 'services');
-  const [listings,  setListings] = useState<Listing[]>([]);
-  const [products,  setProducts] = useState<Product[]>([]);
-  const [loading,   setLoading]  = useState(true);
-  const [error,     setError]    = useState<string | null>(null);
-  const [sortBy,    setSortBy]   = useState<'newest' | 'price' | 'popular'>('newest');
+  const [tab,        setTab]        = useState<StoreTab>(tabParam ?? 'services');
+  const [listings,   setListings]   = useState<Listing[]>([]);
+  const [products,   setProducts]   = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [catLoading, setCatLoading] = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
+  const [sortBy,     setSortBy]     = useState<'newest' | 'price' | 'popular'>('newest');
+
+  // ── Whether to show the category grid ────────────────────────────────────
+  // Show on mobile only when: no category selected AND no search active
+  const showCategoryGrid = !categorySlug && !searchQuery;
+
+  // ── Fetch categories once for the grid ───────────────────────────────────
+  useEffect(() => {
+    categoriesService.getAll()
+      .then(res => {
+        const data = (res as any).data ?? res;
+        setCategories(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setCategories([]))
+      .finally(() => setCatLoading(false));
+  }, []); // only once
 
   // ── Sync tab to URL ───────────────────────────────────────────────────────
   const switchTab = (next: StoreTab) => {
@@ -53,26 +89,18 @@ function Store() {
     router.push(`/store?${params.toString()}`, { scroll: false });
   };
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+  // ── Fetch listings / products ─────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       if (tab === 'services') {
-        const filters: ListingFilters = {
-          categorySlug,
-          search: searchQuery,
-          sortBy: sortBy === 'newest' ? 'newest' : sortBy,
-        };
+        const filters: ListingFilters = { categorySlug, search: searchQuery, sortBy };
         const res  = await listingsService.getAll(filters);
         const data = (res as any).data;
         setListings(Array.isArray(data) ? data : (data?.data ?? []));
       } else {
-        const filters: ProductFilters = {
-          categorySlug,
-          search: searchQuery,
-          sortBy,
-        };
+        const filters: ProductFilters = { categorySlug, search: searchQuery, sortBy };
         const res  = await productsService.getAll(filters);
         const data = (res as any).data;
         setProducts(Array.isArray(data) ? data : (data?.data ?? []));
@@ -92,11 +120,10 @@ function Store() {
   return (
     <div className="min-h-screen bg-gray-50">
 
-     {/* ── Toolbar ── */}
+      {/* ── Toolbar — sticky below CategoryStrip ── */}
       <div
         className="bg-white border-b border-gray-100 z-30"
-        style={{ position: 'sticky', top: 'calc(var(--header-h, 116px) + 56px)' }}
-        // ✅ --header-h (navbar+searchbar) + CategoryStrip h-14 (56px)
+        style={{ top: 'calc(var(--header-h, 116px) + 56px)' }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">
 
@@ -122,7 +149,7 @@ function Store() {
             </button>
           </div>
 
-          {/* Right: count + sort */}
+          {/* Count + sort */}
           <div className="flex items-center gap-3">
             {!loading && (
               <span className="text-xs text-gray-400 hidden sm:block">
@@ -142,28 +169,63 @@ function Store() {
           </div>
         </div>
       </div>
-      {/* ── Content ── */}
+
+      {/* ── Mobile Category Grid ── */}
+      {/* Shown on mobile only when no filter/search is active */}
+      {showCategoryGrid && (
+        <div className="lg:hidden">
+          {catLoading
+            ? <CategoryGridSkeleton />
+            : categories.length > 0 && <CategoryGrid categories={categories} />
+          }
+        </div>
+      )}
+
+      {/* ── Active category indicator on mobile ── */}
+      {categorySlug && (
+        <div className="lg:hidden px-4 pt-4 pb-0 flex items-center gap-2">
+          <span className="text-xs font-bold text-[#2D3B45] capitalize">
+            {categorySlug.replace(/-/g, ' ')}
+          </span>
+          <button
+            onClick={() => router.push('/store')}
+            className="text-[10px] text-gray-400 underline hover:text-gray-600 transition">
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* ── Content grid ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
         {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6 flex items-center justify-between">
+          <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6
+            flex items-center justify-between">
             <p className="text-xs text-red-600 font-medium">{error}</p>
             <button onClick={fetchData}
-              className="flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-800 transition-colors">
+              className="flex items-center gap-1.5 text-xs font-bold text-red-600
+                hover:text-red-800 transition-colors">
               <RefreshCw size={12} /> Retry
             </button>
           </div>
         )}
 
-        {/* Grid */}
+        {/* ── On mobile with no filter: show section header above grid ── */}
+        {showCategoryGrid && !loading && items.length > 0 && (
+          <h2 className="text-sm font-black text-gray-900 mb-4 lg:hidden">
+            {tab === 'services' ? 'Featured Services' : 'Featured Products'}
+          </h2>
+        )}
+
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
           </div>
         ) : isEmpty ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 bg-white border border-gray-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+            <div className="w-16 h-16 bg-white border border-gray-100 rounded-2xl
+              flex items-center justify-center mb-4 shadow-sm">
               <Package size={28} className="text-gray-300" />
             </div>
             <p className="text-sm font-bold text-gray-700 mb-1">
@@ -177,7 +239,8 @@ function Store() {
             {(categorySlug || searchQuery) && (
               <button
                 onClick={() => router.push('/store')}
-                className="px-4 py-2 bg-[#2D3B45] text-white text-xs font-bold rounded-xl hover:bg-[#3a4d5a] transition-colors">
+                className="px-4 py-2 bg-[#2D3B45] text-white text-xs font-bold
+                  rounded-xl hover:bg-[#3a4d5a] transition-colors">
                 Clear Filters
               </button>
             )}
@@ -190,11 +253,11 @@ function Store() {
                 : products.map(p => <ProductCard key={p.id} product={p} />)
               }
             </div>
-
             {items.length >= 20 && (
               <div className="flex justify-center mt-8">
-                <button className="px-6 py-2.5 border border-gray-200 rounded-xl text-xs font-bold
-                  text-gray-600 hover:border-[#2D3B45] hover:text-[#2D3B45] transition-colors bg-white">
+                <button className="px-6 py-2.5 border border-gray-200 rounded-xl text-xs
+                  font-bold text-gray-600 hover:border-[#2D3B45] hover:text-[#2D3B45]
+                  transition-colors bg-white">
                   Load more
                 </button>
               </div>
@@ -210,7 +273,8 @@ export default function StoreContent() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#2D3B45] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#2D3B45] border-t-transparent
+          rounded-full animate-spin" />
       </div>
     }>
       <Store />
