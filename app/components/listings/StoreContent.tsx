@@ -9,10 +9,9 @@ import type { Listing, Product, ListingFilters, ProductFilters, Category } from 
 import { ListingCard } from './ListingCard';
 import { ProductCard } from './ProductCard';
 import {
-  Package, RefreshCw, ShoppingBag, Calendar,
+  Package, RefreshCw, ShoppingBag, Calendar, ChevronRight,
   Building2, Utensils, Camera, Music, Flower2,
   Bus, MoreHorizontal, BookOpen, Sparkles, LayoutGrid,
-  ChevronRight,
 } from 'lucide-react';
 
 type StoreTab = 'services' | 'products';
@@ -26,39 +25,57 @@ const ICON_MAP: Record<string, React.ElementType> = {
   entertainment: MoreHorizontal, education: BookOpen,
 };
 
-// ── Skeletons ─────────────────────────────────────────────────────────────────
+// ── Card skeleton ─────────────────────────────────────────────────────────────
 function CardSkeleton() {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
-      <div className="h-40 bg-gray-100" />
-      <div className="p-3.5 space-y-2.5">
-        <div className="h-3.5 bg-gray-100 rounded-lg w-3/4" />
-        <div className="h-3   bg-gray-100 rounded-lg w-1/2" />
-        <div className="h-3   bg-gray-100 rounded-lg w-1/3" />
+      <div className="h-36 bg-gray-100" />
+      <div className="p-3 space-y-2">
+        <div className="h-3.5 bg-gray-100 rounded w-3/4" />
+        <div className="h-3   bg-gray-100 rounded w-1/2" />
+        <div className="h-3   bg-gray-100 rounded w-1/3" />
         <div className="pt-2 border-t border-gray-50 flex justify-between">
-          <div className="h-5 bg-gray-100 rounded w-20" />
-          <div className="h-6 bg-gray-100 rounded-xl w-14" />
+          <div className="h-5 bg-gray-100 rounded w-16" />
+          <div className="h-6 bg-gray-100 rounded-xl w-12" />
         </div>
       </div>
     </div>
   );
 }
 
+// ── Sidebar skeleton ──────────────────────────────────────────────────────────
 function SidebarSkeleton() {
   return (
-    <div className="space-y-1 p-2">
+    <div className="space-y-1 p-3">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-2 p-2 animate-pulse">
-          <div className="w-9 h-9 rounded-xl bg-gray-100 shrink-0" />
-          <div className="h-3 bg-gray-100 rounded w-16" />
+        <div key={i} className="flex items-center gap-3 p-2.5 animate-pulse">
+          <div className="w-10 h-10 rounded-xl bg-gray-100 shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 bg-gray-100 rounded w-24" />
+            <div className="h-2.5 bg-gray-100 rounded w-16" />
+          </div>
         </div>
       ))}
     </div>
   );
 }
 
-// ── Mobile left sidebar ───────────────────────────────────────────────────────
-function MobileSidebar({
+// ── Mobile category grid skeleton ─────────────────────────────────────────────
+function GridSkeleton() {
+  return (
+    <div className="grid grid-cols-4 gap-3 p-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="flex flex-col items-center gap-2 animate-pulse">
+          <div className="w-full aspect-square rounded-2xl bg-gray-100" />
+          <div className="h-2.5 bg-gray-100 rounded w-3/4" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Desktop/tablet left sidebar ───────────────────────────────────────────────
+function DesktopSidebar({
   categories,
   activeSlug,
   loading,
@@ -67,7 +84,7 @@ function MobileSidebar({
   activeSlug?: string;
   loading:    boolean;
 }) {
-  const allItem: Category = { id: 'all', name: 'All', slug: 'all', icon: 'LayoutGrid' };
+  const allItem: Category = { id: 'all', name: 'All Categories', slug: 'all', icon: 'LayoutGrid' };
   const items = [allItem, ...categories];
 
   if (loading) return <SidebarSkeleton />;
@@ -75,8 +92,7 @@ function MobileSidebar({
   return (
     <nav className="py-2">
       {items.map(({ id, name, slug, icon, imageUrl }) => {
-        const Icon   = (icon && ICON_MAP[icon]) ? ICON_MAP[icon]
-                     : (ICON_MAP[slug] ?? Sparkles);
+        const Icon   = (icon && ICON_MAP[icon]) ? ICON_MAP[icon] : (ICON_MAP[slug] ?? Sparkles);
         const href   = slug === 'all' ? '/store' : `/store?category=${slug}`;
         const active = slug === 'all' ? !activeSlug : activeSlug === slug;
 
@@ -84,47 +100,116 @@ function MobileSidebar({
           <Link
             key={id}
             href={href}
-            className={`flex flex-col items-center gap-1.5 px-2 py-3 mx-1 rounded-xl
-              no-underline transition-all relative
+            className={`group flex items-center gap-3 px-3 py-2.5 mx-2 rounded-xl
+              no-underline transition-all
               ${active
-                ? 'bg-[#2D3B45]/5'
-                : 'hover:bg-gray-50'}`}>
+                ? 'bg-[#2D3B45]/8 border border-[#2D3B45]/10'
+                : 'hover:bg-gray-50 border border-transparent'}`}>
 
-            {/* Image or icon */}
-            <div className={`w-11 h-11 rounded-xl overflow-hidden flex items-center
+            {/* Image or icon tile */}
+            <div className={`w-10 h-10 rounded-xl overflow-hidden flex items-center
               justify-center shrink-0 transition-all
-              ${active
-                ? 'bg-[#2D3B45] text-white'
-                : 'bg-gray-100 text-gray-500'}`}>
+              ${active ? 'bg-[#2D3B45]' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
               {imageUrl ? (
                 <Image
                   src={imageUrl}
                   alt={name}
-                  width={44}
-                  height={44}
+                  width={40}
+                  height={40}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Icon size={18} strokeWidth={active ? 2.2 : 1.7} />
+                <Icon
+                  size={17}
+                  className={active ? 'text-white' : 'text-gray-500'}
+                  strokeWidth={active ? 2.2 : 1.7}
+                />
               )}
             </div>
 
-            {/* Label */}
-            <span className={`text-[10px] font-semibold text-center leading-tight
-              line-clamp-2 w-full
-              ${active ? 'text-[#2D3B45]' : 'text-gray-500'}`}>
+            {/* Name */}
+            <span className={`flex-1 text-xs font-semibold leading-tight min-w-0
+              ${active ? 'text-[#2D3B45]' : 'text-gray-700 group-hover:text-gray-900'}`}>
               {name}
             </span>
 
-            {/* Active indicator */}
-            {active && (
-              <span className="absolute right-0 top-1/2 -translate-y-1/2
-                w-0.5 h-8 bg-[#F5C842] rounded-l-full" />
-            )}
+            {/* Chevron */}
+            <ChevronRight
+              size={13}
+              className={`shrink-0 transition-colors
+                ${active ? 'text-[#2D3B45]' : 'text-gray-300 group-hover:text-gray-400'}`}
+            />
           </Link>
         );
       })}
     </nav>
+  );
+}
+
+// ── Mobile category grid ──────────────────────────────────────────────────────
+function MobileCategoryGrid({
+  categories,
+  loading,
+}: {
+  categories: Category[];
+  loading:    boolean;
+}) {
+  if (loading) return <GridSkeleton />;
+  if (!categories.length) return null;
+
+  return (
+    <section className="px-4 pt-4 pb-2">
+      <h2 className="text-sm font-black text-gray-900 mb-3 tracking-tight">
+        Browse by Category
+      </h2>
+      <div className="grid grid-cols-4 gap-3">
+        {categories.map(({ id, name, slug, icon, imageUrl }) => {
+          const Icon = (icon && ICON_MAP[icon]) ? ICON_MAP[icon] : (ICON_MAP[slug] ?? Sparkles);
+
+          return (
+            <Link
+              key={id}
+              href={`/store?category=${slug}`}
+              className="flex flex-col items-center gap-1.5 no-underline group">
+
+              {/* Tile */}
+              <div className="w-full aspect-square rounded-2xl overflow-hidden bg-gray-100
+                flex items-center justify-center border border-gray-100
+                group-hover:border-[#2D3B45]/20 group-active:scale-95
+                transition-all duration-150">
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt={name}
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover
+                      group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center
+                    bg-gradient-to-br from-gray-50 to-gray-100">
+                    <Icon
+                      size={26}
+                      className="text-[#2D3B45]/50 group-hover:text-[#2D3B45]
+                        transition-colors"
+                      strokeWidth={1.5}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Label */}
+              <span className="text-[11px] font-semibold text-gray-700 text-center
+                leading-tight line-clamp-2 w-full group-hover:text-[#2D3B45]
+                transition-colors">
+                {name}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -146,7 +231,10 @@ function Store() {
   const [error,      setError]      = useState<string | null>(null);
   const [sortBy,     setSortBy]     = useState<'newest' | 'price' | 'popular'>('newest');
 
-  // ── Fetch categories once ─────────────────────────────────────────────────
+  // mobile: show grid only when no filter active
+  const showMobileGrid = !categorySlug && !searchQuery;
+
+  // ── Fetch categories ──────────────────────────────────────────────────────
   useEffect(() => {
     categoriesService.getAll()
       .then(res => {
@@ -157,6 +245,7 @@ function Store() {
       .finally(() => setCatLoading(false));
   }, []);
 
+  // ── Switch tab ────────────────────────────────────────────────────────────
   const switchTab = (next: StoreTab) => {
     setTab(next);
     const params = new URLSearchParams(searchParams.toString());
@@ -164,6 +253,7 @@ function Store() {
     router.push(`/store?${params.toString()}`, { scroll: false });
   };
 
+  // ── Fetch listings / products ─────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -191,19 +281,28 @@ function Store() {
   const items   = tab === 'services' ? listings : products;
   const isEmpty = !loading && items.length === 0;
 
+  // ── Toolbar top value ─────────────────────────────────────────────────────
+  // Mobile: var(--header-h) only (no category strip in header)
+  // Desktop: var(--header-h) only (sidebar is beside content, not above)
+  const toolbarTop = 'var(--header-h, 116px)';
+
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* ── Toolbar — sticky, sits below header ── */}
+      {/* ── Toolbar ── */}
       <div
         className="bg-white border-b border-gray-100 z-30"
-        style={{ position: 'sticky', top: 'var(--header-h, 116px)' }}
+        style={{ position: 'sticky', top: toolbarTop }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 h-12
+          flex items-center justify-between gap-4">
+
+          {/* Tabs */}
           <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
             <button
               onClick={() => switchTab('services')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
+                font-bold transition-all
                 ${tab === 'services'
                   ? 'bg-white text-[#2D3B45] shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'}`}>
@@ -211,25 +310,30 @@ function Store() {
             </button>
             <button
               onClick={() => switchTab('products')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
+                font-bold transition-all
                 ${tab === 'products'
                   ? 'bg-white text-[#2D3B45] shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'}`}>
               <ShoppingBag size={13} /> Products
             </button>
           </div>
+
+          {/* Count + sort */}
           <div className="flex items-center gap-3">
             {!loading && (
               <span className="text-xs text-gray-400 hidden sm:block">
-                {items.length} {tab === 'services' ? 'service' : 'product'}{items.length !== 1 ? 's' : ''}
-                {categorySlug && ` in ${categorySlug.replace(/-/g, ' ')}`}
+                {items.length} {tab === 'services' ? 'service' : 'product'}
+                {items.length !== 1 ? 's' : ''}
+                {categorySlug && ` · ${categorySlug.replace(/-/g, ' ')}`}
               </span>
             )}
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as typeof sortBy)}
-              className="text-xs font-medium text-gray-600 border border-gray-200 rounded-xl
-                px-2.5 py-1.5 bg-white outline-none cursor-pointer hover:border-gray-300 transition-colors">
+              className="text-xs font-medium text-gray-600 border border-gray-200
+                rounded-xl px-2.5 py-1.5 bg-white outline-none cursor-pointer
+                hover:border-gray-300 transition-colors">
               <option value="newest">Newest</option>
               <option value="price">Price ↑</option>
               <option value="popular">Popular</option>
@@ -238,32 +342,77 @@ function Store() {
         </div>
       </div>
 
-      {/* ── Body: sidebar + content ── */}
-      <div className="flex min-h-[calc(100vh-var(--header-h,116px)-48px)]">
+      {/* ── Body ── */}
+      <div className="flex max-w-screen-xl mx-auto">
 
-        {/* ── LEFT SIDEBAR — mobile only, fixed width, scrollable ── */}
+        {/* ════════════════════════════════════════════════════
+            DESKTOP/TABLET LEFT SIDEBAR (lg+)
+            Sticky, independently scrollable category list
+        ════════════════════════════════════════════════════ */}
         <aside
-          className="lg:hidden w-[72px] shrink-0 bg-white border-r border-gray-100
-            overflow-y-auto overscroll-contain"
+          className="hidden lg:block w-56 xl:w-64 shrink-0 bg-white border-r border-gray-100"
           style={{
             position:  'sticky',
-            top:       'calc(var(--header-h, 116px) + 48px)',  // below toolbar
-            height:    'calc(100vh - var(--header-h, 116px) - 48px)',
+            top:       `calc(${toolbarTop} + 48px)`,
+            height:    `calc(100vh - ${toolbarTop} - 48px)`,
+            overflowY: 'auto',
             alignSelf: 'flex-start',
           }}
         >
-          <MobileSidebar
+          <DesktopSidebar
             categories={categories}
             activeSlug={categorySlug}
             loading={catLoading}
           />
         </aside>
 
-        {/* ── RIGHT CONTENT — listings/products grid ── */}
-        <main className="flex-1 min-w-0 px-3 sm:px-6 py-4">
+        {/* ════════════════════════════════════════════════════
+            MAIN CONTENT
+        ════════════════════════════════════════════════════ */}
+        <main className="flex-1 min-w-0">
 
-          {/* Desktop: max-width container */}
-          <div className="max-w-7xl mx-auto">
+          {/* ── MOBILE: Category grid (no filter active) ── */}
+          <div className="lg:hidden">
+            {showMobileGrid && (
+              <MobileCategoryGrid
+                categories={categories}
+                loading={catLoading}
+              />
+            )}
+
+            {/* Active category breadcrumb on mobile */}
+            {categorySlug && (
+              <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                <span className="text-xs font-black text-gray-900 capitalize">
+                  {categorySlug.replace(/-/g, ' ')}
+                </span>
+                <button
+                  onClick={() => router.push('/store')}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100
+                    text-gray-500 hover:bg-gray-200 transition font-semibold">
+                  ✕ Clear
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ── DESKTOP: Active category label ── */}
+          {categorySlug && (
+            <div className="hidden lg:flex items-center gap-2 px-6 pt-5 pb-0">
+              <span className="text-sm font-black text-gray-900 capitalize">
+                {categorySlug.replace(/-/g, ' ')}
+              </span>
+              <button
+                onClick={() => router.push('/store')}
+                className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100
+                  text-gray-500 hover:bg-gray-200 transition font-semibold">
+                ✕ Clear
+              </button>
+            </div>
+          )}
+
+          {/* ── Listings/Products grid ── */}
+          <div className="px-4 lg:px-6 py-4">
 
             {/* Error */}
             {error && (
@@ -278,23 +427,15 @@ function Store() {
               </div>
             )}
 
-            {/* Active category label on mobile */}
-            {categorySlug && (
-              <div className="flex items-center gap-2 mb-3 lg:hidden">
-                <span className="text-xs font-black text-gray-900 capitalize">
-                  {categorySlug.replace(/-/g, ' ')}
-                </span>
-                <button
-                  onClick={() => router.push('/store')}
-                  className="text-[10px] text-gray-400 underline hover:text-gray-600">
-                  Clear
-                </button>
-              </div>
+            {/* Section label on mobile when showing all */}
+            {showMobileGrid && !loading && items.length > 0 && (
+              <h2 className="text-sm font-black text-gray-900 mb-3 lg:hidden">
+                {tab === 'services' ? 'All Services' : 'All Products'}
+              </h2>
             )}
 
-            {/* Grid */}
             {loading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
               </div>
             ) : isEmpty ? (
@@ -322,7 +463,7 @@ function Store() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                   {tab === 'services'
                     ? listings.map(l => <ListingCard key={l.id} listing={l} />)
                     : products.map(p => <ProductCard key={p.id} product={p} />)
