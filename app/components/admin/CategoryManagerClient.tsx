@@ -479,6 +479,7 @@ export function CategoryManagerClient({ initialCategories }: { initialCategories
     category?:  Category;
     parentId?:  string;
     parentName?: string;
+    imageUrl?: string;
   } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [deleting,     setDeleting]     = useState(false);
@@ -622,6 +623,7 @@ export function CategoryManagerClient({ initialCategories }: { initialCategories
           initial={modal.category}
           parentId={modal.parentId}
           parentName={modal.parentName}
+          imageUrl={modal.imageUrl || ''}
           allCategories={flatCategories()}
           onClose={() => setModal(null)}
           onSave={modal.type === 'create'
