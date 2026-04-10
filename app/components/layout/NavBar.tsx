@@ -150,7 +150,7 @@ export function NavBar() {
               + List Service
             </Link>
             <Link
-              href="/auth/signin"
+              href="/auth/login"
               className="flex items-center gap-1.5 px-3 py-1.5 border border-[#2D3B45] text-[#2D3B45]
                 text-xs font-bold rounded-xl hover:bg-gray-50 transition-all no-underline whitespace-nowrap"
             >
