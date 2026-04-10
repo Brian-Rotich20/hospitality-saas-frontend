@@ -13,6 +13,7 @@ interface NavLink {
 
 interface MobileDrawerProps {
   navLinks: NavLink[];
+  isAuthenticated: boolean;
   onClose:  () => void;
 }
 

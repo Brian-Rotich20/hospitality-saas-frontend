@@ -10,9 +10,9 @@ import {
   Heart, CalendarCheck, Bell, Menu, X,
   LayoutList, MessageSquare, LayoutDashboard,
 } from 'lucide-react';
-import { SearchBar } from './SearchBar';
-import { UserMenu } from './UserMenu';
-import { MobileDrawer } from './MobileDrawer';
+import { SearchBar } from './SearchBar'; // for consistent search experience across desktop/mobile
+import { UserMenu } from './UserMenu';  // for user avatar and auth actions
+import { MobileDrawer } from './MobileDrawer'; // for mobile nav links and auth actions
 
 const CUSTOMER_NAV = [
   { href: '/saved',    Icon: Heart,          label: 'Saved'    },
