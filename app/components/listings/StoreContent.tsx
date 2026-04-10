@@ -106,7 +106,7 @@ function DesktopSidebar({
 
             <div className={`w-10 h-10 rounded-xl overflow-hidden flex items-center
               justify-center shrink-0 transition-all
-              ${active ? 'bg-[#2D3B45]' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
+              ${active ? 'bg-[#2D3B45]' : 'bg-gray-100 group-hover:bg-gray-200 '}`}>
               {imageUrl ? (
                 <Image src={imageUrl} alt={name} width={40} height={40}
                   className="w-full h-full object-cover" />
@@ -253,7 +253,7 @@ function Store() {
 
         {/* ── Desktop sidebar ── */}
         <aside
-          className="hidden lg:block w-56 xl:w-64 shrink-0 bg-white border-r border-gray-100"
+          className="hidden lg:block w-56 xl:w-64 shrink-0 bg-white border-r border-gray-100 scrollbar-none z-20"
           style={{
             position:  'sticky',
             top:       headerH,                              // ✅ no +48px, toolbar gone
