@@ -9,6 +9,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth/auth.context';
+import Image from 'next/image'; 
 import {
   LayoutDashboard, Package, Calendar, BarChart3,
   Users, LogOut, User, Settings, ShoppingBag,
@@ -69,16 +70,37 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
     <div className="flex flex-col h-full">
 
       {/* Logo */}
+      {/* Logo */}
       <div className="flex items-center justify-between px-5 py-5 border-b border-gray-100">
-        <Link href={role === 'vendor' ? '/vendor/dashboard' : role === 'admin' ? '/admin/dashboard' : '/store'}
-          className="text-lg font-black tracking-tight text-[#2D3B45] no-underline">
-          Link<span className="text-[#F5C842]">Mart</span>
+        
+        <Link
+          href={
+            role === "vendor"
+              ? "/vendor/dashboard"
+              : role === "admin"
+              ? "/admin/dashboard"
+              : "/store"
+          }
+          className="flex items-center no-underline shrink-0"
+        >
+          <Image
+            src="/images/logo.png"
+            alt="LinkMart Logo"
+            width={120}
+            height={28}
+            className="h-7 w-auto"
+            priority
+          />
         </Link>
+
         {/* Mobile close button */}
-        <button onClick={onMobileClose}
-          className="lg:hidden w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition text-gray-500">
+        <button
+          onClick={onMobileClose}
+          className="lg:hidden flex items-center justify-center w-7 h-7 rounded-lg text-gray-500 hover:bg-gray-100 transition"
+        >
           <X size={16} />
         </button>
+
       </div>
 
       {/* User info */}

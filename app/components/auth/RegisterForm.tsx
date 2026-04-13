@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Image from "next/image";
 
 const schema = z.object({
   fullName: z.string().min(2, 'At least 2 characters'),
@@ -56,11 +57,17 @@ export function RegisterForm() {
     <div className="min-h-screen bg-[#2D3B45] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
 
-        <div className="text-center mb-6">
-          <span className="text-white font-black text-xl tracking-tight">
-            Link<span className="text-[#F5C842]">Mart</span>
-          </span>
-        </div>
+        {/* Logo */}
+      <div className="text-center mb-6">
+        <Image
+          src="/images/logo.png"
+          alt="LinkMart Logo"
+          width={120}
+          height={28}
+          className="mx-auto h-7 w-auto"
+          priority
+        />
+      </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-xl">
           <h2 className="text-base font-bold text-gray-900 mb-1">Create account</h2>

@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { Mail, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'next/navigation';
-
+import Image from "next/image";
 const loginSchema = z.object({
   email:    z.string().min(1, 'Email is required').email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -47,11 +47,16 @@ export function LoginForm() {
             </p>
           </div>
         )}
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <span className="text-white font-black text-xl tracking-tight">
-            Link<span className="text-[#F5C842]">Mart</span>
-          </span>
+       {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/images/logo.png"
+            alt="LinkMart Logo"
+            width={120}
+            height={28}
+            className="h-7 w-auto"
+            priority
+          />
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-xl">
