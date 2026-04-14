@@ -1,187 +1,127 @@
-// NewListingForm.tsx  — category-aware 3-step form
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useRouter }        from 'next/navigation';
-import { useForm }          from 'react-hook-form';
-import { zodResolver }      from '@hookform/resolvers/zod';
-import { z }                from 'zod';
-import { useAuth }          from '../../lib/auth/auth.context';
-import { listingsService }  from '../../lib/api/endpoints';
-import type { Category }    from '../../lib/types/listing';
 import {
-  MapPin, DollarSign, Users, Upload, X, ChevronRight,
-  Info, Plus, ImageIcon, Loader2, AlertCircle, Check,
-  ArrowLeft, Sparkles,
+  useState, useCallback, useRef, useEffect,
+} from 'react';
+import { useRouter }       from 'next/navigation';
+import { useForm }         from 'react-hook-form';
+import { zodResolver }     from '@hookform/resolvers/zod';
+import { z }               from 'zod';
+import { useAuth }         from '../../lib/auth/auth.context';
+import { listingsService } from '../../lib/api/endpoints';
+import type { Category }   from '../../lib/types/listing';
+import {
+  MapPin, DollarSign, Upload, X, ChevronRight,
+  Info, ImageIcon, Loader2, AlertCircle, Check, ArrowLeft,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const MAX_PHOTOS   = 10;
-const MAX_SIZE_MB  = 5;
-const ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+const MAX_PHOTOS  = 10;
+const MAX_MB      = 5;
+const ACCEPT      = ['image/jpeg', 'image/png', 'image/webp'];
 
-// ── Schema (unchanged from your original) ─────────────────────────────────────
+const KENYA_COUNTIES = [
+  'Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa',
+  'Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi',
+  'Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos',
+  'Makueni','Mandera','Marsabit','Meru','Migori','Mombasa','Murang\'a',
+  'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri',
+  'Samburu','Siaya','Taita-Taveta','Tana River','Tharaka-Nithi','Trans Nzoia',
+  'Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot',
+];
+
+const PRICING_OPTIONS = [
+  { value: 'per_hour',   label: 'Per hour'         },
+  { value: 'per_day',    label: 'Per day'           },
+  { value: 'per_person', label: 'Per person'        },
+  { value: 'package',    label: 'Package'           },
+  { value: 'contact',    label: 'Contact for price' },
+] as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Schema — aligned with backend
+// ─────────────────────────────────────────────────────────────────────────────
 const schema = z.object({
-  title:              z.string().min(5, 'At least 5 characters').max(100),
-  description:        z.string().min(20, 'At least 20 characters').max(2000),
-  categoryId:         z.string().min(1, 'Select a category'),
-  city:               z.string().min(2, 'Required'),
-  address:            z.string().optional(),
-  county:             z.string().optional(),
-  capacity:           z.coerce.number().min(1).max(10000).optional(),
-  pricingType:        z.enum(['per_hour', 'per_day', 'per_night', 'per_person', 'package', 'contact']),
-  price:              z.coerce.number().positive('Must be positive').optional(),
-  minPrice:           z.coerce.number().positive().optional(),
-  maxPrice:           z.coerce.number().positive().optional(),
-  currency:           z.string().default('KES'),
-  instantBooking:     z.boolean().default(false),
-  minBookingDuration: z.coerce.number().min(1).default(1),
-  maxBookingDuration: z.coerce.number().min(1).default(30),
-  leadTime:           z.coerce.number().min(0).default(1),
+  categoryId:    z.string().min(1, 'Select a category'),
+  subCategoryId: z.string().optional(),
+  title:         z.string().min(5, 'At least 5 characters').max(255),
+  description:   z.string().min(20, 'At least 20 characters').max(5000),
+  county:        z.string().min(2, 'Select a county'),
+  area:          z.string().min(2, 'Select an area'),
+  pricingType:   z.enum(['per_hour', 'per_day', 'per_person', 'package', 'contact']),
+  price:         z.coerce.number().positive().optional(),
+  minPrice:      z.coerce.number().positive().optional(),
+  maxPrice:      z.coerce.number().positive().optional(),
+  currency:      z.string().default('KES'),
+  lat:          z.coerce.number().optional(),
+  lng:          z.coerce.number().optional(),  
 }).refine(data => {
-  if (data.pricingType !== 'contact' && data.pricingType !== 'package') return !!data.price;
-  if (data.pricingType === 'package') return !!data.minPrice && !!data.maxPrice;
+  if (data.pricingType === 'package')  return !!data.minPrice && !!data.maxPrice;
+  if (data.pricingType !== 'contact')  return !!data.price;
   return true;
 }, { message: 'Price is required', path: ['price'] });
 
 type FormData = z.infer<typeof schema>;
 
-// ── Category config map ────────────────────────────────────────────────────────
-  // ── Category-aware config ─────────────────────────────────────────────────────
-  // Slug keys match what comes from your DB categories.slug
-  const CATEGORY_CONFIG: Record<string, {
-    pricingTypes:      string[];
-    defaultPricing:    FormData['pricingType'];
-    amenityPresets:    string[];
-    showCapacity:      boolean;
-    capacityLabel:     string;
-    titlePlaceholder:  string;
-    descPlaceholder:   string;
-    durationUnit:      'hours' | 'days';
-    priceLabel:        string;
-  }> = {
-    venue: {
-      pricingTypes:     ['per_day', 'per_night', 'package', 'contact'],
-      defaultPricing:   'per_day',
-      amenityPresets:   ['WiFi', 'Parking', 'AC', 'Projector', 'Sound System', 'Catering', 'Security', 'Generator', 'Bar', 'Kitchen', 'Tables & Chairs', 'Restrooms'],
-      showCapacity:     true,
-      capacityLabel:    'Max guests',
-      titlePlaceholder: 'e.g. Elegant Garden Venue with Pool – Karen, Nairobi',
-      descPlaceholder:  'What makes this venue special? Describe the ambiance, layout, what\'s included, and what events it\'s perfect for.',
-      durationUnit:     'days',
-      priceLabel:       'Price per day (KSh)',
-    },
-    photography: {
-      pricingTypes:     ['per_hour', 'per_day', 'package', 'contact'],
-      defaultPricing:   'per_hour',
-      amenityPresets:   ['Studio Lighting', 'Backdrop Options', 'Props', 'Changing Room', 'Editing Included', 'Raw Files', 'Same-day Preview', 'Outdoor Locations'],
-      showCapacity:     false,
-      capacityLabel:    '',
-      titlePlaceholder: 'e.g. Professional Wedding & Event Photography – Nairobi',
-      descPlaceholder:  'Describe your photography style, experience, what packages include, turnaround time, and equipment.',
-      durationUnit:     'hours',
-      priceLabel:       'Price per hour (KSh)',
-    },
-    catering: {
-      pricingTypes:     ['per_person', 'package', 'contact'],
-      defaultPricing:   'per_person',
-      amenityPresets:   ['Halal', 'Vegetarian', 'Vegan', 'Gluten-free', 'Buffet Setup', 'Waitstaff', 'Cutlery & Crockery', 'Desserts', 'Bar Service'],
-      showCapacity:     true,
-      capacityLabel:    'Max guests served',
-      titlePlaceholder: 'e.g. Full-service Catering for Events up to 500 – Nairobi',
-      descPlaceholder:  'Describe your cuisine style, what\'s included (setup, service, cleanup), dietary options, and minimum order.',
-      durationUnit:     'days',
-      priceLabel:       'Price per person (KSh)',
-    },
-    entertainment: {
-      pricingTypes:     ['per_hour', 'per_day', 'package', 'contact'],
-      defaultPricing:   'per_hour',
-      amenityPresets:   ['Sound System', 'Lighting Rig', 'MC Services', 'Live Band', 'DJ Equipment', 'Microphones', 'Stage', 'Smoke Machine'],
-      showCapacity:     false,
-      capacityLabel:    '',
-      titlePlaceholder: 'e.g. Professional DJ + Sound System – Weddings & Corporate Events',
-      descPlaceholder:  'Describe your act, what\'s included, genre specialties, setup time needed, and past events.',
-      durationUnit:     'hours',
-      priceLabel:       'Price per hour (KSh)',
-    },
-    decoration: {
-      pricingTypes:     ['package', 'per_day', 'contact'],
-      defaultPricing:   'package',
-      amenityPresets:   ['Floral Arrangements', 'Balloon Décor', 'Lighting', 'Table Centerpieces', 'Backdrops', 'Setup & Teardown', 'Theme Packages', 'Candles'],
-      showCapacity:     false,
-      capacityLabel:    '',
-      titlePlaceholder: 'e.g. Premium Wedding & Event Decoration – Nairobi & Environs',
-      descPlaceholder:  'Describe your decoration style, themes you specialise in, what\'s included in packages, and portfolio highlights.',
-      durationUnit:     'days',
-      priceLabel:       'Package price from (KSh)',
-    },
-  };
-
-  // Fallback for categories without a specific config
-  const DEFAULT_CONFIG = {
-    pricingTypes:     ['per_hour', 'per_day', 'per_person', 'package', 'contact'],
-    defaultPricing:   'per_day' as FormData['pricingType'],
-    amenityPresets:   ['WiFi', 'Parking', 'AC', 'Security', 'Generator'],
-    showCapacity:     true,
-    capacityLabel:    'Max capacity',
-    titlePlaceholder: 'Give your listing a clear, descriptive title',
-    descPlaceholder:  'Describe what you offer, what\'s included, and what makes you the right choice.',
-    durationUnit:     'days' as 'hours' | 'days',
-    priceLabel:       'Price (KSh)',
-  };
-
-  function getCategoryConfig(categories: Category[], categoryId: string) {
-    const cat = categories.find(c => c.id === categoryId);
-    if (!cat) return DEFAULT_CONFIG;
-    // Try exact slug match, then partial match
-    return CATEGORY_CONFIG[cat.slug] 
-      ?? Object.entries(CATEGORY_CONFIG).find(([k]) => cat.slug.includes(k))?.[1]
-      ?? DEFAULT_CONFIG;
-  }
-// ── Shared UI atoms ───────────────────────────────────────────────────────────
-const inp = (err?: boolean) =>
-  `w-full px-3 py-2.5 text-sm rounded-xl border bg-white text-gray-900 placeholder-gray-400
-   focus:outline-none focus:ring-2 focus:ring-[#2D3B45] focus:border-transparent transition
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared atoms
+// ─────────────────────────────────────────────────────────────────────────────
+const field = (err?: boolean) =>
+  `w-full px-3 py-2.5 text-sm rounded-xl border bg-white text-gray-900
+   placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2D3B45]
+   focus:border-transparent transition
    ${err ? 'border-red-400' : 'border-gray-200'}`;
 
-function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
+function Label({ children, req }: { children: React.ReactNode; req?: boolean }) {
   return (
-    <label className="block text-xs font-black text-gray-600 uppercase tracking-wide mb-1.5">
-      {children}{required && <span className="text-red-400 normal-case font-normal ml-1">*</span>}
+    <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-1.5">
+      {children}
+      {req && <span className="text-red-400 normal-case font-normal ml-1">*</span>}
     </label>
   );
 }
-function ErrorMsg({ msg }: { msg?: string }) {
-  return msg ? <p className="text-red-500 text-[11px] mt-1">{msg}</p> : null;
+
+function Err({ msg }: { msg?: string }) {
+  return msg
+    ? <p className="text-red-500 text-[11px] mt-1 flex items-center gap-1">
+        <AlertCircle size={10} />{msg}
+      </p>
+    : null;
 }
 
-// ── Step indicator ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Step bar
+// ─────────────────────────────────────────────────────────────────────────────
+const STEPS = ['Category', 'Details', 'Pricing'];
+
 function StepBar({ step }: { step: number }) {
-  const steps = ['Category', 'Essentials', 'Pricing & Details'];
   return (
-    <div className="flex items-center gap-0 mb-8">
-      {steps.map((label, i) => {
-        const num      = i + 1;
-        const done     = step > num;
-        const active   = step === num;
+    <div className="flex items-center mb-8">
+      {STEPS.map((label, i) => {
+        const n      = i + 1;
+        const done   = step > n;
+        const active = step === n;
         return (
-          <div key={num} className="flex items-center flex-1 last:flex-none">
+          <div key={n} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center gap-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black
-                transition-all
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center
+                text-xs font-black transition-all
                 ${done   ? 'bg-[#2D3B45] text-white'
                 : active ? 'bg-[#F5C842] text-[#2D3B45]'
                 :          'bg-gray-100 text-gray-400'}`}>
-                {done ? <Check size={13} /> : num}
+                {done ? <Check size={13} /> : n}
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-wide whitespace-nowrap
+              <span className={`text-[10px] font-bold uppercase tracking-wide
                 ${active ? 'text-[#2D3B45]' : 'text-gray-400'}`}>
                 {label}
               </span>
             </div>
-            {i < steps.length - 1 && (
+            {i < STEPS.length - 1 && (
               <div className={`flex-1 h-px mx-3 mb-4 transition-colors
-                ${step > num ? 'bg-[#2D3B45]' : 'bg-gray-200'}`} />
+                ${step > n ? 'bg-[#2D3B45]' : 'bg-gray-200'}`} />
             )}
           </div>
         );
@@ -190,63 +130,97 @@ function StepBar({ step }: { step: number }) {
   );
 }
 
-// ── Step 1: Category picker ────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 1 — Category + Subcategory
+// ─────────────────────────────────────────────────────────────────────────────
 function CategoryStep({
-  categories, value, onChange, onNext,
+  categories,
+  categoryId,
+  subCategoryId,
+  onCategory,
+  onSubCategory,
+  onNext,
 }: {
-  categories: Category[];
-  value:      string;
-  onChange:   (id: string) => void;
-  onNext:     () => void;
+  categories:    Category[];
+  categoryId:    string;
+  subCategoryId: string;
+  onCategory:    (id: string) => void;
+  onSubCategory: (id: string) => void;
+  onNext:        () => void;
 }) {
+  // Only top-level categories (no parentId)
+  const topLevel = categories.filter(c => !c.parentId);
+  const selected = topLevel.find(c => c.id === categoryId);
+
+  // Subcategories = children of selected top-level
+  const subs = selected?.children ?? categories.filter(c => c.parentId === categoryId);
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-black text-gray-900 mb-1">What are you listing?</h2>
-        <p className="text-sm text-gray-500">
-          Choose the category that best describes your service or venue.
-          This helps us show the right fields for your listing.
-        </p>
+        <h2 className="text-base font-black text-gray-900 mb-0.5">What are you listing?</h2>
+        <p className="text-xs text-gray-400">Pick the category that best describes your service.</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {categories.map(cat => {
-          const selected = value === cat.id;
-          const config   = getCategoryConfig(categories, cat.id);
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => onChange(cat.id)}
-              className={`relative flex flex-col items-start gap-2 p-4 rounded-2xl border-2
-                text-left transition-all
-                ${selected
-                  ? 'border-[#2D3B45] bg-[#2D3B45]/5'
-                  : 'border-gray-100 hover:border-gray-300 bg-white'}`}
-            >
-              {selected && (
-                <span className="absolute top-2.5 right-2.5 w-5 h-5 bg-[#2D3B45] rounded-full
-                  flex items-center justify-center">
-                  <Check size={11} className="text-white" />
-                </span>
-              )}
-              <span className={`text-sm font-black ${selected ? 'text-[#2D3B45]' : 'text-gray-800'}`}>
-                {cat.name}
+      {/* Top-level categories */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        {topLevel.map(cat => (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => { onCategory(cat.id); onSubCategory(''); }}
+            className={`relative flex flex-col items-start gap-1.5 p-3.5 rounded-2xl
+              border-2 text-left transition-all
+              ${categoryId === cat.id
+                ? 'border-[#2D3B45] bg-[#2D3B45]/5'
+                : 'border-gray-100 hover:border-gray-300 bg-white'}`}
+          >
+            {categoryId === cat.id && (
+              <span className="absolute top-2 right-2 w-4 h-4 bg-[#2D3B45] rounded-full
+                flex items-center justify-center">
+                <Check size={9} className="text-white" />
               </span>
-              <span className="text-[10px] text-gray-400 font-medium leading-tight">
-                {config.defaultPricing.replace('_', ' ')} · {config.showCapacity ? 'capacity' : 'no capacity'}
-              </span>
-            </button>
-          );
-        })}
+            )}
+            {cat.icon && (
+              <span className="text-lg">{cat.icon}</span>
+            )}
+            <span className={`text-xs font-black leading-tight
+              ${categoryId === cat.id ? 'text-[#2D3B45]' : 'text-gray-800'}`}>
+              {cat.name}
+            </span>
+          </button>
+        ))}
       </div>
+
+      {/* Subcategories — appear when parent is selected */}
+      {categoryId && subs.length > 0 && (
+        <div>
+          <Label>Subcategory <span className="text-gray-400 font-normal normal-case">(optional but helps customers find you)</span></Label>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {subs.map(sub => (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => onSubCategory(subCategoryId === sub.id ? '' : sub.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors
+                  ${subCategoryId === sub.id
+                    ? 'bg-[#2D3B45] text-white border-[#2D3B45]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#2D3B45]'}`}
+              >
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <button
         type="button"
         onClick={onNext}
-        disabled={!value}
+        disabled={!categoryId}
         className="w-full py-3 bg-[#2D3B45] text-white rounded-xl text-sm font-black
-          hover:bg-[#3a4d5a] transition disabled:opacity-40 flex items-center justify-center gap-2"
+          hover:bg-[#3a4d5a] transition disabled:opacity-40
+          flex items-center justify-center gap-2"
       >
         Continue <ChevronRight size={15} />
       </button>
@@ -254,6 +228,219 @@ function CategoryStep({
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Nominatim area autocomplete hook
+// ─────────────────────────────────────────────────────────────────────────────
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  address: {
+    suburb?:       string;
+    neighbourhood?: string;
+    quarter?:      string;
+    city_district?: string;
+    town?:         string;
+    village?:      string;
+    county?:       string;
+    state?:        string;
+  };
+  lat: string;
+  lon: string;
+}
+
+function useAreaSearch(county: string) {
+  const [query,       setQuery]       = useState('');
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
+  const [loading,     setLoading]     = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    if (!query || query.length < 2 || !county) {
+      setSuggestions([]);
+      return;
+    }
+
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        // Nominatim free API — scoped to Kenya + the selected county
+        const params = new URLSearchParams({
+          q:              `${query}, ${county}, Kenya`,
+          format:         'json',
+          addressdetails: '1',
+          limit:          '6',
+          countrycodes:   'ke',
+          'accept-language': 'en',
+        });
+
+        const res  = await fetch(
+          `https://nominatim.openstreetmap.org/search?${params}`,
+          { headers: { 'User-Agent': 'LinkMart/1.0' } },
+        );
+        const data: NominatimResult[] = await res.json();
+
+        // Deduplicate by suburb/neighbourhood name
+        const seen = new Set<string>();
+        const unique = data.filter(r => {
+          const label = extractAreaLabel(r);
+          if (seen.has(label)) return false;
+          seen.add(label);
+          return true;
+        });
+
+        setSuggestions(unique);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [query, county]);
+
+  return { query, setQuery, suggestions, setSuggestions, loading };
+}
+
+function extractAreaLabel(r: NominatimResult): string {
+  const a = r.address;
+  return (
+    a.suburb       ??
+    a.neighbourhood ??
+    a.quarter       ??
+    a.city_district ??
+    a.town          ??
+    a.village       ??
+    // fallback: first part of display_name before first comma
+    r.display_name.split(',')[0].trim()
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Location picker component
+// ─────────────────────────────────────────────────────────────────────────────
+function LocationPicker({
+  county, area, onCounty, onArea, errors,
+}: {
+  county:   string;
+  area:     string;
+  onCounty: (v: string) => void;
+  onArea:   (v: string, lat?: number, lng?: number) => void;
+  errors:   { county?: { message?: string }; area?: { message?: string } };
+}) {
+  const { query, setQuery, suggestions, setSuggestions, loading } =
+    useAreaSearch(county);
+  const [open, setOpen] = useState(false);
+  const wrapRef         = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const pickArea = (r: NominatimResult) => {
+    const label = extractAreaLabel(r);
+    onArea(label, parseFloat(r.lat), parseFloat(r.lon));
+    setQuery(label);
+    setSuggestions([]);
+    setOpen(false);
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* County dropdown */}
+      <div>
+        <Label req>County</Label>
+        <div className="relative">
+          <MapPin size={14} className="absolute left-3 top-3 text-gray-400 pointer-events-none" />
+          <select
+            value={county}
+            onChange={e => { onCounty(e.target.value); onArea(''); setQuery(''); }}
+            className={`${field(!!errors.county)} pl-8 cursor-pointer appearance-none`}
+          >
+            <option value="">Select county…</option>
+            {KENYA_COUNTIES.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+        <Err msg={errors.county?.message} />
+      </div>
+
+      {/* Area autocomplete — only shown once county is picked */}
+      {county && (
+        <div ref={wrapRef} className="relative">
+          <Label req>Area / Estate</Label>
+          <div className="relative">
+            <MapPin size={14} className="absolute left-3 top-3 text-gray-400 pointer-events-none" />
+            {loading && (
+              <Loader2 size={13} className="absolute right-3 top-3 text-gray-400 animate-spin" />
+            )}
+            <input
+              value={area || query}
+              placeholder={`Search area in ${county}…`}
+              onChange={e => {
+                setQuery(e.target.value);
+                onArea(e.target.value);
+                setOpen(true);
+              }}
+              onFocus={() => suggestions.length > 0 && setOpen(true)}
+              className={`${field(!!errors.area)} pl-8 pr-8`}
+              autoComplete="off"
+            />
+          </div>
+          <Err msg={errors.area?.message} />
+
+          {/* Suggestions dropdown */}
+          {open && suggestions.length > 0 && (
+            <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200
+              rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto">
+              {suggestions.map(r => {
+                const label = extractAreaLabel(r);
+                return (
+                  <li key={r.place_id}>
+                    <button
+                      type="button"
+                      onMouseDown={() => pickArea(r)}
+                      className="w-full flex items-start gap-2 px-3 py-2.5
+                        hover:bg-gray-50 text-left transition-colors"
+                    >
+                      <MapPin size={12} className="text-gray-400 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800">{label}</p>
+                        <p className="text-[10px] text-gray-400 truncate max-w-xs">
+                          {r.display_name}
+                        </p>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {/* No results hint */}
+          {open && query.length >= 2 && suggestions.length === 0 && !loading && (
+            <p className="text-[11px] text-gray-400 mt-1">
+              No areas found — try a different spelling or type the name directly.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Photo uploader
+// ─────────────────────────────────────────────────────────────────────────────
 interface UploadedPhoto {
   localId:   string;
   url:       string;
@@ -261,220 +448,233 @@ interface UploadedPhoto {
   error?:    string;
 }
 
-function PhotoUploader({value, onChange, token,}: {
+function PhotoUploader({
+  value, onChange, token,
+}: {
   value:    string[];
   onChange: (v: string[]) => void;
   token:    string | null;
 }) {
   const [photos,   setPhotos]   = useState<UploadedPhoto[]>(
-    value.map(url => ({ url, uploading: false, localId: url }))
+    value.map(url => ({ url, uploading: false, localId: url })),
   );
   const [dragging, setDragging] = useState(false);
-  const inputRef               = useRef<HTMLInputElement>(null);
-  const remaining              = MAX_PHOTOS - photos.filter(p => !p.error).length;
+  const inputRef                = useRef<HTMLInputElement>(null);
+  const uploadedCount           = photos.filter(p => p.url && !p.error).length;
+  const remaining               = MAX_PHOTOS - photos.filter(p => !p.error).length;
 
   useEffect(() => {
-    const urls = photos
-      .filter(p => p.url && !p.uploading && !p.error)
-      .map(p => p.url);
-    onChange(urls);
+    onChange(photos.filter(p => p.url && !p.uploading && !p.error).map(p => p.url));
   }, [photos]);
 
-
-  // ✅ Authorization header added
   const uploadFile = useCallback(async (file: File, localId: string) => {
-    const formData = new FormData();
-    formData.append('image', file);
-
+    const fd = new FormData();
+    fd.append('image', file);
     try {
       const res = await fetch('/api/upload/image', {
         method:  'POST',
-        body:    formData,
+        body:    fd,
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || `Upload failed (${res.status})`);
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error ?? `Upload failed (${res.status})`);
       }
-
       const json = await res.json();
       const url: string = json.data?.url ?? json.url;
-      if (!url) throw new Error('No URL returned from upload');
+      if (!url) throw new Error('No URL returned');
+      setPhotos(prev => prev.map(p =>
+        p.localId === localId ? { ...p, url, uploading: false } : p,
+      ));
+    } catch (err) {
+      setPhotos(prev => prev.map(p =>
+        p.localId === localId
+          ? { ...p, uploading: false, error: err instanceof Error ? err.message : 'Upload failed' }
+          : p,
+      ));
+    }
+  }, [token]);
 
-    setPhotos(prev =>
-            prev.map(p => p.localId === localId ? { ...p, url, uploading: false } : p)
-          );
-        } catch (err) {
-          const error = err instanceof Error ? err.message : 'Upload failed';
-          setPhotos(prev =>
-            prev.map(p => p.localId === localId ? { ...p, uploading: false, error } : p)
-          );
-        }
-      }, [token]);
-      
   const processFiles = useCallback((files: File[]) => {
-    const valid = files.filter(f =>
-      ACCEPT_TYPES.includes(f.type) && f.size <= MAX_SIZE_MB * 1024 * 1024
-    );
+    const valid = files.filter(f => ACCEPT.includes(f.type) && f.size <= MAX_MB * 1024 * 1024);
     const slots = Math.min(valid.length, remaining);
     if (!slots) return;
-
-    const newPhotos: UploadedPhoto[] = valid.slice(0, slots).map(f => ({
+    const next: UploadedPhoto[] = valid.slice(0, slots).map(f => ({
       url: '', uploading: true,
       localId: `${f.name}-${Date.now()}-${Math.random()}`,
     }));
-
-    setPhotos(prev => [...prev, ...newPhotos]);
-    newPhotos.forEach((p, i) => uploadFile(valid[i], p.localId));
+    setPhotos(prev => [...prev, ...next]);
+    next.forEach((p, i) => uploadFile(valid[i], p.localId));
   }, [remaining, uploadFile]);
 
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setDragging(false);
-    processFiles(Array.from(e.dataTransfer.files));
-  };
-
-  const removePhoto = (localId: string) => {
-      setPhotos(prev => prev.filter(p => p.localId !== localId));
-    };
-
   return (
-    <div>
-      <div
-        onDragEnter={() => setDragging(true)}
-        onDragLeave={() => setDragging(false)}
-        onDragOver={e => e.preventDefault()}
-        onDrop={onDrop}
-        className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition
-          ${dragging ? 'border-[#2D3B45] bg-[#2D3B45]/5' : 'border-gray-200 hover:border-gray-300'}`}
-        onClick={() => inputRef.current?.click()}
-      >
-        <Upload size={24} className="mx-auto text-gray-400 mb-2" />
-        <p className="text-sm text-gray-600 font-medium">Drag photos here or click to upload</p>
-        <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP up to 5MB each</p>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          accept={ACCEPT_TYPES.join(',')}
-          onChange={e => processFiles(Array.from(e.currentTarget.files || []))}
-          className="hidden"
-        />
+    <div className="space-y-3">
+      {/* Progress indicator */}
+      <div className="flex items-center justify-between text-[11px]">
+        <span className="text-gray-500">
+          {uploadedCount} of {MAX_PHOTOS} photos
+          {uploadedCount > 0 && ' · first photo is your cover'}
+        </span>
+        <span className={`font-bold ${uploadedCount >= 3 ? 'text-emerald-600' : 'text-amber-600'}`}>
+          {uploadedCount < 3 ? `${3 - uploadedCount} more needed to publish` : '✓ Ready to publish'}
+        </span>
       </div>
-      <div className="grid grid-cols-3 gap-3 mt-4">
-        {photos.map(p => (
-          <div key={p.localId} className="relative bg-gray-100 rounded-lg overflow-hidden aspect-square">
-            {p.uploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                <Loader2 size={20} className="text-white animate-spin" />
-              </div>
-            )}
-            {p.error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-red-50">
-                <AlertCircle size={20} className="text-red-500" />
-              </div>
-            )}
-            {!p.error && p.url && (
-              <img src={p.url} alt="upload" className="w-full h-full object-cover" />
-            )}
-            <button
-              type="button"
-              onClick={() => removePhoto(p.localId)}
-              className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        ))}
-      </div>
+
+      {/* Drop zone */}
       {remaining > 0 && (
-        <p className="text-xs text-gray-500 mt-2">
-          {remaining} slot{remaining !== 1 ? 's' : ''} remaining
-        </p>
+        <div
+          onClick={() => inputRef.current?.click()}
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={e => { e.preventDefault(); setDragging(false); processFiles(Array.from(e.dataTransfer.files)); }}
+          className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer
+            transition-colors select-none
+            ${dragging
+              ? 'border-[#2D3B45] bg-[#2D3B45]/5'
+              : 'border-gray-200 hover:border-[#2D3B45] hover:bg-gray-50'}`}
+        >
+          <input
+            ref={inputRef} type="file" multiple accept={ACCEPT.join(',')}
+            className="sr-only"
+            onChange={e => { processFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }}
+          />
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center
+            mx-auto mb-2 transition-colors
+            ${dragging ? 'bg-[#2D3B45] text-white' : 'bg-gray-100 text-gray-400'}`}>
+            <Upload size={18} />
+          </div>
+          <p className="text-sm font-bold text-gray-700">
+            {dragging ? 'Drop here' : 'Drag photos or click to upload'}
+          </p>
+          <p className="text-[11px] text-gray-400 mt-1">
+            JPG · PNG · WebP · max {MAX_MB}MB each
+          </p>
+        </div>
+      )}
+
+      {/* Photo grid */}
+      {photos.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {photos.map((p, i) => (
+            <div key={p.localId}
+              className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 group">
+              {p.uploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+                  <Loader2 size={18} className="text-[#2D3B45] animate-spin" />
+                </div>
+              )}
+              {p.error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-red-50 z-10 p-2">
+                  <AlertCircle size={16} className="text-red-400" />
+                </div>
+              )}
+              {p.url && !p.uploading && !p.error && (
+                <img src={p.url} alt={`photo ${i + 1}`} className="w-full h-full object-cover" />
+              )}
+              {i === 0 && p.url && !p.error && (
+                <span className="absolute top-1 left-1 text-[9px] font-black
+                  bg-[#F5C842] text-[#2D3B45] px-1.5 py-0.5 rounded z-20">
+                  COVER
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setPhotos(prev => prev.filter(x => x.localId !== p.localId))}
+                className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white
+                  rounded-full flex items-center justify-center opacity-0
+                  group-hover:opacity-100 transition-opacity z-20 hover:bg-red-500"
+              >
+                <X size={10} />
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-// ── Step 2: Essentials ─────────────────────────────────────────────────────────
-function EssentialsStep({
-  register, errors, config, photos, setPhotos, token, onBack, onNext,
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 2 — Details (title, description, location, photos)
+// ─────────────────────────────────────────────────────────────────────────────
+function DetailsStep({
+  register, errors, watch, setValue,
+  photos, setPhotos, token,
+  onBack, onNext,
 }: {
   register:  any;
   errors:    any;
-  config:    ReturnType<typeof getCategoryConfig>;
+  watch:     any;
+  setValue:  any;
   photos:    string[];
   setPhotos: (v: string[]) => void;
   token:     string | null;
   onBack:    () => void;
   onNext:    () => void;
 }) {
+  const county = watch('county') ?? '';
+  const area   = watch('area')   ?? '';
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-black text-gray-900 mb-1">Tell us about your listing</h2>
-        <p className="text-sm text-gray-500">
-          Good photos and a clear description get you 3× more enquiries.
+        <h2 className="text-base font-black text-gray-900 mb-0.5">About your listing</h2>
+        <p className="text-xs text-gray-400">
+          A clear title and real photos get 3× more enquiries.
         </p>
       </div>
 
       {/* Title */}
       <div>
-        <Label required>Listing title</Label>
-        <input {...register('title')} placeholder={config.titlePlaceholder} className={inp(!!errors.title)} />
-        <ErrorMsg msg={errors.title?.message} />
+        <Label req>Title</Label>
+        <input
+          {...register('title')}
+          placeholder="e.g. Professional Wedding Photography – Nairobi"
+          className={field(!!errors.title)}
+        />
+        <Err msg={errors.title?.message} />
       </div>
 
       {/* Description */}
       <div>
-        <Label required>Description</Label>
+        <Label req>Description</Label>
         <textarea
           {...register('description')}
-          rows={5}
-          placeholder={config.descPlaceholder}
-          className={`${inp(!!errors.description)} resize-none`}
+          rows={4}
+          placeholder="What makes your service special? What's included? Who is it best for?"
+          className={`${field(!!errors.description)} resize-none`}
         />
-        <ErrorMsg msg={errors.description?.message} />
+        <Err msg={errors.description?.message} />
       </div>
 
-      {/* Location — city is the only required field here */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label required>City</Label>
-          <div className="relative">
-            <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
-            <input {...register('city')} placeholder="Nairobi" className={`${inp(!!errors.city)} pl-8`} />
-          </div>
-          <ErrorMsg msg={errors.city?.message} />
-        </div>
-        <div>
-          <Label>County</Label>
-          <input {...register('county')} placeholder="e.g. Nairobi County" className={inp()} />
-        </div>
-        <div className="col-span-2">
-          <Label>Area / address</Label>
-          <input {...register('address')} placeholder="e.g. Westlands, Karen, CBD…" className={inp()} />
-        </div>
-      </div>
+      {/* Location */}
+      <LocationPicker
+        county={county}
+        area={area}
+        onCounty={v => setValue('county', v, { shouldValidate: true })}
+        onArea={(v, lat, lng) => {
+          setValue('area', v, { shouldValidate: true });
+          // lat/lng stored silently for future map use — not required fields
+          if (lat) setValue('_lat', lat);
+          if (lng) setValue('_lng', lng);
+        }}
+        errors={errors}
+      />
 
       {/* Photos */}
       <div>
-        <Label required>Photos</Label>
-        <p className="text-[11px] text-gray-400 mb-2">
-          Add at least 3 photos. First photo becomes your cover image.
-        </p>
+        <Label req>Photos</Label>
         <PhotoUploader value={photos} onChange={setPhotos} token={token} />
       </div>
 
-      {/* Nav */}
       <div className="flex gap-3 pt-2">
         <button type="button" onClick={onBack}
-          className="flex items-center gap-1.5 px-4 py-3 border border-gray-200 text-gray-600
-            rounded-xl text-sm font-bold hover:border-gray-400 transition">
+          className="flex items-center gap-1.5 px-4 py-2.5 border border-gray-200
+            text-gray-600 rounded-xl text-sm font-bold hover:border-gray-400 transition">
           <ArrowLeft size={14} /> Back
         </button>
         <button type="button" onClick={onNext}
-          className="flex-1 py-3 bg-[#2D3B45] text-white rounded-xl text-sm font-black
+          className="flex-1 py-2.5 bg-[#2D3B45] text-white rounded-xl text-sm font-black
             hover:bg-[#3a4d5a] transition flex items-center justify-center gap-2">
           Continue <ChevronRight size={15} />
         </button>
@@ -483,244 +683,126 @@ function EssentialsStep({
   );
 }
 
-// ── Amenities picker (unchanged logic, config-driven presets) ─────────────────
-function AmenitiesPicker({
-  value, onChange, presets,
-}: {
-  value:    string[];
-  onChange: (v: string[]) => void;
-  presets:  string[];
-}) {
-  const [custom, setCustom] = useState('');
-  const toggle = (item: string) =>
-    onChange(value.includes(item) ? value.filter(a => a !== item) : [...value, item]);
-  const addCustom = () => {
-    const t = custom.trim();
-    if (t && !value.includes(t)) onChange([...value, t]);
-    setCustom('');
-  };
-  return (
-    <div>
-      <div className="flex flex-wrap gap-2 mb-3">
-        {presets.map(a => (
-          <button key={a} type="button" onClick={() => toggle(a)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors
-              ${value.includes(a)
-                ? 'bg-[#2D3B45] text-white border-[#2D3B45]'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-[#2D3B45]'}`}>
-            {a}
-          </button>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <input value={custom} onChange={e => setCustom(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustom())}
-          placeholder="Add custom amenity…"
-          className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white
-            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2D3B45] transition" />
-        <button type="button" onClick={addCustom}
-          className="px-3 py-2 bg-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-200 transition">
-          <Plus size={13} />
-        </button>
-      </div>
-      {value.filter(a => !presets.includes(a)).length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2">
-          {value.filter(a => !presets.includes(a)).map(a => (
-            <span key={a} className="flex items-center gap-1 px-3 py-1.5 bg-[#2D3B45] text-white rounded-lg text-xs font-bold">
-              {a}
-              <button type="button" onClick={() => toggle(a)} className="hover:text-red-300 transition">
-                <X size={11} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Step 3: Pricing & details ──────────────────────────────────────────────────
-const PRICING_LABELS: Record<string, string> = {
-  per_hour:   'Per hour',
-  per_day:    'Per day',
-  per_night:  'Per night',
-  per_person: 'Per person',
-  package:    'Package',
-  contact:    'Contact for price',
-};
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 3 — Pricing
+// ─────────────────────────────────────────────────────────────────────────────
 function PricingStep({
-  register, errors, watch, setValue, config,
-  amenities, setAmenities, saving, saveAsRef, onBack,
+  register, errors, watch,
+  saving, saveAsRef, onBack,
 }: {
-  register:     any;
-  errors:       any;
-  watch:        any;
-  setValue:     any;
-  config:       ReturnType<typeof getCategoryConfig>;
-  amenities:    string[];
-  setAmenities: (v: string[]) => void;
-  saving:       boolean;
-  saveAsRef:    React.MutableRefObject<'draft' | 'active'>;
-  onBack:       () => void;
+  register:  any;
+  errors:    any;
+  watch:     any;
+  saving:    boolean;
+  saveAsRef: React.MutableRefObject<'draft' | 'active'>;
+  onBack:    () => void;
 }) {
   const pricingType = watch('pricingType');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-black text-gray-900 mb-1">Pricing & details</h2>
-        <p className="text-sm text-gray-500">Set your pricing and add any relevant details.</p>
+        <h2 className="text-base font-black text-gray-900 mb-0.5">Pricing</h2>
+        <p className="text-xs text-gray-400">
+          Clear pricing builds trust and reduces back-and-forth.
+        </p>
       </div>
 
-      {/* Pricing type — only show what makes sense for this category */}
+      {/* Pricing type */}
       <div>
-        <Label required>How do you charge?</Label>
+        <Label req>How do you charge?</Label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {config.pricingTypes.map(value => {
+          {PRICING_OPTIONS.map(({ value, label }) => {
             const checked = pricingType === value;
             return (
               <label key={value}
-                className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer text-xs
-                  font-bold transition-colors
+                className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer
+                  text-xs font-bold transition-colors
                   ${checked
                     ? 'border-[#2D3B45] bg-[#2D3B45]/5 text-[#2D3B45]'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                 <input
-                  type="radio"
-                  value={value}
-                  {...register('pricingType')}
-                  className="sr-only"
+                  type="radio" value={value}
+                  {...register('pricingType')} className="sr-only"
                 />
-                <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex items-center justify-center
+                <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0
+                  flex items-center justify-center
                   ${checked ? 'border-[#2D3B45]' : 'border-gray-300'}`}>
                   {checked && <span className="w-1.5 h-1.5 rounded-full bg-[#2D3B45]" />}
                 </span>
-                {PRICING_LABELS[value]}
+                {label}
               </label>
             );
           })}
         </div>
       </div>
 
-      {/* Price field(s) */}
+      {/* Price inputs */}
       {pricingType === 'package' ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label required>Min price (KSh)</Label>
+            <Label req>Min price (KSh)</Label>
             <div className="relative">
-              <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
+              <DollarSign size={13} className="absolute left-3 top-3 text-gray-400" />
               <input type="number" {...register('minPrice')} placeholder="50,000"
-                className={`${inp(!!errors.minPrice)} pl-8`} />
+                className={`${field(!!errors.minPrice)} pl-8`} />
             </div>
-            <ErrorMsg msg={errors.minPrice?.message} />
+            <Err msg={errors.minPrice?.message} />
           </div>
           <div>
-            <Label required>Max price (KSh)</Label>
+            <Label req>Max price (KSh)</Label>
             <div className="relative">
-              <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
+              <DollarSign size={13} className="absolute left-3 top-3 text-gray-400" />
               <input type="number" {...register('maxPrice')} placeholder="200,000"
-                className={`${inp(!!errors.maxPrice)} pl-8`} />
+                className={`${field(!!errors.maxPrice)} pl-8`} />
             </div>
-            <ErrorMsg msg={errors.maxPrice?.message} />
+            <Err msg={errors.maxPrice?.message} />
           </div>
         </div>
       ) : pricingType === 'contact' ? (
-        <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl">
-          <Info size={14} className="text-blue-500 shrink-0" />
-          <p className="text-xs text-blue-700">Customers will contact you directly to discuss pricing.</p>
+        <div className="flex items-start gap-2.5 px-4 py-3 bg-blue-50
+          border border-blue-100 rounded-xl">
+          <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-700 leading-relaxed">
+            Customers will contact you directly to discuss pricing.
+            Make sure your profile has up-to-date contact details.
+          </p>
         </div>
       ) : (
         <div>
-          <Label required>{config.priceLabel}</Label>
+          <Label req>Price (KSh)</Label>
           <div className="relative">
-            <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
+            <DollarSign size={13} className="absolute left-3 top-3 text-gray-400" />
             <input type="number" {...register('price')} placeholder="e.g. 15,000"
-              className={`${inp(!!errors.price)} pl-8`} />
+              className={`${field(!!errors.price)} pl-8`} />
           </div>
-          <ErrorMsg msg={errors.price?.message} />
+          <Err msg={errors.price?.message} />
         </div>
       )}
 
-      {/* Capacity — only if relevant */}
-      {config.showCapacity && (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>{config.capacityLabel}</Label>
-            <div className="relative">
-              <Users size={14} className="absolute left-3 top-3 text-gray-400" />
-              <input type="number" {...register('capacity')} placeholder="e.g. 200"
-                className={`${inp(!!errors.capacity)} pl-8`} />
-            </div>
-          </div>
-          <div>
-            <Label>Lead time ({config.durationUnit === 'hours' ? 'hours' : 'days'})</Label>
-            <input type="number" {...register('leadTime')} placeholder="1" className={inp()} />
-            <p className="text-[11px] text-gray-400 mt-1">Advance notice needed</p>
-          </div>
-        </div>
-      )}
-
-      {/* Booking duration */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Min booking ({config.durationUnit})</Label>
-          <input type="number" {...register('minBookingDuration')} placeholder="1" className={inp()} />
-        </div>
-        <div>
-          <Label>Max booking ({config.durationUnit})</Label>
-          <input type="number" {...register('maxBookingDuration')} placeholder="30" className={inp()} />
-        </div>
-      </div>
-
-      {/* Instant booking toggle */}
-      <label className="flex items-center gap-3 cursor-pointer">
-        <div className="relative">
-          <input type="checkbox" {...register('instantBooking')} className="sr-only peer" />
-          <div className="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-[#2D3B45] transition-colors" />
-          <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow
-            transition-transform peer-checked:translate-x-4" />
-        </div>
-        <div>
-          <p className="text-xs font-bold text-gray-800">Instant booking</p>
-          <p className="text-[11px] text-gray-400">Customers can book without your approval</p>
-        </div>
-      </label>
-
-      {/* Amenities — presets driven by category */}
-      <div>
-        <Label>Amenities & features</Label>
-        <p className="text-[11px] text-gray-400 mb-2">
-          Select what's included. These help customers find and compare you.
-        </p>
-        <AmenitiesPicker
-          value={amenities}
-          onChange={setAmenities}
-          presets={config.amenityPresets}
-        />
-      </div>
-
-      {/* Submit buttons */}
+      {/* Actions */}
       <div className="flex gap-3 pt-2 pb-8">
         <button type="button" onClick={onBack}
-          className="flex items-center gap-1.5 px-4 py-3 border border-gray-200 text-gray-600
-            rounded-xl text-sm font-bold hover:border-gray-400 transition">
+          className="flex items-center gap-1.5 px-4 py-2.5 border border-gray-200
+            text-gray-600 rounded-xl text-sm font-bold hover:border-gray-400 transition">
           <ArrowLeft size={14} /> Back
         </button>
         <button
           type="submit"
           disabled={saving}
           onClick={() => { saveAsRef.current = 'draft'; }}
-          className="flex-1 py-3 border-2 border-[#2D3B45] text-[#2D3B45] rounded-xl text-sm
-            font-black hover:bg-[#2D3B45]/5 transition disabled:opacity-50">
-          {saving && saveAsRef.current === 'draft' ? 'Saving…' : 'Save as draft'}
+          className="flex-1 py-2.5 border-2 border-[#2D3B45] text-[#2D3B45]
+            rounded-xl text-sm font-black hover:bg-[#2D3B45]/5
+            transition disabled:opacity-50">
+          {saving && saveAsRef.current === 'draft' ? 'Saving…' : 'Save draft'}
         </button>
         <button
           type="submit"
           disabled={saving}
           onClick={() => { saveAsRef.current = 'active'; }}
-          className="flex-1 py-3 bg-[#2D3B45] text-white rounded-xl text-sm font-black
-            hover:bg-[#3a4d5a] transition disabled:opacity-50 flex items-center justify-center gap-2">
+          className="flex-1 py-2.5 bg-[#2D3B45] text-white rounded-xl text-sm
+            font-black hover:bg-[#3a4d5a] transition disabled:opacity-50
+            flex items-center justify-center gap-2">
           {saving && saveAsRef.current === 'active'
             ? 'Publishing…'
             : <><span>Publish</span><ChevronRight size={15} /></>}
@@ -730,108 +812,140 @@ function PricingStep({
   );
 }
 
-// ── Main form ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Root form
+// ─────────────────────────────────────────────────────────────────────────────
 export function NewListingForm({ categories }: { categories: Category[] }) {
-  const router     = useRouter();
-  const { token }  = useAuth();
-  const saveAsRef  = useRef<'draft' | 'active'>('draft');
-  const [step,     setStep]     = useState(1);
-  const [amenities, setAmenities] = useState<string[]>([]);
-  const [photos,    setPhotos]    = useState<string[]>([]);
-  const [saving,    setSaving]    = useState(false);
+  const router    = useRouter();
+  const { token } = useAuth();
+  const saveAsRef = useRef<'draft' | 'active'>('draft');
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
+  const [step,    setStep]    = useState(1);
+  const [photos,  setPhotos]  = useState<string[]>([]);
+  const [saving,  setSaving]  = useState(false);
+
+  const {
+    register, handleSubmit, watch, setValue,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      pricingType: 'per_day', currency: 'KES',
-      instantBooking: false, minBookingDuration: 1, maxBookingDuration: 30, leadTime: 1,
-    },
+    defaultValues: { pricingType: 'per_day', currency: 'KES' },
   });
 
-  const categoryId = watch('categoryId');
-  const config     = getCategoryConfig(categories, categoryId);
+  const categoryId    = watch('categoryId')    ?? '';
+  const subCategoryId = watch('subCategoryId') ?? '';
 
-  // When category changes, update pricing type default and reset amenities
-  useEffect(() => {
-    if (!categoryId) return;
-    const cfg = getCategoryConfig(categories, categoryId);
-    setValue('pricingType', cfg.defaultPricing);
-    setAmenities([]);
-  }, [categoryId, categories, setValue]);
-
-  const goToStep2 = () => {
-    if (!categoryId) return;
+  // ── Navigation guards ───────────────────────────────────────────────────────
+  const goStep2 = () => {
+    if (!categoryId) { toast.error('Pick a category first'); return; }
     setStep(2);
   };
 
-  const goToStep3 = () => {
-    // Validate step 2 fields before proceeding
-    const title       = watch('title');
-    const description = watch('description');
-    const city        = watch('city');
-    if (!title || title.length < 5)       { toast.error('Add a title (5+ characters)'); return; }
-    if (!description || description.length < 20) { toast.error('Add a description (20+ characters)'); return; }
-    if (!city || city.length < 2)          { toast.error('Add your city'); return; }
+  const goStep3 = () => {
+    const title  = watch('title')       ?? '';
+    const desc   = watch('description') ?? '';
+    const county = watch('county')      ?? '';
+    const area   = watch('area')        ?? '';
+
+    if (title.length  < 5)  { toast.error('Title needs at least 5 characters'); return; }
+    if (desc.length   < 20) { toast.error('Description needs at least 20 characters'); return; }
+    if (!county)             { toast.error('Select a county'); return; }
+    if (!area)               { toast.error('Select an area'); return; }
+    if (photos.length < 1)   { toast.error('Add at least 1 photo'); return; }
+
     setStep(3);
   };
 
+  // ── Submit ──────────────────────────────────────────────────────────────────
   const onSubmit = async (data: FormData) => {
+    if (saveAsRef.current === 'active' && photos.length < 3) {
+      toast.error('Add at least 3 photos to publish');
+      return;
+    }
+
     setSaving(true);
+
     try {
+      const lat = watch('_lat');
+      const lng = watch('_lng');
+
       const payload = {
-        title: data.title, description: data.description, categoryId: data.categoryId,
-        location: { city: data.city, address: data.address, county: data.county, country: 'Kenya' },
-        capacity: data.capacity, pricingType: data.pricingType,
-        price: data.price, minPrice: data.minPrice, maxPrice: data.maxPrice,
-        currency: data.currency, photos, coverPhoto: photos[0], amenities,
-        instantBooking: data.instantBooking,
-        minBookingDuration: data.minBookingDuration,
-        maxBookingDuration: data.maxBookingDuration,
-        leadTime: data.leadTime,
+        categoryId: data.subCategoryId || data.categoryId,
+        title: data.title,
+        description: data.description,
+
+        location: {
+          county: data.county,
+          area: data.area,
+          country: 'Kenya',
+          ...(lat && { latitude: Number(lat) }),
+          ...(lng && { longitude: Number(lng) }),
+        },
+
+        pricingType: data.pricingType,
+        price: data.price,
+        minPrice: data.minPrice,
+        maxPrice: data.maxPrice,
+        currency: data.currency,
+
+        photos,
+        coverPhoto: photos[0],
       };
 
       const res = await listingsService.create(payload);
-      const id  = res.data?.id ?? (res.data as any)?.data?.id;
+
+      const id = res.data?.id ?? (res.data as any)?.data?.id;
 
       if (saveAsRef.current === 'active' && id) {
         await listingsService.updateStatus(id, 'active').catch(() => {});
       }
 
-      toast.success(saveAsRef.current === 'active' ? 'Listing published!' : 'Draft saved');
+      toast.success(
+        saveAsRef.current === 'active'
+          ? 'Listing published!'
+          : 'Draft saved'
+      );
+
       router.push('/vendor/listings');
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create listing');
     } finally {
       setSaving(false);
     }
   };
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl">
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-xl">
       <StepBar step={step} />
 
-      {/* Hidden field — always registered */}
+      {/* Hidden registered fields */}
       <input type="hidden" {...register('categoryId')} />
+      <input type="hidden" {...register('subCategoryId')} />
+      <input type="hidden" {...register('county')} />
+      <input type="hidden" {...register('area')} />
 
       <div className="bg-white border border-gray-100 rounded-2xl p-6">
         {step === 1 && (
           <CategoryStep
             categories={categories}
-            value={categoryId}
-            onChange={id => setValue('categoryId', id)}
-            onNext={goToStep2}
+            categoryId={categoryId}
+            subCategoryId={subCategoryId}
+            onCategory={id => setValue('categoryId', id, { shouldValidate: true })}
+            onSubCategory={id => setValue('subCategoryId', id)}
+            onNext={goStep2}
           />
         )}
         {step === 2 && (
-          <EssentialsStep
+          <DetailsStep
             register={register}
             errors={errors}
-            config={config}
+            watch={watch}
+            setValue={setValue}
             photos={photos}
             setPhotos={setPhotos}
             token={token}
             onBack={() => setStep(1)}
-            onNext={goToStep3}
+            onNext={goStep3}
           />
         )}
         {step === 3 && (
@@ -839,10 +953,6 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
             register={register}
             errors={errors}
             watch={watch}
-            setValue={setValue}
-            config={config}
-            amenities={amenities}
-            setAmenities={setAmenities}
             saving={saving}
             saveAsRef={saveAsRef}
             onBack={() => setStep(2)}

@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { User, Mail, Phone, Lock, Building2, Eye, EyeOff, MapPin, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Image from "next/image";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
@@ -151,15 +150,9 @@ export function RegisterVendorForm() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-6">
-        <Image
-          src="/images/logo.png"
-          alt="LinkMart Logo"
-          width={120}
-          height={28}
-          className="mx-auto h-7 w-auto"
-          priority
-        />
-      </div>
+          <span className="text-white font-black text-xl tracking-tight">
+            Link<span className="text-[#F5C842]">Mart</span>
+          </span>
           {/* Step indicator */}
           <div className="flex items-center justify-center gap-2 mt-3">
             {[1, 2].map(s => (

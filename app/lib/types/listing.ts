@@ -1,42 +1,36 @@
-// lib/types/listing.ts
+export type ListingStatus = 'draft' | 'active' | 'paused' | 'deleted';
+export type PricingType   = 'per_hour' | 'per_day' | 'per_person' | 'package' | 'contact';
 
-export type ListingStatus    = 'draft' | 'active' | 'paused' | 'deleted';
-export type PricingType      = 'fixed' | 'per_day' | 'per_hour' | 'per_person' | 'range' | 'package';
-export type ProductStatus    = 'draft' | 'active' | 'paused' | 'out_of_stock' | 'deleted';
-
-// ── Location jsonb shape (matches backend) ────────────────────────────────────
+// ── Location — county + area only (no city, no address)
 export interface ListingLocation {
-  city:       string;
-  address?:   string | undefined;
-  county?:    string | undefined;
-  country?:   string | undefined;
+  county:     string;
+  area:       string;
+  country?:   string;
   latitude?:  number | undefined;
   longitude?: number | undefined;
 }
 
-// ── Category (from /api/categories) ──────────────────────────────────────────
+// ── Category — supports parent/children tree
 export interface Category {
   id:        string;
   name:      string;
   slug:      string;
-  icon?:     string | undefined;
-  imageUrl?: string | undefined;
-  parentId?: string | undefined;
-  children?: Category[] | undefined;
+  icon?:     string;
+  imageUrl?: string;
+  parentId?: string;
+  children?: Category[];
 }
 
-// ── Vendor shape on relations ─────────────────────────────────────────────────
 export interface ListingVendor {
   id:              string;
   businessName:    string;
   slug:            string;
-  logo?:           string | undefined;
-  whatsappNumber?: string | undefined;
-  phoneNumber:     string;
+  logo?:           string;
+  whatsappNumber?: string;
+  phoneNumber?:    string;
   verified:        boolean;
 }
 
-// ── Listing (matches new backend schema) ─────────────────────────────────────
 export interface Listing {
   id:          string;
   vendorId:    string;
@@ -44,119 +38,39 @@ export interface Listing {
   title:       string;
   slug:        string;
   description: string;
-
-  // ✅ jsonb location — NOT flat fields
-  location: ListingLocation;
-
-  capacity?: number | undefined;
-
-  // ✅ Flexible pricing
+  location:    ListingLocation;
   pricingType: PricingType;
-  price?:      string | undefined;   // decimal string from DB
-  minPrice?:   string | undefined;
-  maxPrice?:   string | undefined;
-  currency:    string;
-
-  photos:     string[];
-  coverPhoto?: string | undefined;
-  amenities?:  string[] | undefined;
-
-  instantBooking:     boolean;
-  minBookingDuration: number;
-  maxBookingDuration: number;
-  leadTime:           number;
-
-  status:        ListingStatus;
-  views:         number;
-  bookingsCount: number;
-
-  createdAt: string;
-  updatedAt: string;
-
-  // Relations (when fetched with includeRelations)
-  vendor?:   ListingVendor  | undefined;
-  category?: Category       | undefined;
-}
-
-// ── Product variant ───────────────────────────────────────────────────────────
-export interface ProductVariant {
-  id:          string;
-  productId:   string;
-  name:        string;
-  price?:      string | undefined;
-  attributes?: Record<string, string> | undefined;
-}
-
-// ── Product inventory ─────────────────────────────────────────────────────────
-export interface ProductInventory {
-  id:         string;
-  productId:  string;
-  quantity:   number;
-  lowStockAt: number;
-  trackStock: boolean;
-  updatedAt:  string;
-}
-
-// ── Product (marketplace side) ────────────────────────────────────────────────
-export interface Product {
-  id:          string;
-  vendorId:    string;
-  categoryId?: string | undefined;
-  title:       string;
-  slug:        string;
-  description?: string | undefined;
-  price:       string;   // decimal string
+  price?:      string;
+  minPrice?:   string;
+  maxPrice?:   string;
   currency:    string;
   photos:      string[];
-  coverPhoto?: string | undefined;
-  whatsappMessage?: string | undefined;
-  isDigital:   boolean;
-  status:      ProductStatus;
+  coverPhoto?: string;
+  status:      ListingStatus;
   views:       number;
+  bookingsCount: number;
   createdAt:   string;
   updatedAt:   string;
-
-  vendor?:    ListingVendor  | undefined;
-  category?:  Category       | undefined;
-  variants?:  ProductVariant[]  | undefined;
-  inventory?: ProductInventory[] | undefined;
+  vendor?:     ListingVendor;
+  category?:   Category;
+  _lat?:       number | undefined
+  _lng?:       number | undefined
 }
 
-// ── Filters ───────────────────────────────────────────────────────────────────
 export interface ListingFilters {
-  categoryId?:   string | undefined;
-  categorySlug?: string | undefined;
-  search?:       string | undefined;
-  city?:         string | undefined;
-  minPrice?:     number | undefined;
-  maxPrice?:     number | undefined;
-  minCapacity?:  number | undefined;
-  sortBy?:       'price' | 'popular' | 'newest' | undefined;
-  limit?:        number | undefined;
-  offset?:       number | undefined;
+  categoryId?:   string;
+  categorySlug?: string;
+  county?:       string;
+  area?:         string;
+  search?:       string;
+  minPrice?:     number;
+  maxPrice?:     number;
+  sortBy?:       'price' | 'popular' | 'newest';
+  limit?:        number;
+  offset?:       number;
 }
 
-export interface ProductFilters {
-  categoryId?:   string  | undefined;
-  categorySlug?: string  | undefined;
-  vendorId?:     string  | undefined;
-  search?:       string  | undefined;
-  minPrice?:     number  | undefined;
-  maxPrice?:     number  | undefined;
-  isDigital?:    boolean | undefined;
-  sortBy?:       'price' | 'newest' | 'popular' | undefined;
-  limit?:        number  | undefined;
-  offset?:       number  | undefined;
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-// Resolve display price from listing (handles all pricingTypes)
 export function resolveListingPrice(listing: Listing): number {
   const p = listing.price ?? listing.minPrice;
   return p ? parseFloat(p) : 0;
-}
-
-export function resolveProductPrice(product: Product): number {
-  return parseFloat(product.price ?? '0');
 }

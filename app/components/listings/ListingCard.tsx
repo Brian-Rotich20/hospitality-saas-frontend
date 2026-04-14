@@ -1,25 +1,28 @@
 import React from 'react';
-import Link from 'next/link';
+import Link  from 'next/link';
 import Image from 'next/image';
-import { MapPin, Star, Users, Package } from 'lucide-react';
-import type { Listing } from '../../lib/types/listing';
+import { MapPin, Package } from 'lucide-react';
+import type { Listing }    from '../../lib/types/listing';
 import { resolveListingPrice } from '../../lib/types/listing';
 
-interface ListingCardProps { listing: Listing; }
-
-export function ListingCard({ listing }: ListingCardProps) {
+export function ListingCard({ listing }: { listing: Listing }) {
   const imageUrl = listing.photos?.[0] ?? listing.coverPhoto;
-  const city     = listing.location?.city;
+  const area     = listing.location?.area;
+  const county   = listing.location?.county;
   const price    = resolveListingPrice(listing);
 
-  // Pricing label
   const priceSuffix: Record<string, string> = {
-    per_day:    '/ day',
     per_hour:   '/ hr',
+    per_day:    '/ day',
     per_person: '/ person',
-    package:    'package',
+    package:    'pkg',
+    contact:    '',
   };
-  const suffix = priceSuffix[listing.pricingType] ?? '';
+
+  const priceLabel: Record<string, string> = {
+    package: 'From',
+    contact: 'Contact',
+  };
 
   return (
     <Link
@@ -28,7 +31,7 @@ export function ListingCard({ listing }: ListingCardProps) {
         hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 no-underline"
     >
       {/* Image */}
-      <div className="relative h-40 bg-gray-100 overflow-hidden">
+      <div className="relative h-44 bg-gray-100 overflow-hidden">
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -44,40 +47,29 @@ export function ListingCard({ listing }: ListingCardProps) {
             <Package size={24} className="text-gray-300" />
           </div>
         )}
-        {/* Instant booking badge */}
-        {listing.instantBooking && (
-          <span className="absolute top-2.5 right-2.5 bg-[#F5C842] text-[#2D3B45] text-[9px]
-            font-black px-2 py-0.5 rounded-full uppercase tracking-wide">
-            Instant
+
+        {/* Category badge */}
+        {listing.category?.name && (
+          <span className="absolute top-2.5 left-2.5 bg-white/90 backdrop-blur-sm
+            text-[#2D3B45] text-[9px] font-black px-2 py-0.5 rounded-full
+            uppercase tracking-wide border border-white/50">
+            {listing.category.name}
           </span>
         )}
       </div>
 
       {/* Body */}
       <div className="p-3.5 space-y-2">
-        <h3 className="text-sm font-bold text-gray-900 leading-snug line-clamp-1 group-hover:text-[#2D3B45]">
+        <h3 className="text-sm font-bold text-gray-900 leading-snug line-clamp-2
+          group-hover:text-[#2D3B45] transition-colors">
           {listing.title}
         </h3>
 
-        <div className="flex items-center justify-between gap-2">
-          {city && (
-            <span className="flex items-center gap-1 text-[11px] text-gray-400 truncate">
-              <MapPin size={10} className="text-gray-300 shrink-0" />
-              {city}
-            </span>
-          )}
-          {listing.vendor?.verified && (
-            <span className="shrink-0 text-[9px] font-black text-emerald-600 bg-emerald-50
-              px-1.5 py-0.5 rounded-full uppercase tracking-wide">
-              Verified
-            </span>
-          )}
-        </div>
-
-        {listing.capacity != null && (
-          <span className="flex items-center gap-1 text-[11px] text-gray-400">
-            <Users size={10} className="text-gray-300" />
-            Up to {Number(listing.capacity).toLocaleString()} guests
+        {/* Location */}
+        {(area || county) && (
+          <span className="flex items-center gap-1 text-[11px] text-gray-400 truncate">
+            <MapPin size={10} className="text-gray-300 shrink-0" />
+            {[area, county].filter(Boolean).join(', ')}
           </span>
         )}
 
@@ -85,18 +77,29 @@ export function ListingCard({ listing }: ListingCardProps) {
         <div className="pt-2 mt-1 border-t border-gray-50 flex items-end justify-between">
           <div>
             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
-              {listing.pricingType === 'range' ? 'From' : 'Price'}
+              {priceLabel[listing.pricingType] ?? 'Price'}
             </p>
-            <p className="text-sm font-black text-[#2D3B45] leading-none">
-              <span className="text-xs font-semibold text-gray-400 mr-0.5">KSh</span>
-              {price.toLocaleString()}
-              {suffix && <span className="text-[10px] font-medium text-gray-400 ml-0.5">{suffix}</span>}
-            </p>
+            {listing.pricingType === 'contact' ? (
+              <p className="text-sm font-black text-[#2D3B45]">On request</p>
+            ) : (
+              <p className="text-sm font-black text-[#2D3B45] leading-none">
+                <span className="text-xs font-semibold text-gray-400 mr-0.5">KSh</span>
+                {price.toLocaleString()}
+                {priceSuffix[listing.pricingType] && (
+                  <span className="text-[10px] font-medium text-gray-400 ml-0.5">
+                    {priceSuffix[listing.pricingType]}
+                  </span>
+                )}
+              </p>
+            )}
           </div>
-          <span className="text-[10px] font-bold text-[#2D3B45] bg-[#F5C842] px-2.5 py-1
-            rounded-xl group-hover:bg-[#45452d] group-hover:text-[#F5C842] transition-colors">
-             →
-          </span>
+
+          {listing.vendor?.verified && (
+            <span className="text-[9px] font-black text-emerald-700 bg-emerald-50
+              px-1.5 py-0.5 rounded-full uppercase tracking-wide border border-emerald-100">
+              Verified
+            </span>
+          )}
         </div>
       </div>
     </Link>
