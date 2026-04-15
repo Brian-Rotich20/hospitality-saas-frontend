@@ -104,7 +104,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       </div>
 
       {/* User info */}
-      <div className="px-5 py-4 border-b border-gray-100">
+      {/* <div className="px-5 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-[#2D3B45] flex items-center justify-center shrink-0">
             <span className="text-[#F5C842] text-xs font-black">
@@ -118,7 +118,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             <p className="text-[10px] text-gray-400 capitalize">{role}</p>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Nav links */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">

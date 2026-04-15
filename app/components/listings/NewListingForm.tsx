@@ -464,7 +464,11 @@ function PhotoUploader({
   const remaining               = MAX_PHOTOS - photos.filter(p => !p.error).length;
 
   useEffect(() => {
-    onChange(photos.filter(p => p.url && !p.uploading && !p.error).map(p => p.url));
+    onChange(
+      photos
+        .filter(p => p.url && p.url.trim().length > 0 && !p.uploading && !p.error)
+        .map(p => p.url)
+    );
   }, [photos]);
 
   const uploadFile = useCallback(async (file: File, localId: string) => {
@@ -868,11 +872,13 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
       const lat = watch('lat');
       const lng = watch('lng');
 
+      const cleanPhotos = photos.filter(p => typeof p === 'string' && p.trim().length > 0);
+
       const payload = {
         categoryId: data.subCategoryId || data.categoryId,
         title: data.title,
         description: data.description,
-
+        currency: 'KES',
         location: {
           county: data.county,
           area: data.area,
@@ -882,13 +888,12 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
         },
 
         pricingType: data.pricingType,
-        price: data.price,
-        minPrice: data.minPrice,
-        maxPrice: data.maxPrice,
-        currency: data.currency,
+        price: data.price ? Number(data.price) : undefined,
+        minPrice: data.minPrice ? Number(data.minPrice) : undefined,
+        maxPrice: data.maxPrice ? Number(data.maxPrice) : undefined,
 
-        photos,
-        coverPhoto: photos[0],
+        photos: cleanPhotos,
+        coverPhoto: cleanPhotos[0],
       };
 
       const res = await listingsService.create(payload);

@@ -24,6 +24,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
     contact: 'Contact',
   };
 
+  // REPLACE the whole ListingCard return
   return (
     <Link
       href={`/store/${listing.id}`}
@@ -47,25 +48,25 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <Package size={24} className="text-gray-300" />
           </div>
         )}
-
-        {/* Category badge */}
-        {listing.category?.name && (
-          <span className="absolute top-2.5 left-2.5 bg-white/90 backdrop-blur-sm
-            text-[#2D3B45] text-[9px] font-black px-2 py-0.5 rounded-full
-            uppercase tracking-wide border border-white/50">
-            {listing.category.name}
-          </span>
-        )}
       </div>
 
       {/* Body */}
-      <div className="p-3.5 space-y-2">
-        <h3 className="text-sm font-bold text-gray-900 leading-snug line-clamp-2
+      <div className="p-3.5 space-y-1.5">
+
+        {/* Title */}
+        <h3 className="text-sm font-bold text-gray-900 leading-snug line-clamp-1
           group-hover:text-[#2D3B45] transition-colors">
           {listing.title}
         </h3>
 
-        {/* Location */}
+        {/* Short description */}
+        {listing.description && (
+          <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-2">
+            {listing.description}
+          </p>
+        )}
+
+        {/* Location — area + county */}
         {(area || county) && (
           <span className="flex items-center gap-1 text-[11px] text-gray-400 truncate">
             <MapPin size={10} className="text-gray-300 shrink-0" />
