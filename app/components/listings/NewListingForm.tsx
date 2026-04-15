@@ -56,8 +56,8 @@ const schema = z.object({
   minPrice:      z.coerce.number().positive().optional(),
   maxPrice:      z.coerce.number().positive().optional(),
   currency:      z.string().default('KES'),
-  lat:          z.coerce.number().optional(),
-  lng:          z.coerce.number().optional(),  
+  lat:          z.number().optional(),
+  lng:          z.number().optional(),  
 }).refine(data => {
   if (data.pricingType === 'package')  return !!data.minPrice && !!data.maxPrice;
   if (data.pricingType !== 'contact')  return !!data.price;
@@ -652,11 +652,10 @@ function DetailsStep({
         county={county}
         area={area}
         onCounty={v => setValue('county', v, { shouldValidate: true })}
-        onArea={(v, lat, lng) => {
+       onArea={(v, lat, lng) => {
           setValue('area', v, { shouldValidate: true });
-          // lat/lng stored silently for future map use — not required fields
-          if (lat) setValue('_lat', lat);
-          if (lng) setValue('_lng', lng);
+          if (lat) setValue('lat', lat);    // ✅
+          if (lng) setValue('lng', lng);    // ✅
         }}
         errors={errors}
       />
@@ -866,8 +865,8 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
     setSaving(true);
 
     try {
-      const lat = watch('_lat');
-      const lng = watch('_lng');
+      const lat = watch('lat');
+      const lng = watch('lng');
 
       const payload = {
         categoryId: data.subCategoryId || data.categoryId,
