@@ -95,8 +95,8 @@ export const API_ENDPOINTS = {
 // ── Service methods ───────────────────────────────────────────────────────────
 import { apiClient } from './client';
 import type {
-  Listing, Product, Category,
-  ListingFilters, ProductFilters,
+  Listing, ListingLocation, Category,
+  ListingFilters,
 } from '../types/listing';
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -165,41 +165,6 @@ export const listingsService = {
     apiClient.delete<{ message: string }>(API_ENDPOINTS.LISTINGS.DELETE(id)),
 };
 
-// ── Products ──────────────────────────────────────────────────────────────────
-export const productsService = {
-  getAll:       (filters?: ProductFilters) =>
-    apiClient.get<Product[]>(API_ENDPOINTS.PRODUCTS.GET_ALL, { params: filters }),
-
-  getFeatured:  (limit?: number) =>
-    apiClient.get<Product[]>(API_ENDPOINTS.PRODUCTS.GET_FEATURED, { params: { limit } }),
-
-  getById:      (id: string) =>
-    apiClient.get<Product>(API_ENDPOINTS.PRODUCTS.GET_BY_ID(id)),
-
-  getBySlug:    (slug: string) =>
-    apiClient.get<Product>(API_ENDPOINTS.PRODUCTS.GET_BY_SLUG(slug)),
-
-  getByVendor:  (vendorId: string) =>
-    apiClient.get<Product[]>(API_ENDPOINTS.PRODUCTS.GET_BY_VENDOR(vendorId)),
-
-  getMyProducts:() =>
-    apiClient.get<Product[]>(API_ENDPOINTS.PRODUCTS.MY_PRODUCTS),
-
-  create:       (data: any) =>
-    apiClient.post<Product>(API_ENDPOINTS.PRODUCTS.CREATE, data),
-
-  update:       (id: string, data: any) =>
-    apiClient.put<Product>(API_ENDPOINTS.PRODUCTS.UPDATE(id), data),
-
-  updateStatus: (id: string, status: 'active' | 'paused' | 'out_of_stock') =>
-    apiClient.patch<Product>(API_ENDPOINTS.PRODUCTS.UPDATE_STATUS(id), { status }),
-
-  updateInventory: (id: string, data: any) =>
-    apiClient.patch(API_ENDPOINTS.PRODUCTS.UPDATE_INVENTORY(id), data),
-
-  delete:       (id: string) =>
-    apiClient.delete<{ message: string }>(API_ENDPOINTS.PRODUCTS.DELETE(id)),
-};
 
 // ── Bookings ──────────────────────────────────────────────────────────────────
 export const bookingsService = {
