@@ -2,17 +2,24 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '../../lib/auth/auth.context';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Image from "next/image";
+import Field from "../../components/ui/Field"
+import PasswordField from "../../components/ui/PasswordField"
+import GoogleIcon from "../../components/ui/GoogleIcon"
+import Divider from "../../components/ui/Divider"
+import Spinner from "../../components/ui/Spinner"
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 const schema = z.object({
   fullName: z.string().min(2, 'At least 2 characters'),
-  email:    z.string().min(1, 'Email is required').email('Invalid email'),
+  email:    z.string().min(1, 'Required').email('Invalid email'),
   phone:    z.string().regex(/^(\+254|0)[17]\d{8}$/, 'Enter a valid Kenyan number'),
   password: z.string()
     .min(8, 'At least 8 characters')
@@ -31,118 +38,77 @@ const inp = (err: boolean) =>
    ${err ? 'border-red-400' : 'border-gray-200'}`;
 
 export function RegisterForm() {
-  const { register: registerUser, isLoading } = useAuth();
+  const { register: registerUser } = useAuth();
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loading,     setLoading]     = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   const onSubmit = async (data: FormData) => {
+    setLoading(true);
     try {
-      // ✅ No role field — backend always registers as customer
-      await registerUser({
-        fullName: data.fullName,
-        email:    data.email,
-        password: data.password,
-        phone:    data.phone,
-      });
+      await registerUser({ fullName: data.fullName, email: data.email, password: data.password, phone: data.phone });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+      toast.error(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#2D3B45] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-
-        {/* Logo */}
-      <div className="text-center mb-6">
-        <Image
-          src="/images/logo.png"
-          alt="LinkMart Logo"
-          width={120}
-          height={28}
-          className="mx-auto h-7 w-auto"
-          priority
-        />
-      </div>
+        <div className="flex justify-center mb-6">
+          <Image src="/images/logo.png" alt="LinkMart" width={120} height={28} className="h-7 w-auto" priority />
+        </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-xl">
-          <h2 className="text-base font-bold text-gray-900 mb-1">Create account</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-0.5">Create account</h2>
           <p className="text-xs text-gray-400 mb-5">Join as a customer — it's free</p>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+          {/* Google */}
+          <button
+            type="button"
+            onClick={() => window.location.href = `${API}/auth/google?state=customer`}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
+              border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
+              transition active:scale-[0.98] mb-4"
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type="text" placeholder="John Doe" {...register('fullName')} disabled={isLoading}
-                  className={inp(!!errors.fullName)} />
-              </div>
-              {errors.fullName && <p className="text-red-500 text-[10px] mt-0.5">{errors.fullName.message}</p>}
-            </div>
+          <Divider label="or sign up with email" />
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type="email" placeholder="you@example.com" {...register('email')} disabled={isLoading}
-                  className={inp(!!errors.email)} />
-              </div>
-              {errors.email && <p className="text-red-500 text-[10px] mt-0.5">{errors.email.message}</p>}
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 mt-4">
+            <Field label="Full Name" error={errors.fullName?.message}>
+              <User className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
+              <input type="text" placeholder="John Doe" {...register('fullName')} disabled={loading} className={inp(!!errors.fullName)} />
+            </Field>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Phone Number</label>
-              <div className="relative">
-                <Phone className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type="tel" placeholder="+254 712 345 678" {...register('phone')} disabled={isLoading}
-                  className={inp(!!errors.phone)} />
-              </div>
-              {errors.phone && <p className="text-red-500 text-[10px] mt-0.5">{errors.phone.message}</p>}
-            </div>
+            <Field label="Email" error={errors.email?.message}>
+              <Mail className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
+              <input type="email" placeholder="you@example.com" {...register('email')} disabled={loading} className={inp(!!errors.email)} />
+            </Field>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type={showPass ? 'text' : 'password'} placeholder="••••••••"
-                  {...register('password')} disabled={isLoading}
-                  className={`${inp(!!errors.password)} pr-8`} />
-                <button type="button" onClick={() => setShowPass(v => !v)}
-                  className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500">
-                  {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              {errors.password
-                ? <p className="text-red-500 text-[10px] mt-0.5">{errors.password.message}</p>
-                : <p className="text-[10px] text-gray-300 mt-0.5">8+ chars · uppercase · number</p>}
-            </div>
+            <Field label="Phone" error={errors.phone?.message}>
+              <Phone className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
+              <input type="tel" placeholder="+254 712 345 678" {...register('phone')} disabled={loading} className={inp(!!errors.phone)} />
+            </Field>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Confirm Password</label>
-              <div className="relative">
-                <Lock className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type={showConfirm ? 'text' : 'password'} placeholder="••••••••"
-                  {...register('confirmPassword')} disabled={isLoading}
-                  className={`${inp(!!errors.confirmPassword)} pr-8`} />
-                <button type="button" onClick={() => setShowConfirm(v => !v)}
-                  className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500">
-                  {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              {errors.confirmPassword && <p className="text-red-500 text-[10px] mt-0.5">{errors.confirmPassword.message}</p>}
-            </div>
+            <PasswordField label="Password" name="password" register={register} error={errors.password?.message}
+              hint="8+ chars · uppercase · number" show={showPass} toggle={() => setShowPass(v => !v)} disabled={loading} inp={inp} />
 
-            <button type="submit" disabled={isLoading}
+            <PasswordField label="Confirm Password" name="confirmPassword" register={register}
+              error={errors.confirmPassword?.message} show={showConfirm} toggle={() => setShowConfirm(v => !v)} disabled={loading} inp={inp} />
+
+            <button type="submit" disabled={loading}
               className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold
-                transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1">
-              {isLoading
-                ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating account...</>
-                : 'Create Account'}
+                transition disabled:opacity-50 flex items-center justify-center gap-2 mt-1">
+              {loading ? <Spinner /> : 'Create Account'}
             </button>
           </form>
 

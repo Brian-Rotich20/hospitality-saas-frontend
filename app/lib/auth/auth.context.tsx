@@ -35,7 +35,9 @@ interface AuthContextType {
   register:        (data: RegisterData) => Promise<void>;
   logout:          () => Promise<void>;
   refreshToken:    () => Promise<void>;
+  setTokenAndFetchUser: (token: string) => Promise<void>;
 }
+
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -88,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token,     setToken]   = useState<string | null>(null);
   const [isLoading, setLoading] = useState(true);
   const router = useRouter();
+ 
 
   // ── setAuth ─────────────────────────────────────────────────────────────
   const setAuth = useCallback((accessToken: string): User => {
@@ -291,11 +294,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [attemptRefresh, clearAuth, router]);
 
+  const setTokenAndFetchUser = useCallback(async (accessToken: string) => {
+  const parsed = setAuth(accessToken);
+    // If they're already a vendor (Google linked existing vendor account), go to dashboard
+    if (parsed.role === 'vendor') {
+      router.push(ROLE_REDIRECT['vendor']);
+    }
+    // Otherwise caller (onboarding page) handles the redirect
+  }, [setAuth, router]);
+
   return (
     <AuthContext.Provider value={{
       user, isLoading, token,
       isAuthenticated: !!user,
       login, register, logout, refreshToken,
+      setTokenAndFetchUser,
     }}>
       {children}
     </AuthContext.Provider>

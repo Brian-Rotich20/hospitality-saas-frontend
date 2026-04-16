@@ -7,17 +7,21 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Phone, Lock, Building2, Eye, EyeOff, FileText } from 'lucide-react';
+import { User, Mail, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Field from "../../components/ui/Field"
+import PasswordField from "../../components/ui/PasswordField"
+import GoogleIcon from "../../components/ui/GoogleIcon"
+import Divider from "../../components/ui/Divider"
+import Spinner from "../../components/ui/Spinner"
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 const schema = z.object({
-  email:        z.string().min(1, 'Required').email('Invalid email'),
-  phone:        z.string().regex(/^(\+254|0)[17]\d{8}$/, 'Enter a valid Kenyan number'),
-  businessName: z.string().min(3, 'At least 3 characters'),
-  description:  z.string().min(20, 'At least 20 characters').max(500),
-  password:     z.string()
+  fullName: z.string().min(2, 'At least 2 characters'),
+  email:    z.string().min(1, 'Required').email('Invalid email'),
+  phone:    z.string().regex(/^(\+254|0)[17]\d{8}$/, 'Enter a valid Kenyan number'),
+  password: z.string()
     .min(8, 'At least 8 characters')
     .regex(/[A-Z]/, 'Must include an uppercase letter')
     .regex(/[0-9]/, 'Must include a number'),
@@ -29,7 +33,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const inp = (err: boolean) =>
-  `w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border bg-gray-50 text-gray-900 placeholder-gray-300
+  `w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300
    focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition
    ${err ? 'border-red-400' : 'border-gray-200'}`;
 
@@ -46,44 +50,27 @@ export function RegisterVendorForm() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      // Step 1 — create account
-      const regRes = await fetch(`${API}/auth/register`, {
+      const res = await fetch(`${API}/auth/register`, {
         method:      'POST',
         credentials: 'include',
         headers:     { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: data.businessName, // use business name as display name
+          fullName: data.fullName,
           email:    data.email,
           password: data.password,
           phone:    data.phone,
         }),
       });
 
-      const regJson = await regRes.json();
-      if (!regRes.ok) throw new Error(regJson.error || regJson.message || 'Registration failed');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || json.message || 'Registration failed');
 
-      const accessToken = regJson.data?.accessToken;
-      if (!accessToken) throw new Error('No token received');
+      const token = json.data?.accessToken;
+      if (!token) throw new Error('No token received');
 
-      // Step 2 — apply as vendor
-      const vendorRes = await fetch(`${API}/vendors/apply`, {
-        method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization:  `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          businessName: data.businessName,
-          description:  data.description,
-          phoneNumber:  data.phone,
-        }),
-      });
-
-      const vendorJson = await vendorRes.json();
-      if (!vendorRes.ok) throw new Error(vendorJson.error || vendorJson.message || 'Application failed');
-
-      toast.success('Application submitted! We\'ll be in touch shortly.');
-      router.push('/auth/login?message=application-submitted');
+      // Store token for onboarding flow
+      sessionStorage.setItem('vendorToken', token);
+      router.push('/vendor/onboarding');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -94,131 +81,60 @@ export function RegisterVendorForm() {
   return (
     <div className="min-h-screen bg-[#2D3B45] flex items-center justify-center p-4 py-10">
       <div className="w-full max-w-sm">
-
-        {/* Logo */}
         <div className="flex justify-center mb-6">
-          <Image
-            src="/images/logo.png"
-            alt="LinkMart Logo"
-            width={120}
-            height={28}
-            className="h-7 w-auto"
-            priority
-          />
+          <Image src="/images/logo.png" alt="LinkMart" width={120} height={28} className="h-7 w-auto" priority />
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-xl">
           <h2 className="text-base font-black text-gray-900 mb-0.5">Become a vendor</h2>
-          <p className="text-xs text-gray-400 mb-5">Create your account and start listing</p>
+          <p className="text-xs text-gray-400 mb-5">Create your account — set up your store next</p>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
+          {/* Google */}
+          <button
+            type="button"
+            onClick={() => window.location.href = `${API}/auth/google?state=vendor`}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
+              border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
+              transition active:scale-[0.98] mb-4"
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
 
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type="email" placeholder="you@business.com"
-                  {...register('email')} disabled={loading}
-                  className={inp(!!errors.email)} />
-              </div>
-              {errors.email && <p className="text-red-500 text-[10px] mt-0.5">{errors.email.message}</p>}
-            </div>
+          <Divider label="or sign up with email" />
 
-            {/* Phone */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Phone</label>
-              <div className="relative">
-                <Phone className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type="tel" placeholder="+254 712 345 678"
-                  {...register('phone')} disabled={loading}
-                  className={inp(!!errors.phone)} />
-              </div>
-              {errors.phone && <p className="text-red-500 text-[10px] mt-0.5">{errors.phone.message}</p>}
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 mt-4">
+            <Field label="Full Name" error={errors.fullName?.message}>
+              <User className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
+              <input type="text" placeholder="John Doe" {...register('fullName')} disabled={loading} className={inp(!!errors.fullName)} />
+            </Field>
 
-            {/* Business Name */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Business Name</label>
-              <div className="relative">
-                <Building2 className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type="text" placeholder="Your Business Name"
-                  {...register('businessName')} disabled={loading}
-                  className={inp(!!errors.businessName)} />
-              </div>
-              {errors.businessName && <p className="text-red-500 text-[10px] mt-0.5">{errors.businessName.message}</p>}
-            </div>
+            <Field label="Email" error={errors.email?.message}>
+              <Mail className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
+              <input type="email" placeholder="you@business.com" {...register('email')} disabled={loading} className={inp(!!errors.email)} />
+            </Field>
 
-            {/* Description */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
-              <div className="relative">
-                <FileText className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <textarea
-                  placeholder="Briefly describe your business and services..."
-                  {...register('description')} disabled={loading} rows={3}
-                  className={`w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border bg-gray-50 text-gray-900
-                    placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842]
-                    focus:border-transparent transition resize-none
-                    ${errors.description ? 'border-red-400' : 'border-gray-200'}`} />
-              </div>
-              {errors.description
-                ? <p className="text-red-500 text-[10px] mt-0.5">{errors.description.message}</p>
-                : <p className="text-[10px] text-gray-300 mt-0.5">20–500 characters</p>}
-            </div>
+            <Field label="Phone" error={errors.phone?.message}>
+              <Phone className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
+              <input type="tel" placeholder="+254 712 345 678" {...register('phone')} disabled={loading} className={inp(!!errors.phone)} />
+            </Field>
 
-            {/* Password */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type={showPass ? 'text' : 'password'} placeholder="••••••••"
-                  {...register('password')} disabled={loading}
-                  className={`${inp(!!errors.password)} pr-9`} />
-                <button type="button" onClick={() => setShowPass(v => !v)}
-                  className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500 transition">
-                  {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              {errors.password
-                ? <p className="text-red-500 text-[10px] mt-0.5">{errors.password.message}</p>
-                : <p className="text-[10px] text-gray-300 mt-0.5">8+ chars · uppercase · number</p>}
-            </div>
+            <PasswordField label="Password" name="password" register={register} error={errors.password?.message}
+              hint="8+ chars · uppercase · number" show={showPass} toggle={() => setShowPass(v => !v)} disabled={loading} inp={inp} />
 
-            {/* Confirm Password */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Confirm Password</label>
-              <div className="relative">
-                <Lock className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                <input type={showConfirm ? 'text' : 'password'} placeholder="••••••••"
-                  {...register('confirmPassword')} disabled={loading}
-                  className={`${inp(!!errors.confirmPassword)} pr-9`} />
-                <button type="button" onClick={() => setShowConfirm(v => !v)}
-                  className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500 transition">
-                  {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-red-500 text-[10px] mt-0.5">{errors.confirmPassword.message}</p>
-              )}
-            </div>
+            <PasswordField label="Confirm Password" name="confirmPassword" register={register}
+              error={errors.confirmPassword?.message} show={showConfirm} toggle={() => setShowConfirm(v => !v)} disabled={loading} inp={inp} />
 
-            {/* Submit */}
             <button type="submit" disabled={loading}
-              className="w-full py-2.5 rounded-xl bg-[#2D3B45] hover:bg-[#3a4d5a] text-white
-                text-xs font-bold transition active:scale-[0.98] disabled:opacity-50
-                flex items-center justify-center gap-2 mt-1">
-              {loading
-                ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting...</>
-                : 'Submit Application'}
+              className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold
+                transition disabled:opacity-50 flex items-center justify-center gap-2 mt-1">
+              {loading ? <Spinner /> : 'Create Vendor Account'}
             </button>
           </form>
 
           <p className="text-center text-[11px] text-gray-400 mt-4">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-[#2D3B45] font-bold hover:underline">
-              Sign in
-            </Link>
+            <Link href="/auth/login" className="text-[#2D3B45] font-bold hover:underline">Sign in</Link>
           </p>
         </div>
       </div>

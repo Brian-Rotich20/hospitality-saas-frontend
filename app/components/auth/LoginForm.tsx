@@ -10,6 +10,11 @@ import { Mail, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'next/navigation';
 import Image from "next/image";
+import GoogleIcon from '../ui/GoogleIcon';
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
+
+
 const loginSchema = z.object({
   email:    z.string().min(1, 'Email is required').email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -112,6 +117,17 @@ export function LoginForm() {
                 <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Signing in...</>
               ) : 'Sign In'}
             </button>
+            {/* Google sign-in */}
+          <button
+            type="button"
+            onClick={() => window.location.href = `${API}/auth/google?state=customer`}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
+              border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
+              transition active:scale-[0.98] mt-3"
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
           </form>
 
           <div className="flex items-center gap-2 my-4">
