@@ -6,5 +6,5 @@ export interface VendorApplication {
   phoneNumber: string;
   idNumber: string;
   address: string;
-  city: string;
+  county: string;
 }

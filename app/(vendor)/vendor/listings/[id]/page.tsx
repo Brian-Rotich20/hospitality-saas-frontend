@@ -24,8 +24,8 @@ interface ListingData {
   // Flat fields — backend does NOT return a nested location object
   location?: string;
   address?: string;
-  city?: string;
   county?: string;
+  area?: string;
   basePrice?: number;
   currency?: string;
   capacity?: number;
@@ -190,7 +190,8 @@ export default function VendorListingDetailPage() {
   // ── Derived values ─────────────────────────────────────────────────────────
 
   const photos    = listing?.photos ?? [];
-  const city      = listing?.city ?? listing?.location ?? '—';
+  const county    = listing?.county ?? '—';
+  const area      = listing?.area ?? '—';
   const address   = listing?.address;
   const amenities = listing?.amenities ?? [];
 
@@ -267,10 +268,10 @@ export default function VendorListingDetailPage() {
             <h1 className="text-lg font-black text-gray-900 leading-tight tracking-tight">
               {listing.title}
             </h1>
-            {(address || city !== '—') && (
+            {(address || listing.county !== '—') && (
               <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
                 <MapPin size={11} />
-                {[address, city].filter(Boolean).join(', ')}
+                {[address, listing.county, listing.area].filter(Boolean).join(', ')}
               </p>
             )}
           </div>
@@ -338,7 +339,7 @@ export default function VendorListingDetailPage() {
             <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Details</p>
               <div className="grid grid-cols-2 gap-2">
-                <DetailItem icon={MapPin}       label="Location"  value={[city, address].filter(Boolean).join(', ') || '—'} />
+                <DetailItem icon={MapPin}       label="Location"  value={[listing.county, listing.area, address].filter(Boolean).join(', ') || '—'} />
                 <DetailItem icon={Users}        label="Capacity"  value={listing.capacity ? `${listing.capacity} guests` : '—'} />
                 <DetailItem icon={DollarSign}   label="Starting price" value={listing.basePrice ? `KSh ${listing.basePrice.toLocaleString()} ${listing.currency ?? 'KES'}` : '—'} />
                 <DetailItem icon={Star}         label="Rating"    value={listing.rating ? `${listing.rating.toFixed(1)} / 5.0 (${listing.reviewCount ?? 0})` : 'No ratings yet'} />

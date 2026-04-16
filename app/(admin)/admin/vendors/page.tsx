@@ -12,7 +12,7 @@ interface Vendor {
   businessName: string;
   description?: string;
   phoneNumber?: string;
-  city?:        string;
+  county?:        string;
   status:       'pending' | 'approved' | 'rejected' | 'suspended';
   createdAt:    string;
   user?: {

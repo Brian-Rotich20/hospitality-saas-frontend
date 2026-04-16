@@ -79,9 +79,10 @@ export default function EditListingPage() {
         title:       formData.title.trim(),
         description: formData.description.trim(),
         category:    formData.category,
-        location:    formData.city.trim(),
+        location:    formData.county.trim(),
         address:     formData.address.trim(),
-        city:        formData.city.trim(),
+        county:        formData.county.trim(),
+        area:          formData.area.trim(),
         capacity:    parseInt(formData.capacity, 10),
         basePrice:   parseFloat(formData.startingPrice),  // ✅ basePrice not startingPrice
         amenities:   formData.amenities ?? [],

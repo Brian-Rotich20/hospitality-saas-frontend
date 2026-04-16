@@ -4,7 +4,7 @@ import React from 'react';
 import { MapPin } from 'lucide-react';
 
 interface LocationBadgeProps {
-  city: string;
+  county: string;
   area?: string;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -12,7 +12,7 @@ interface LocationBadgeProps {
 const fontSizeMap  = { sm: 12, md: 14, lg: 16 };
 const iconSizeMap  = { sm: 13, md: 15, lg: 18 };
 
-export function LocationBadge({ city, area, size = 'md' }: LocationBadgeProps) {
+export function LocationBadge({ county, area, size = 'md' }: LocationBadgeProps) {
   return (
     <div
       style={{
@@ -27,7 +27,7 @@ export function LocationBadge({ city, area, size = 'md' }: LocationBadgeProps) {
     >
       <MapPin size={iconSizeMap[size]} color="#2d9967" style={{ flexShrink: 0 }} />
       <span>
-        {city}
+        {county}
         {area && `, ${area}`}
       </span>
     </div>

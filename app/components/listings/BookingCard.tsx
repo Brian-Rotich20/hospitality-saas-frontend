@@ -23,7 +23,7 @@ interface Vendor {
 }
 
 interface Location {
-  city?: string;
+  county?: string;
 }
 
 interface Props {
@@ -86,10 +86,10 @@ export function BookingCard({
             </span>
           </div>
         )}
-        {location.city && (
+        {location.county && (
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-500">Location</span>
-            <span className="text-xs font-bold text-gray-800">{location.city}</span>
+            <span className="text-xs font-bold text-gray-800">{location.county}</span>
           </div>
         )}
         <div className="flex justify-between items-center">

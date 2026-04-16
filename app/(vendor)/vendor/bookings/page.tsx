@@ -25,7 +25,8 @@ interface Booking {
   createdAt: string;
   listing?: {
     title: string;
-    city: string;
+    county: string;
+    area: string;
     photos: string[];
   };
   customer?: {
@@ -166,9 +167,14 @@ function BookingRow({ booking, onAccept, onDecline, actionLoading }: {
             <span style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>
               <Calendar size={11} /> {fmt(booking.startDate)} → {fmt(booking.endDate)}
             </span>
-            {booking.listing?.city && (
+            {booking.listing?.county && (
               <span style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <MapPin size={11} /> {booking.listing.city}
+                <MapPin size={11} /> {booking.listing.county}
+              </span>
+            )}
+            {booking.listing?.area && (
+              <span style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <MapPin size={11} /> {booking.listing.area}
               </span>
             )}
             <span style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>

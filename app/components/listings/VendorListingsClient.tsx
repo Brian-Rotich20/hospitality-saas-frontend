@@ -155,16 +155,13 @@ export function VendorListingsClient({ initialListings }: { initialListings: Lis
                     </span>
                   </div>
                   <div className="flex gap-3 flex-wrap">
-                    {listing.location?.city && (
-                      <span className="text-[11px] text-gray-400">{listing.location.city}</span>
+                    {listing.location?.county && (
+                      <span className="text-[11px] text-gray-400">{listing.location.county}</span>
                     )}
                     {listing.category && (
                       <span className="text-[11px] text-gray-400">{listing.category.name}</span>
                     )}
-                    <span className="text-[11px] text-gray-400">KSh {price.toLocaleString()}</span>
-                    {listing.capacity && (
-                      <span className="text-[11px] text-gray-400">Up to {listing.capacity} guests</span>
-                    )}
+                   
                   </div>
                 </div>
 

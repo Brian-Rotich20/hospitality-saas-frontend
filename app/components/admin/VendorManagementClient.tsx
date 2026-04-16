@@ -18,7 +18,8 @@ interface Vendor {
   businessName:    string;
   description?:    string;
   phoneNumber?:    string;
-  city?:           string;
+  county?:           string;
+  area?:             string;
   status:          VendorStatus;
   createdAt:       string;
   user?: {
@@ -318,7 +319,8 @@ export function VendorManagementClient({ initialVendors }: { initialVendors: Ven
                       {vendor.user?.fullName && <span>{vendor.user.fullName}</span>}
                       {vendor.user?.email    && <span>{vendor.user.email}</span>}
                       {vendor.phoneNumber    && <span>{vendor.phoneNumber}</span>}
-                      {vendor.city           && <span>{vendor.city}</span>}
+                      {vendor.county           && <span>{vendor.county}</span>}
+                      {vendor.area             && <span>{vendor.area}</span>}
                       <span>Applied {new Date(vendor.createdAt).toLocaleDateString('en-KE', {
                         day: 'numeric', month: 'short', year: 'numeric'
                       })}</span>

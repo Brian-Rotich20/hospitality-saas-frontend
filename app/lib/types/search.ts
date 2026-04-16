@@ -2,7 +2,8 @@
 export interface SearchParams {
   q?: string;
   category?: string;
-  city?: string;
+  county?: string;
+  area?: string;
   priceMin?: number;
   priceMax?: number;
   capacity?: number;

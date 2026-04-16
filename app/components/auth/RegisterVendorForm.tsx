@@ -30,8 +30,8 @@ const businessSchema = z.object({
   description:    z.string().min(20, 'At least 20 characters').max(500),
   phoneNumber:    z.string().regex(/^(\+254|0)[17]\d{8}$/, 'Enter a valid Kenyan number'),
   whatsappNumber: z.string().regex(/^(\+254|0)[17]\d{8}$/, 'Enter a valid Kenyan number').optional().or(z.literal('')),
-  city:           z.string().min(2, 'Required'),
-  county:         z.string().optional(),
+  county:           z.string().min(2, 'Required'),
+  area:             z.string().optional(),
 });
 
 type AccountData  = z.infer<typeof accountSchema>;
@@ -122,8 +122,8 @@ export function RegisterVendorForm() {
           description:    data.description,
           phoneNumber:    data.phoneNumber,
           whatsappNumber: data.whatsappNumber || undefined,
-          city:           data.city,
-          county:         data.county || undefined,
+          county:           data.county || undefined,
+          area:             data.area || undefined,
         }),
       });
 
@@ -323,15 +323,15 @@ export function RegisterVendorForm() {
                 <SectionLabel>Location</SectionLabel>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">City</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">County</label>
                   <div className="relative">
                     <MapPin className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-                    <input type="text" placeholder="Nairobi"
-                      {...businessForm.register('city')} disabled={loading}
-                      className={inp(!!businessForm.formState.errors.city)} />
+                    <input type="text" placeholder="Nairobi County"
+                      {...businessForm.register('county')} disabled={loading}
+                      className={inp(!!businessForm.formState.errors.county)} />
                   </div>
-                  {businessForm.formState.errors.city && (
-                    <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.city.message}</p>
+                  {businessForm.formState.errors.county && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{businessForm.formState.errors.county.message}</p>
                   )}
                 </div>
 
