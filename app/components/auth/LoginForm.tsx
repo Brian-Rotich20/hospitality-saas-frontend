@@ -21,6 +21,12 @@ const loginSchema = z.object({
 });
 type LoginFormData = z.infer<typeof loginSchema>;
 
+
+const handleGoogleLogin = (intent: 'customer' | 'vendor') => {
+  document.cookie = `oauth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
+  window.location.href = `${API}/auth/google`;
+};
+
 export function LoginForm() {
   const { login, isLoading } = useAuth();
   const [showPass, setShowPass] = useState(false);
@@ -120,7 +126,7 @@ export function LoginForm() {
             {/* Google sign-in */}
           <button
             type="button"
-            onClick={() => window.location.href = `${API}/auth/google?state=customer`}
+            onClick={() => handleGoogleLogin('customer')} // Default to customer intent for Google login
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
               border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
               transition active:scale-[0.98] mt-3"
@@ -128,6 +134,7 @@ export function LoginForm() {
             <GoogleIcon />
             Continue with Google
           </button>
+
           </form>
 
           <div className="flex items-center gap-2 my-4">

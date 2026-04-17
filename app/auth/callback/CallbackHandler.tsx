@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/auth.context';
 
 export default function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { setTokenAndFetchUser } = useAuth();
 
   useEffect(() => {
@@ -24,9 +25,14 @@ export default function CallbackHandler() {
     }
 
     setTokenAndFetchUser(token).then(() => {
-      router.replace('/');
+      // Decide redirect based on current route
+      if (pathname.startsWith('/vendor')) {
+        router.replace('/vendor/dashboard'); // or onboarding continuation
+      } else {
+        router.replace('/'); // customer default
+      }
     });
-  }, [searchParams, router, setTokenAndFetchUser]);
+  }, [searchParams, router, setTokenAndFetchUser, pathname]);
 
   return null;
 }

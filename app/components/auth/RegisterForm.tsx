@@ -32,6 +32,12 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+const handleGoogleLogin = async (intent: 'customer' | 'vendor') => {
+  // Set intent cookie so callback knows where to redirect
+  document.cookie = `oauth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
+  window.location.href = `${API}/auth/google`;
+};
+
 const inp = (err: boolean) =>
   `w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300
    focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition
@@ -72,7 +78,7 @@ export function RegisterForm() {
           {/* Google */}
           <button
             type="button"
-            onClick={() => window.location.href = `${API}/auth/google?state=customer`}
+            onClick={() => handleGoogleLogin('customer')}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
               border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
               transition active:scale-[0.98] mb-4"
