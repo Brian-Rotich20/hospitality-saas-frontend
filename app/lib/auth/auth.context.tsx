@@ -294,14 +294,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [attemptRefresh, clearAuth, router]);
 
-  const setTokenAndFetchUser = useCallback(async (accessToken: string) => {
-  const parsed = setAuth(accessToken);
-    // If they're already a vendor (Google linked existing vendor account), go to dashboard
-    if (parsed.role === 'vendor') {
-      router.push(ROLE_REDIRECT['vendor']);
-    }
-    // Otherwise caller (onboarding page) handles the redirect
-  }, [setAuth, router]);
+    const setTokenAndFetchUser = useCallback(async (accessToken: string) => {
+      const parsed = setAuth(accessToken);
+      router.push(ROLE_REDIRECT[parsed.role]);  // always redirect based on role
+    }, [setAuth, router]);
 
   return (
     <AuthContext.Provider value={{
