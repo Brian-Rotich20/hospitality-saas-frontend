@@ -351,13 +351,21 @@ function CategoryRow({ category, depth, allCategories, onEdit, onDelete, onAddCh
           {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </button>
 
-        {/* Icon */}
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0
-          ${depth === 0
-            ? 'bg-[#2D3B45]/10 text-[#2D3B45]'
-            : 'bg-gray-100 text-gray-500'}`}>
+        {/* Images */}
+      <div className={`w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center shrink-0
+        ${depth === 0
+          ? 'bg-[#2D3B45]/10 text-[#2D3B45]'
+          : 'bg-gray-100 text-gray-500'}`}>
+        {category.imageUrl ? (
+          <img
+            src={category.imageUrl}
+            alt={category.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
           <CategoryIcon name={category.icon} size={14} />
-        </div>
+        )}
+      </div>
 
         {/* Name + slug */}
         <div className="flex-1 min-w-0">

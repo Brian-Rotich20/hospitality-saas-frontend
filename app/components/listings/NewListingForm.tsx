@@ -165,30 +165,32 @@ function CategoryStep({
       {/* Top-level categories */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {topLevel.map(cat => (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => { onCategory(cat.id); onSubCategory(''); }}
-            className={`relative flex flex-col items-start gap-1.5 p-3.5 rounded-2xl
-              border-2 text-left transition-all
-              ${categoryId === cat.id
-                ? 'border-[#2D3B45] bg-[#2D3B45]/5'
-                : 'border-gray-100 hover:border-gray-300 bg-white'}`}
-          >
-            {categoryId === cat.id && (
-              <span className="absolute top-2 right-2 w-4 h-4 bg-[#2D3B45] rounded-full
-                flex items-center justify-center">
-                <Check size={9} className="text-white" />
-              </span>
-            )}
-            {cat.icon && (
-              <span className="text-lg">{cat.icon}</span>
-            )}
-            <span className={`text-xs font-black leading-tight
-              ${categoryId === cat.id ? 'text-[#2D3B45]' : 'text-gray-800'}`}>
-              {cat.name}
+        <button>
+          {categoryId === cat.id && (
+            <span className="absolute top-2 right-2 w-4 h-4 bg-[#2D3B45] rounded-full
+              flex items-center justify-center">
+              <Check size={9} className="text-white" />
             </span>
-          </button>
+          )}
+
+          {/* Image or icon fallback */}
+          {cat.imageUrl ? (
+            <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
+              <img
+                src={cat.imageUrl}
+                alt={cat.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : cat.icon ? (
+            <span className="text-lg">{cat.icon}</span>
+          ) : null}
+
+          <span className={`text-xs font-black leading-tight
+            ${categoryId === cat.id ? 'text-[#2D3B45]' : 'text-gray-800'}`}>
+            {cat.name}
+          </span>
+</button>
         ))}
       </div>
 
