@@ -516,7 +516,7 @@ export function CategoryManagerClient({ initialCategories }: { initialCategories
 
   // ── Create ────────────────────────────────────────────────────────────────
   const handleCreate = async (data: {
-    name: string; slug?: string; icon?: string; parentId?: string;
+    name: string; slug?: string; icon?: string; parentId?: string; imageUrl?: string; // ✅ add imageUrl
   }) => {
     await apiClient.post('/categories', data);
     toast.success('Category created');
@@ -525,13 +525,13 @@ export function CategoryManagerClient({ initialCategories }: { initialCategories
 
   // ── Update ────────────────────────────────────────────────────────────────
   const handleUpdate = async (id: string, data: {
-    name: string; slug?: string; icon?: string; parentId?: string;
+    name: string; slug?: string; icon?: string; parentId?: string; imageUrl?: string; // ✅ add imageUrl
   }) => {
     await apiClient.put(`/categories/${id}`, data);
     toast.success('Category updated');
     await refetch();
   };
-
+  
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = async () => {
     if (!deleteTarget) return;
