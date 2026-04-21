@@ -27,17 +27,16 @@ interface RegisterData {
 }
 
 interface AuthContextType {
-  user:            User | null;
-  isLoading:       boolean;
-  isAuthenticated: boolean;
-  token:           string | null;
-  login:           (email: string, password: string) => Promise<void>;
-  register:        (data: RegisterData) => Promise<void>;
-  logout:          () => Promise<void>;
-  refreshToken:    () => Promise<void>;
+  user:                 User | null;
+  isLoading:            boolean;
+  isAuthenticated:      boolean;
+  token:                string | null;
+  login:                (email: string, password: string) => Promise<void>;
+  register:             (data: RegisterData) => Promise<void>;
+  logout:               () => Promise<void>;
+  refreshToken:         () => Promise<void>;
   setTokenAndFetchUser: (token: string) => Promise<void>;
 }
-
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -82,17 +81,19 @@ function parseToken(token: string): User | null {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const accessTokenRef    = useRef<string | null>(null);
-  const isRefreshingRef   = useRef(false);           // ✅ dedupe concurrent refresh calls
-  const intervalRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+  const accessTokenRef  = useRef<string | null>(null);
+  const intervalRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Single shared promise for in-flight refresh ─────────────────────────
+  // This is the correct way to dedupe — share the SAME promise, not a boolean flag
+  const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
 
   const [user,      setUser]    = useState<User | null>(null);
   const [token,     setToken]   = useState<string | null>(null);
   const [isLoading, setLoading] = useState(true);
   const router = useRouter();
- 
 
-  // ── setAuth ─────────────────────────────────────────────────────────────
+  // ── setAuth ───────────────────────────────────────────────────────────────
   const setAuth = useCallback((accessToken: string): User => {
     const parsed = parseToken(accessToken);
     if (!parsed) throw new Error('Invalid token received from server');
@@ -101,67 +102,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(accessToken);
     setUser(parsed);
     apiClient.setAccessToken(accessToken);
-    setCookie('user_role',    parsed.role, 7 * 24 * 60 * 60);
-    setCookie('access_token', accessToken, 15 * 60);
+    setCookie('user_role',    parsed.role,    7 * 24 * 60 * 60);
+    setCookie('access_token', accessToken,    15 * 60);
 
     return parsed;
   }, []);
 
-  // ── clearAuth ────────────────────────────────────────────────────────────
+  // ── clearAuth ─────────────────────────────────────────────────────────────
   const clearAuth = useCallback(() => {
-    accessTokenRef.current = null;
+    accessTokenRef.current  = null;
+    refreshPromiseRef.current = null;
     setToken(null);
     setUser(null);
     apiClient.setAccessToken(null);
     clearCookie('user_role');
     clearCookie('access_token');
 
-    // ✅ stop interval immediately on logout
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
   }, []);
 
-  // ── attemptRefresh ───────────────────────────────────────────────────────
+  // ── attemptRefresh — guaranteed single in-flight request ─────────────────
   const attemptRefresh = useCallback(async (): Promise<string | null> => {
-    // ✅ CRITICAL: prevent two simultaneous refresh calls hitting Redis
-    if (isRefreshingRef.current) {
-      // Wait for the in-flight refresh to finish instead of firing a second one
-      return new Promise(resolve => {
-        const check = setInterval(() => {
-          if (!isRefreshingRef.current) {
-            clearInterval(check);
-            resolve(accessTokenRef.current);
-          }
-        }, 100);
-      });
+    // If a refresh is already in flight, return the SAME promise
+    // All callers wait for the same result — only ONE hits Redis
+    if (refreshPromiseRef.current) {
+      return refreshPromiseRef.current;
     }
 
-    isRefreshingRef.current = true;
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method:      'POST',
-        credentials: 'include',
-      });
+    const promise = (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method:      'POST',
+          credentials: 'include',
+        });
 
-      if (!res.ok) return null;
+        if (!res.ok) return null;
 
-      const json        = await res.json();
-      const accessToken = json.data?.accessToken;
-      if (!accessToken) return null;
+        const json        = await res.json();
+        const accessToken = json.data?.accessToken;
+        if (!accessToken) return null;
 
-      setAuth(accessToken);
-      return accessToken;
-    } catch {
-      return null;
-    } finally {
-      isRefreshingRef.current = false;  // ✅ always release the lock
-    }
+        setAuth(accessToken);
+        return accessToken;
+      } catch {
+        return null;
+      } finally {
+        // Clear the shared promise so next refresh can run
+        refreshPromiseRef.current = null;
+      }
+    })();
+
+    // Store the promise so concurrent callers reuse it
+    refreshPromiseRef.current = promise;
+    return promise;
   }, [setAuth]);
 
-  // ── Init: attempt refresh only once, only if session exists ─────────────
+  // ── Init: single refresh attempt on mount ────────────────────────────────
   useEffect(() => {
+    // Only attempt if we have evidence of a prior session
     const hasSession = document.cookie.includes('user_role=');
     if (hasSession) {
       attemptRefresh().finally(() => setLoading(false));
@@ -170,17 +171,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Start auto-refresh interval ONLY after confirmed login ───────────────
-  // ✅ Depends on `user` — interval only exists while logged in
-  // ✅ Uses ref so interval callback always has latest attemptRefresh
-  const attemptRefreshRef = useRef(attemptRefresh);
-  useEffect(() => {
-    attemptRefreshRef.current = attemptRefresh;
-  }, [attemptRefresh]);
-
+  // ── Auto-refresh interval — only while logged in ──────────────────────────
   useEffect(() => {
     if (!user) {
-      // Not logged in — ensure no interval is running
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -188,9 +181,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // User just logged in — start the interval
+    // Refresh 1 minute before the 15-minute access token expires
     intervalRef.current = setInterval(() => {
-      attemptRefreshRef.current();
+      attemptRefresh();
     }, 14 * 60 * 1000);
 
     return () => {
@@ -199,21 +192,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         intervalRef.current = null;
       }
     };
-  }, [user?.userId]); // ✅ only restarts if the actual user changes, not on every render
+  }, [user?.userId, attemptRefresh]);
 
-  // ── Register refresh handler on apiClient ────────────────────────────────
+  // ── Wire apiClient 401 handler ONCE ──────────────────────────────────────
+  // Use a ref so this effect never re-runs, but always calls the latest attemptRefresh
+  const attemptRefreshRef = useRef(attemptRefresh);
+  useEffect(() => {
+    attemptRefreshRef.current = attemptRefresh;
+  }, [attemptRefresh]);
+
   useEffect(() => {
     apiClient.setRefreshHandler(async () => {
-      const result = await attemptRefresh();
+      const result = await attemptRefreshRef.current();
       if (!result) {
         clearAuth();
         router.push('/auth/login');
         throw new Error('Session expired');
       }
     });
-  }, [attemptRefresh, clearAuth, router]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── login ────────────────────────────────────────────────────────────────
+  // ── login ─────────────────────────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
@@ -241,7 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [router, setAuth]);
 
-  // ── register ─────────────────────────────────────────────────────────────
+  // ── register ──────────────────────────────────────────────────────────────
   const register = useCallback(async (data: RegisterData) => {
     setLoading(true);
     try {
@@ -285,7 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [router, clearAuth]);
 
-  // ── refreshToken (public API for apiClient 401 handler) ──────────────────
+  // ── refreshToken (public) ─────────────────────────────────────────────────
   const refreshToken = useCallback(async () => {
     const result = await attemptRefresh();
     if (!result) {
@@ -294,10 +293,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [attemptRefresh, clearAuth, router]);
 
-    const setTokenAndFetchUser = useCallback(async (accessToken: string) => {
-      const parsed = setAuth(accessToken);
-      router.push(ROLE_REDIRECT[parsed.role]);  // always redirect based on role
-    }, [setAuth, router]);
+  // ── setTokenAndFetchUser (Google OAuth callback) ──────────────────────────
+  const setTokenAndFetchUser = useCallback(async (accessToken: string) => {
+    const parsed = setAuth(accessToken);
+    router.push(ROLE_REDIRECT[parsed.role]);
+  }, [setAuth, router]);
 
   return (
     <AuthContext.Provider value={{
