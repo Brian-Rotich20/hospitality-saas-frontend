@@ -46,6 +46,10 @@ const ROLE_REDIRECT: Record<UserRole, string> = {
   customer: '/store',
 };
 
+  function getRoleRedirect(role: UserRole, vendorId?: string): string {
+    if (role === 'vendor' && !vendorId) return '/vendor/onboarding'; // vendor exists but no vendorId in token yet — shouldn't happen but safety net
+    return ROLE_REDIRECT[role];
+  }
 function setCookie(name: string, value: string, maxAge: number) {
   const isSecure   = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const sameSite   = isSecure ? 'None' : 'Lax';
@@ -234,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const parsed = setAuth(accessToken);
       toast.success('Signed in successfully');
-      router.push(ROLE_REDIRECT[parsed.role]);
+      router.push(getRoleRedirect(parsed.role, parsed.vendorId));
     } finally {
       setLoading(false);
     }
@@ -294,10 +298,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [attemptRefresh, clearAuth, router]);
 
   // ── setTokenAndFetchUser (Google OAuth callback) ──────────────────────────
-  const setTokenAndFetchUser = useCallback(async (accessToken: string) => {
-    const parsed = setAuth(accessToken);
-    router.push(ROLE_REDIRECT[parsed.role]);
-  }, [setAuth, router]);
+const setTokenAndFetchUser = useCallback(async (accessToken: string) => {
+  const parsed = setAuth(accessToken);
+  router.push(getRoleRedirect(parsed.role, parsed.vendorId));
+}, [setAuth, router]);
 
   return (
     <AuthContext.Provider value={{

@@ -35,7 +35,7 @@ type FormData = z.infer<typeof schema>;
 const handleGoogleLogin = async (intent: 'customer' | 'vendor') => {
   // Set intent cookie so callback knows where to redirect
   document.cookie = `oauth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
-  window.location.href = `${API}/auth/google`;
+  window.location.href = `${API}/auth/google?intent=vendor`;
 };
 
 const inp = (err: boolean) =>
@@ -56,7 +56,8 @@ export function RegisterVendorForm() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/auth/register`, {
+      // Step 1 — create account
+      const regRes = await fetch(`${API}/auth/register`, {
         method:      'POST',
         credentials: 'include',
         headers:     { 'Content-Type': 'application/json' },
@@ -68,15 +69,29 @@ export function RegisterVendorForm() {
         }),
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || json.message || 'Registration failed');
+      const regJson = await regRes.json();
+      if (!regRes.ok) throw new Error(regJson.error || regJson.message || 'Registration failed');
 
-      const token = json.data?.accessToken;
-      if (!token) throw new Error('No token received');
+      const accessToken = regJson.data?.accessToken;
+      if (!accessToken) throw new Error('No token received');
 
-      // Store token for onboarding flow
-      sessionStorage.setItem('vendorToken', token);
+      // Step 2 — create vendor record (minimal — onboarding fills the rest)
+      const vendorRes = await fetch(`${API}/vendors/apply`, {
+        method:  'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization:  `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ businessName: data.fullName }),
+      });
+
+      const vendorJson = await vendorRes.json();
+      if (!vendorRes.ok) throw new Error(vendorJson.error || 'Failed to create vendor profile');
+
+      // Store token for onboarding — do NOT go through auth context redirect
+      sessionStorage.setItem('vendorToken', accessToken);
       router.push('/vendor/onboarding');
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
