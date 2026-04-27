@@ -1,25 +1,68 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { jwtDecode }                 from 'jwt-decode';
 
-const isPublicRoute = createRouteMatcher([
-  '/auth(.*)',
-  '/store(.*)',
-  '/public(.*)',
-  '/',
-]);
 
-const ROLE_REDIRECT: Record<string, string> = {
-  vendor:   '/vendor/dashboard',
-  admin:    '/admin/dashboard',
-  customer: '/store',
-};
+interface JWTPayload {
+  userId: string;
+  role:   'customer' | 'vendor' | 'admin';
+  exp:    number;
+}
 
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect();
+// Read role from JWT directly — most reliable source
+// Falls back to user_role cookie when access_token has expired
+function getRole(req: NextRequest): string | null {
+  const accessToken = req.cookies.get('access_token')?.value;
+  if (accessToken) {
+    try {
+      const decoded = jwtDecode<JWTPayload>(accessToken);
+      if (decoded.exp > Date.now() / 1000) return decoded.role;
+    } catch { /* invalid */ }
   }
-});
+  return req.cookies.get('user_role')?.value ?? null;
+}
 
-export const config = {
-  matcher: ['/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)', '/(api|trpc)(.*)'],
-};
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const role         = getRole(request);
+
+
+  // ── /admin/* — admin only ─────────────────────────────────────────────────
+  if (pathname.startsWith('/admin')) {
+    if (!role)            return NextResponse.redirect(new URL('/auth/login', request.url));
+    if (role !== 'admin') return NextResponse.redirect(new URL('/store',      request.url));
+    return NextResponse.next();
+  }
+
+  // ── /vendor/* — vendor only ───────────────────────────────────────────────
+  if (pathname.startsWith('/vendor')) {
+    if (!role)             return NextResponse.redirect(new URL('/auth/login', request.url));
+    if (role !== 'vendor') return NextResponse.redirect(new URL('/store',      request.url));
+    return NextResponse.next();
+  }
+
+  // ── Auth pages — redirect logged-in users away ────────────────────────────
+// Replace the auth pages block
+
+  if (pathname.startsWith('/auth/login') ||
+      pathname.startsWith('/auth/register')) {
+    if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    if (role === 'vendor')   return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
+    if (role === 'customer') return NextResponse.redirect(new URL('/store',            request.url));
+  }
+    const accessToken = request.cookies.get('access_token')?.value;
+    let hasValidToken = false;
+
+    if (accessToken) {
+      try {
+        const decoded = jwtDecode<JWTPayload>(accessToken);
+        hasValidToken = decoded.exp > Date.now() / 1000;
+      } catch { /* invalid */ }
+    }
+
+    if (hasValidToken && role) {
+      if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      if (role === 'vendor')   return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
+      if (role === 'customer') return NextResponse.redirect(new URL('/store',            request.url));
+    }
+  return NextResponse.next();
+}
