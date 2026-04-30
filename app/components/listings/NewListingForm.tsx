@@ -488,7 +488,7 @@ function PhotoUploader({
     const fd = new FormData();
     fd.append('image', file);
     try {
-      const res = await fetch('/api/upload/image', {
+      const res = await fetch('/upload/image', {
         method:  'POST',
         body:    fd,
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
