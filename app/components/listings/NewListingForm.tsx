@@ -148,12 +148,9 @@ function CategoryStep({
   onSubCategory: (id: string) => void;
   onNext:        () => void;
 }) {
-  // Only top-level categories (no parentId)
   const topLevel = categories.filter(c => !c.parentId);
   const selected = topLevel.find(c => c.id === categoryId);
-
-  // Subcategories = children of selected top-level
-  const subs = selected?.children ?? categories.filter(c => c.parentId === categoryId);
+  const subs     = selected?.children ?? categories.filter(c => c.parentId === categoryId);
 
   return (
     <div className="space-y-6">
@@ -164,40 +161,54 @@ function CategoryStep({
 
       {/* Top-level categories */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {topLevel.map(cat => (
-        <button>
-          {categoryId === cat.id && (
-            <span className="absolute top-2 right-2 w-4 h-4 bg-[#2D3B45] rounded-full
-              flex items-center justify-center">
-              <Check size={9} className="text-white" />
-            </span>
-          )}
+        {topLevel.map(cat => {
+          const isSelected = categoryId === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => onCategory(cat.id)}
+              className={`relative flex flex-col items-center gap-2 p-3 border rounded-xl
+                text-center transition-colors cursor-pointer
+                ${isSelected
+                  ? 'border-[#2D3B45] bg-[#2D3B45]/5'
+                  : 'border-gray-200 bg-white hover:border-[#2D3B45] hover:bg-gray-50'}`}
+            >
+              {/* Checkmark badge */}
+              {isSelected && (
+                <span className="absolute top-2 right-2 w-4 h-4 bg-[#2D3B45] rounded-full
+                  flex items-center justify-center">
+                  <Check size={9} className="text-white" />
+                </span>
+              )}
 
-          {/* Image or icon fallback */}
-          {cat.imageUrl ? (
-            <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
-              <img
-                src={cat.imageUrl}
-                alt={cat.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : cat.icon ? (
-            <span className="text-lg">{cat.icon}</span>
-          ) : null}
+              {/* Icon / image */}
+              {cat.imageUrl ? (
+                <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
+                  <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+                </div>
+              ) : cat.icon ? (
+                <span className="text-lg">{cat.icon}</span>
+              ) : null}
 
-          <span className={`text-xs font-black leading-tight
-            ${categoryId === cat.id ? 'text-[#2D3B45]' : 'text-gray-800'}`}>
-            {cat.name}
-          </span>
-</button>
-        ))}
+              <span className={`text-xs font-black leading-tight
+                ${isSelected ? 'text-[#2D3B45]' : 'text-gray-800'}`}>
+                {cat.name}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Subcategories — appear when parent is selected */}
+      {/* Subcategories */}
       {categoryId && subs.length > 0 && (
         <div>
-          <Label>Subcategory <span className="text-gray-400 font-normal normal-case">(optional but helps customers find you)</span></Label>
+          <Label>
+            Subcategory{' '}
+            <span className="text-gray-400 font-normal normal-case">
+              (optional but helps customers find you)
+            </span>
+          </Label>
           <div className="flex flex-wrap gap-2 mt-1">
             {subs.map(sub => (
               <button
