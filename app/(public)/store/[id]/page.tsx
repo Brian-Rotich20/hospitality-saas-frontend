@@ -1,12 +1,12 @@
 // app/(public)/store/[id]/page.tsx
 // ✅ Server Component — force-dynamic prevents build-time fetch timeout
 
-import { notFound }            from 'next/navigation';
-import Link                    from 'next/link';
-import { ArrowLeft, Shield }   from 'lucide-react';
-import { ListingGallery }      from '../../../components/listings/ListingGallery';
-import { ListingInfo }         from '../../../components/listings/ListingQuickInfo';
-import { BookingCard }         from '../../../components/listings/BookingCard';
+import { notFound }          from 'next/navigation';
+import Link                  from 'next/link';
+import { ArrowLeft, Shield, ChevronRight, Tag, Eye, Star } from 'lucide-react';
+import { ListingGallery }    from '../../../components/listings/ListingGallery';
+import { ListingInfo }       from '../../../components/listings/ListingQuickInfo';
+import { BookingCard }       from '../../../components/listings/BookingCard';
 import { resolveListingPrice } from '../../../lib/types/listing';
 
 export const dynamic = 'force-dynamic';
@@ -33,34 +33,91 @@ export default async function ListingDetailPage({ params }: Props) {
 
   if (!listing) notFound();
 
-  const price    = resolveListingPrice(listing);
-  const photos   = listing.photos ?? [];
-  const location = listing.location ?? {};
+  const price      = resolveListingPrice(listing);
+  const photos     = listing.photos ?? [];
+  const location   = listing.location ?? {};
+  const categoryName = (listing.category as any)?.name ?? listing.category ?? null;
+  const rating     = listing.rating;
+  const reviewCount = listing.reviewCount ?? 0;
+  const views      = listing.views ?? 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-10">
 
-      {/* Gallery — full bleed */}
-      <ListingGallery photos={photos} title={listing.title} />
+        {/* ── Breadcrumb ──────────────────────────────────────────── */}
+        <nav className="flex items-center gap-1.5 text-[11px] mb-4 flex-wrap">
+          <Link href="/store"
+            className="flex items-center gap-1 text-gray-400 hover:text-[#2D3B45] transition font-medium no-underline">
+            <ArrowLeft size={11} />
+            Listings
+          </Link>
+          {categoryName && (
+            <>
+              <ChevronRight size={10} className="text-gray-300" />
+              <Link href={`/store?category=${listing.category?.slug ?? ''}`}
+                className="flex items-center gap-1 text-gray-400 hover:text-[#2D3B45] transition no-underline font-medium">
+                <Tag size={9} />
+                {categoryName}
+              </Link>
+            </>
+          )}
+          <ChevronRight size={10} className="text-gray-300" />
+          <span className="text-gray-600 font-semibold truncate max-w-[200px]">
+            {listing.title}
+          </span>
+        </nav>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        {/* ── Gallery ─────────────────────────────────────────────── */}
+        <div className="mb-5">
+          <ListingGallery photos={photos} title={listing.title} />
+        </div>
 
-        {/* Back nav */}
-        <Link
-          href="/store"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400
-            hover:text-gray-700 transition-colors no-underline mb-5">
-          <ArrowLeft size={12} />
-          Back to listings
-        </Link>
+        {/* ── Stats strip — views, rating, reviews ────────────────── */}
+        <div className="flex items-center gap-4 mb-5 flex-wrap">
+          {rating ? (
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-0.5">
+                {[1,2,3,4,5].map(i => (
+                  <Star key={i} size={12}
+                    className={i <= Math.round(rating) ? 'text-[#F5C842] fill-[#F5C842]' : 'text-gray-200 fill-gray-200'} />
+                ))}
+              </div>
+              <span className="text-xs font-bold text-gray-700">{rating.toFixed(1)}</span>
+              <span className="text-xs text-gray-400">({reviewCount} reviews)</span>
+            </div>
+          ) : (
+            <span className="text-xs text-gray-400 flex items-center gap-1">
+              <Star size={11} className="text-gray-300" />
+              No reviews yet
+            </span>
+          )}
+          {views > 0 && (
+            <>
+              <span className="text-gray-200">·</span>
+              <span className="text-xs text-gray-400 flex items-center gap-1">
+                <Eye size={11} className="text-gray-300" />
+                {views.toLocaleString()} views
+              </span>
+            </>
+          )}
+          {listing.instantBooking && (
+            <>
+              <span className="text-gray-200">·</span>
+              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                ⚡ Instant booking
+              </span>
+            </>
+          )}
+        </div>
 
-        {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-5">
+        {/* ── Main content grid ────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
 
-          {/* Left — listing info */}
+          {/* Left — listing details */}
           <ListingInfo listing={listing} />
 
-          {/* Right — booking + trust */}
+          {/* Right — booking card + trust */}
           <div className="space-y-3">
             <BookingCard
               listingId={listing.id}
@@ -75,16 +132,18 @@ export default async function ListingDetailPage({ params }: Props) {
 
             {/* Trust badge */}
             <div className="flex items-start gap-3 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-              <Shield size={13} className="text-gray-400 shrink-0 mt-px" />
-              <p className="text-[11px] text-gray-500 leading-relaxed">
-                <strong className="text-gray-700 font-semibold">Secure booking</strong>
-                {' '}· Payments protected via M-Pesa Daraja
-              </p>
+              <Shield size={14} className="text-gray-400 shrink-0 mt-px" />
+              <div>
+                <p className="text-xs font-bold text-gray-700 mb-0.5">Secure & trusted</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  Payments protected via M-Pesa Daraja. Vendor verified by LinkMart.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Similar listings */}
+        {/* ── Similar listings placeholder ─────────────────────────── */}
         <div className="mt-10 pt-6 border-t border-gray-100">
           <div className="flex items-center gap-2.5 mb-1">
             <h2 className="text-sm font-bold text-gray-800">Similar Listings</h2>
