@@ -138,11 +138,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Init ───────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (document.cookie.includes('user_role=')) {
-      attemptRefresh().finally(() => setLoading(false));
-    } else {
+    const cookies = document.cookie;
+    
+    if (!cookies.includes('user_role=')) {
       setLoading(false);
+      return;
     }
+
+    // If access_token cookie exists and is not expired, use it directly
+    const tokenMatch = document.cookie.match(/access_token=([^;]+)/);
+    if (tokenMatch) {
+      try {
+        const decoded = jwtDecode<any>(tokenMatch[1]);
+        if (decoded.exp > Date.now() / 1000) {
+          // Token is valid — hydrate state without a network call
+          setAuth(tokenMatch[1]);
+          setLoading(false);
+          return;
+        }
+      } catch { /* fall through to refresh */ }
+    }
+
+    // Token missing or expired — try refresh
+    attemptRefresh().finally(() => setLoading(false));
   }, []); // eslint-disable-line
 
   // ── Auto-refresh interval ──────────────────────────────────────────────────

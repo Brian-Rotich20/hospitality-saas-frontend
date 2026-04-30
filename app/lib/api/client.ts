@@ -97,7 +97,7 @@ interface ApiResponse<T> {
           } catch (err) {
             this.accessToken = null;
             this.processQueue(err as Error, null);
-            if (typeof window !== 'undefined') {
+            if (typeof window !== 'undefined' && error.response?.status === 401) {
               window.location.href = '/auth/login';
             }
             return Promise.reject(err);
