@@ -8,6 +8,8 @@ import { ListingGallery }    from '../../../components/listings/ListingGallery';
 import { ListingInfo }       from '../../../components/listings/ListingQuickInfo';
 import { BookingCard }       from '../../../components/listings/BookingCard';
 import { resolveListingPrice } from '../../../lib/types/listing';
+import { ReviewSection } from '../../../components/listings/ReviewSection';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -116,6 +118,7 @@ export default async function ListingDetailPage({ params }: Props) {
 
           {/* Left — listing details */}
           <ListingInfo listing={listing} />
+         <ReviewSection listingId={listing.id} />
 
           {/* Right — booking card + trust */}
           <div className="space-y-3">

@@ -90,6 +90,12 @@ export const API_ENDPOINTS = {
     DOCUMENT:        '/upload/document',
     DELETE:          '/upload/file',
   },
+  REVIEWS: {
+    CREATE:           '/reviews',
+    LIST_FOR_LISTING: (listingId: string) => `/reviews/listing/${listingId}`,
+    ELIGIBILITY:      (listingId: string) => `/reviews/eligibility/${listingId}`,
+    REPLY:            (reviewId: string)  => `/reviews/${reviewId}/reply`,
+  },
 };
 
 // ── Service methods ───────────────────────────────────────────────────────────
@@ -263,4 +269,18 @@ export const uploadService = {
 
   deleteFile:      (url: string) =>
     apiClient.post<{ message: string }>(API_ENDPOINTS.UPLOAD.DELETE, { url }),
+};
+
+export const reviewsService = {
+  create: (data: { bookingId: string; rating: number; title?: string; body: string }) =>
+    apiClient.post(API_ENDPOINTS.REVIEWS.CREATE, data),
+ 
+  getForListing: (listingId: string, limit = 20, offset = 0) =>
+    apiClient.get(API_ENDPOINTS.REVIEWS.LIST_FOR_LISTING(listingId), { params: { limit, offset } }),
+ 
+  getEligibility: (listingId: string) =>
+    apiClient.get(API_ENDPOINTS.REVIEWS.ELIGIBILITY(listingId)),
+ 
+  addReply: (reviewId: string, reply: string) =>
+    apiClient.post(API_ENDPOINTS.REVIEWS.REPLY(reviewId), { reply }),
 };
