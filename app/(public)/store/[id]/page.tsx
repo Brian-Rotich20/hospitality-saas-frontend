@@ -113,38 +113,39 @@ export default async function ListingDetailPage({ params }: Props) {
           )}
         </div>
 
-        {/* ── Main content grid ────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
+      {/* ── Main content grid ────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
 
-          {/* Left — listing details */}
+        {/* Left — listing info + reviews */}
+        <div className="space-y-5">
           <ListingInfo listing={listing} />
-         <ReviewSection listingId={listing.id} />
+          <ReviewSection listingId={listing.id} />
+        </div>
 
-          {/* Right — booking card + trust */}
-          <div className="space-y-3">
-            <BookingCard
-              listingId={listing.id}
-              price={price}
-              pricingType={listing.pricingType}
-              currency={listing.currency ?? 'KES'}
-              capacity={listing.capacity}
-              location={location}
-              instantBooking={listing.instantBooking}
-              vendor={listing.vendor}
-            />
+        {/* Right — booking card + trust */}
+        <div className="space-y-3">
+          <BookingCard
+            listingId={listing.id}
+            price={price}
+            pricingType={listing.pricingType}
+            currency={listing.currency ?? 'KES'}
+            capacity={listing.capacity}
+            location={location}
+            instantBooking={listing.instantBooking}
+            vendor={listing.vendor}
+          />
 
-            {/* Trust badge */}
-            <div className="flex items-start gap-3 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-              <Shield size={14} className="text-gray-400 shrink-0 mt-px" />
-              <div>
-                <p className="text-xs font-bold text-gray-700 mb-0.5">Secure & trusted</p>
-                <p className="text-[11px] text-gray-500 leading-relaxed">
-                  Payments protected via M-Pesa Daraja. Vendor verified by LinkMart.
-                </p>
-              </div>
+          <div className="flex items-start gap-3 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+            <Shield size={14} className="text-gray-400 shrink-0 mt-px" />
+            <div>
+              <p className="text-xs font-bold text-gray-700 mb-0.5">Secure & trusted</p>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                Payments protected via M-Pesa Daraja. Vendor verified by LinkMart.
+              </p>
             </div>
           </div>
         </div>
+      </div>
 
         {/* ── Similar listings placeholder ─────────────────────────── */}
         <div className="mt-10 pt-6 border-t border-gray-100">
