@@ -460,7 +460,6 @@ interface UploadedPhoto {
   uploading: boolean;
   error?:    string;
 }
-
 function PhotoUploader({
   value, onChange, token,
 }: {
@@ -473,33 +472,45 @@ function PhotoUploader({
   );
   const [dragging, setDragging] = useState(false);
   const inputRef                = useRef<HTMLInputElement>(null);
-  const uploadedCount           = photos.filter(p => p.url && !p.error).length;
-  const remaining               = MAX_PHOTOS - photos.filter(p => !p.error).length;
+  const onChangeRef             = useRef(onChange);  // ✅ stable ref — never stale
 
+  // Keep ref current without re-running effects
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+
+  const uploadedCount = photos.filter(p => p.url && !p.error).length;
+  const remaining     = MAX_PHOTOS - photos.filter(p => !p.error).length;
+
+  // ✅ Notify parent whenever photos settle — using ref avoids the loop
   useEffect(() => {
-    onChange(
-      photos
-        .filter(p => p.url && p.url.trim().length > 0 && !p.uploading && !p.error)
-        .map(p => p.url)
-    );
+    const urls = photos
+      .filter(p => p.url && p.url.trim().length > 0 && !p.uploading && !p.error)
+      .map(p => p.url);
+    onChangeRef.current(urls);
   }, [photos]);
+
+  const BACKEND = process.env.NEXT_PUBLIC_API_URL!.replace(/\/+$/, '');
 
   const uploadFile = useCallback(async (file: File, localId: string) => {
     const fd = new FormData();
     fd.append('image', file);
     try {
-      const res = await fetch('/upload/image', {
+      // ✅ Hits Fastify directly — correct URL
+      const res = await fetch(`${BACKEND}/upload/image`, {
         method:  'POST',
         body:    fd,
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        // ✅ No Content-Type header — browser sets multipart boundary automatically
       });
+
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        throw new Error(e.error ?? `Upload failed (${res.status})`);
+        throw new Error(e.error ?? e.message ?? `Upload failed (${res.status})`);
       }
+
       const json = await res.json();
       const url: string = json.data?.url ?? json.url;
-      if (!url) throw new Error('No URL returned');
+      if (!url) throw new Error('No URL returned from server');
+
       setPhotos(prev => prev.map(p =>
         p.localId === localId ? { ...p, url, uploading: false } : p,
       ));
@@ -509,13 +520,23 @@ function PhotoUploader({
           ? { ...p, uploading: false, error: err instanceof Error ? err.message : 'Upload failed' }
           : p,
       ));
+      toast.error(err instanceof Error ? err.message : 'Upload failed');
     }
-  }, [token]);
+  }, [token, BACKEND]);
 
   const processFiles = useCallback((files: File[]) => {
-    const valid = files.filter(f => ACCEPT.includes(f.type) && f.size <= MAX_MB * 1024 * 1024);
+    const valid = files.filter(f =>
+      ACCEPT.includes(f.type) && f.size <= MAX_MB * 1024 * 1024,
+    );
+    if (!valid.length) {
+      toast.error(`Only JPG/PNG/WebP up to ${MAX_MB}MB accepted`);
+      return;
+    }
     const slots = Math.min(valid.length, remaining);
-    if (!slots) return;
+    if (!slots) {
+      toast.error(`Maximum ${MAX_PHOTOS} photos allowed`);
+      return;
+    }
     const next: UploadedPhoto[] = valid.slice(0, slots).map(f => ({
       url: '', uploading: true,
       localId: `${f.name}-${Date.now()}-${Math.random()}`,
@@ -526,7 +547,6 @@ function PhotoUploader({
 
   return (
     <div className="space-y-3">
-      {/* Progress indicator */}
       <div className="flex items-center justify-between text-[11px]">
         <span className="text-gray-500">
           {uploadedCount} of {MAX_PHOTOS} photos
@@ -537,7 +557,6 @@ function PhotoUploader({
         </span>
       </div>
 
-      {/* Drop zone */}
       {remaining > 0 && (
         <div
           onClick={() => inputRef.current?.click()}
@@ -569,7 +588,6 @@ function PhotoUploader({
         </div>
       )}
 
-      {/* Photo grid */}
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {photos.map((p, i) => (
@@ -581,8 +599,12 @@ function PhotoUploader({
                 </div>
               )}
               {p.error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-red-50 z-10 p-2">
-                  <AlertCircle size={16} className="text-red-400" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center
+                  bg-red-50 z-10 p-2 gap-1">
+                  <AlertCircle size={14} className="text-red-400" />
+                  <p className="text-[9px] text-red-400 text-center leading-tight line-clamp-2">
+                    {p.error}
+                  </p>
                 </div>
               )}
               {p.url && !p.uploading && !p.error && (
@@ -610,7 +632,6 @@ function PhotoUploader({
     </div>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 2 — Details (title, description, location, photos)
 // ─────────────────────────────────────────────────────────────────────────────
