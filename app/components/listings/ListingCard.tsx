@@ -6,10 +6,10 @@ import type { Listing }    from '../../lib/types/listing';
 import { resolveListingPrice } from '../../lib/types/listing';
 
 export function ListingCard({ listing }: { listing: Listing }) {
-  const imageUrl = listing.photos?.[0] ?? listing.coverPhoto;
-  const area     = listing.location?.area;
-  const county   = listing.location?.county;
-  const price    = resolveListingPrice(listing);
+  const imageUrl    = listing.photos?.[0] ?? listing.coverPhoto;
+  const area        = listing.location?.area;
+  const county      = listing.location?.county;
+  const price       = resolveListingPrice(listing);
   const rating      = (listing as any).rating;
   const reviewCount = (listing as any).review_count ?? (listing as any).reviewCount ?? 0;
 
@@ -26,7 +26,6 @@ export function ListingCard({ listing }: { listing: Listing }) {
     contact: 'Contact',
   };
 
-  // REPLACE the whole ListingCard return
   return (
     <Link
       href={`/store/${listing.id}`}
@@ -68,7 +67,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
           </p>
         )}
 
-        {/* Location — area + county */}
+        {/* Location */}
         {(area || county) && (
           <span className="flex items-center gap-1 text-[11px] text-gray-400 truncate">
             <MapPin size={10} className="text-gray-300 shrink-0" />
@@ -76,29 +75,10 @@ export function ListingCard({ listing }: { listing: Listing }) {
           </span>
         )}
 
-        {rating ? (
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-0.5">
-              {[1,2,3,4,5].map(i => (
-                <Star key={i} size={9}
-                  className={i <= Math.round(Number(rating))
-                    ? 'text-[#F5C842] fill-[#F5C842]'
-                    : 'text-gray-200 fill-gray-200'} />
-              ))}
-            </div>
-            <span className="text-[10px] font-bold text-gray-600">{Number(rating).toFixed(1)}</span>
-            <span className="text-[10px] text-gray-400">({reviewCount})</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1">
-            {[1,2,3,4,5].map(i => (
-              <Star key={i} size={9} className="text-gray-200 fill-gray-200" />
-            ))}
-            <span className="text-[10px] text-gray-300 ml-1">No reviews</span>
-          </div>
-        )}
-                {/* Price */}
+        {/* Price + Rating — side by side */}
         <div className="pt-2 mt-1 border-t border-gray-50 flex items-end justify-between">
+
+          {/* Price */}
           <div>
             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
               {priceLabel[listing.pricingType] ?? 'Price'}
@@ -118,12 +98,32 @@ export function ListingCard({ listing }: { listing: Listing }) {
             )}
           </div>
 
-          {listing.vendor?.verified && (
-            <span className="text-[9px] font-black text-emerald-700 bg-emerald-50
-              px-1.5 py-0.5 rounded-full uppercase tracking-wide border border-emerald-100">
-              Verified
-            </span>
-          )}
+          {/* Rating OR verified badge */}
+          <div className="flex flex-col items-end gap-1">
+            {rating ? (
+              <div className="flex items-center gap-1">
+                <Star size={11} className="text-[#F5C842] fill-[#F5C842]" />
+                <span className="text-[11px] font-black text-gray-700">
+                  {Number(rating).toFixed(1)}
+                </span>
+                <span className="text-[10px] text-gray-400">
+                  ({reviewCount})
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Star size={11} className="text-gray-200 fill-gray-200" />
+                <span className="text-[10px] text-gray-300">New</span>
+              </div>
+            )}
+
+            {listing.vendor?.verified && (
+              <span className="text-[9px] font-black text-emerald-700 bg-emerald-50
+                px-1.5 py-0.5 rounded-full uppercase tracking-wide border border-emerald-100">
+                Verified
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Link>
