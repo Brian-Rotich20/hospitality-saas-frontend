@@ -163,7 +163,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   return (
     <>
       {/* ── Desktop sidebar — fixed, always visible ── */}
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-57 bg-white border-r border-gray-100 z-40">
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-56 bg-white border-r border-gray-100 z-40">
         <SidebarContent />
       </aside>
 

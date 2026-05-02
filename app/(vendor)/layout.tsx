@@ -31,7 +31,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       />
 
       {/* Main content area */}
-      <div className="lg:ml-[228px] min-h-screen flex flex-col">
+      <div className="lg:ml-56 min-h-screen flex flex-col">
         {/* Topbar gets the toggle function for mobile hamburger */}
         <VendorTopbar onMobileMenuToggle={() => setMobileOpen(v => !v)} />
         <main className="flex-1 p-6 max-w-[1100px] w-full mx-auto">

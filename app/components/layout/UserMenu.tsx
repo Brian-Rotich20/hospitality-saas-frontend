@@ -33,7 +33,7 @@ export function UserMenu() {
   const dashboardHref =
     user?.role === 'vendor' ? '/vendor/dashboard' :
     user?.role === 'admin'  ? '/admin/dashboard'  : '/dashboard';
-
+    
   const dashboardLabel =
     user?.role === 'vendor' ? 'Vendor Dashboard' :
     user?.role === 'admin'  ? 'Admin Dashboard'  : 'Dashboard';
@@ -96,3 +96,4 @@ export function UserMenu() {
     </div>
   );
 }
+
