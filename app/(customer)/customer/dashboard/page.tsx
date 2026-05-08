@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link   from 'next/link';
-import { useAuth }        from '../../lib/auth/auth.context';
-import { customerService, bookingsService } from '../../lib/api/endpoints';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { useAuth }        from '../.././../lib/auth/auth.context';
+import { customerService, bookingsService } from '../../../lib/api/endpoints';
+import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
 import {
   Calendar, Heart, ShoppingBag, TrendingUp,
   Clock, CheckCircle, XCircle, ChevronRight,

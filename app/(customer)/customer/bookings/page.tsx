@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link   from 'next/link';
-import { bookingsService } from '../../lib/api/endpoints';
-import { LoadingSpinner }  from '../../components/common/LoadingSpinner';
+import { bookingsService } from '../.././../lib/api/endpoints';
+import { LoadingSpinner }  from '../../../components/common/LoadingSpinner';
 import {
   Calendar, MapPin, ChevronRight,
   ShoppingBag, AlertCircle, RefreshCw,
