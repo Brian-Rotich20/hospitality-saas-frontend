@@ -7,7 +7,7 @@ import Image from 'next/image';
 import {
   LayoutDashboard, Package, Calendar, BarChart3,
   Users, LogOut, User, Settings, ShoppingBag,
-  ChevronRight, X, Heart,                        // ← Heart added
+  ChevronRight, X, Heart,                       
 } from 'lucide-react';
 
 type Role = 'customer' | 'vendor' | 'admin';
@@ -35,10 +35,10 @@ const NAV: Record<Role, NavItem[]> = {
     { href: '/admin/categories', label: 'Categories', Icon: Settings        },
   ],
   customer: [
-    { href: '/dashboard', label: 'Dashboard',   Icon: LayoutDashboard },
-    { href: '/bookings',  label: 'My Bookings', Icon: Calendar        },
-    { href: '/saved',     label: 'Saved',        Icon: Heart           }, // ← added
-    { href: '/profile',   label: 'Profile',      Icon: User            },
+    { href: '/customer/dashboard', label: 'Dashboard',   Icon: LayoutDashboard },
+    { href: '/customer/bookings',  label: 'My Bookings', Icon: Calendar        },
+    { href: '/customer/saved',     label: 'Saved',        Icon: Heart           }, // ← added
+    { href: '/customer/profile',   label: 'Profile',      Icon: User            },
   ],
 };
 

@@ -15,8 +15,8 @@ import { UserMenu } from './UserMenu';  // for user avatar and auth actions
 import { MobileDrawer } from './MobileDrawer'; // for mobile nav links and auth actions
 
 const CUSTOMER_NAV = [
-  { href: '/saved',    Icon: Heart,          label: 'Saved'    },
-  { href: '/bookings', Icon: CalendarCheck,  label: 'Bookings' },
+  { href: '/customer/saved',    Icon: Heart,          label: 'Saved'    },
+  { href: '/customer/bookings', Icon: CalendarCheck,  label: 'Bookings' },
 ];
 
 const VENDOR_NAV = [

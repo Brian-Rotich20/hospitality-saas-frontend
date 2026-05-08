@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth }         from '../../lib/auth/auth.context';
-import { customerService } from '../../lib/api/endpoints';
-import { LoadingSpinner }  from '../../components/common/LoadingSpinner';
+import { useAuth }         from '../../../lib/auth/auth.context';
+import { customerService } from '../../../lib/api/endpoints';
+import { LoadingSpinner }  from '../../../components/common/LoadingSpinner';
 import { User, Phone, Mail, Save, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

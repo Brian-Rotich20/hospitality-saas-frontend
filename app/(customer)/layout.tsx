@@ -22,7 +22,8 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <CustomerTopbar onMobileMenuToggle={() => setMobileOpen(v => !v)} />
+      <div className="lg:ml-56 min-h-screen flex flex-col">
+        <CustomerTopbar onMobileMenuToggle={() => setMobileOpen(v => !v)} />
         <main className="flex-1 p-4 md:p-6 max-w-[1000px] w-full mx-auto">
           {children}
         </main>
