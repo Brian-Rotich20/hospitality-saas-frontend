@@ -5,10 +5,10 @@ import { useAuth }     from '../../lib/auth/auth.context';
 import { Menu, Bell }  from 'lucide-react';
 
 const LABELS: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/bookings':  'My Bookings',
-  '/saved':     'Saved Listings',
-  '/profile':   'My Profile',
+  '/customer/dashboard': 'Dashboard',
+  '/customer/bookings':  'My Bookings',
+  '/customer/saved':     'Saved Listings',
+  '/customer/ profile':   'My Profile',
 };
 
 function getLabel(pathname: string) {

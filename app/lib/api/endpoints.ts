@@ -61,17 +61,18 @@ export const API_ENDPOINTS = {
     ACCEPT:          (id: string) => `/bookings/${id}/accept`,
     DECLINE:         (id: string) => `/bookings/${id}/decline`,
     CANCEL:          (id: string) => `/bookings/${id}/cancel`,
-  },
-
+  }, 
+  
   VENDORS: {
     APPLY:           '/vendors/apply',
+    VERIFY_EMAIL:    '/vendors/verify-email',    // ← ADD
+    RESEND_OTP:      '/vendors/resend-otp',       // ← ADD
     MY_PROFILE:      '/vendors/me',
     UPDATE_PROFILE:  '/vendors/me',
     PAYOUT_DETAILS:  '/vendors/me/payout-details',
     DOCUMENTS:       '/vendors/me/documents',
     PUBLIC_PROFILE:  (id: string) => `/vendors/${id}`,
   },
-
   ADMIN_VENDORS: {
     PENDING:         '/admin/vendors/pending',
     GET_ALL:         '/admin/vendors',
@@ -242,6 +243,12 @@ export const vendorsService = {
 
   getPublicProfile:(id: string) =>
     apiClient.get(API_ENDPOINTS.VENDORS.PUBLIC_PROFILE(id)),
+  
+   verifyEmail: (otp: string) =>
+    apiClient.post(API_ENDPOINTS.VENDORS.VERIFY_EMAIL, { otp }),
+ 
+  resendOTP: () =>
+    apiClient.post(API_ENDPOINTS.VENDORS.RESEND_OTP, {}),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
