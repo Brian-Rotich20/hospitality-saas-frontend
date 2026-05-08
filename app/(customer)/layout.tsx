@@ -1,61 +1,36 @@
 'use client';
 
-import React from 'react';
-import { useAuth } from '../lib/auth/auth.context';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Sidebar } from '../components/layout/Sidebar';
-import { MobileNav } from '../components/layout/MobileNav';
-import { CustomerNav } from '../components/layout/CustomerNav';
+import { useState, useEffect } from 'react';
+import { useAuth }             from '../lib/auth/auth.context';
+import { useRouter }           from 'next/navigation';
+import { LoadingSpinner }      from '../components/common/LoadingSpinner';
+import { CustomerSidebar }     from '../components/customer/CustomerSidebar';
+import { CustomerTopbar }      from '../components/customer/CustomerTopbar';
 
-export default function CustomerLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { user, isLoading } = useAuth();
+export default function CustomerLayout({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Verify user is customer role
-  React.useEffect(() => {
-    if (!isLoading && user?.role !== 'customer') {
-      router.push('/auth/login');
-    }
-  }, [user, isLoading, router]);
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated)          { router.push('/auth/login'); return; }
+    if (user?.role !== 'customer') { router.push('/store');      return; }
+  }, [isAuthenticated, isLoading, user, router]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  if (isLoading)                                     return <LoadingSpinner fullPage />;
+  if (!isAuthenticated || user?.role !== 'customer') return null;
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 border-r border-gray-200 bg-white">
-      <Sidebar
-            mobileOpen={mobileOpen}
-            onMobileClose={() => setMobileOpen(false)}
-          />
-      </div>
-
-      {/* Mobile Sidebar */}
-      <div className="md:hidden">
-        <MobileNav role="customer" isOpen={false} onClose={function (): void {
-          throw new Error('Function not implemented.');
-        } } />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <CustomerNav />
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-8">
-            {children}
-          </div>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <CustomerSidebar
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
+      <div className="lg:ml-56 min-h-screen flex flex-col">
+        <CustomerTopbar onMobileMenuToggle={() => setMobileOpen(v => !v)} />
+        <main className="flex-1 p-4 md:p-6 max-w-[1000px] w-full mx-auto">
+          {children}
         </main>
       </div>
     </div>

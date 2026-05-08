@@ -96,6 +96,15 @@ export const API_ENDPOINTS = {
     ELIGIBILITY:      (listingId: string) => `/reviews/eligibility/${listingId}`,
     REPLY:            (reviewId: string)  => `/reviews/${reviewId}/reply`,
   },
+   CUSTOMER: {
+    PROFILE:       '/users/me',
+    UPDATE:        '/users/me',
+    STATS:         '/users/me/stats',
+    SAVED:         '/users/me/saved',
+    TOGGLE_SAVED:  (listingId: string) => `/users/me/saved/${listingId}`,
+    IS_SAVED:      (listingId: string) => `/users/me/saved/${listingId}`,
+  },
+ 
 };
 
 // ── Service methods ───────────────────────────────────────────────────────────
@@ -283,4 +292,25 @@ export const reviewsService = {
  
   addReply: (reviewId: string, reply: string) =>
     apiClient.post(API_ENDPOINTS.REVIEWS.REPLY(reviewId), { reply }),
+};
+
+
+export const customerService = {
+  getProfile:   () =>
+    apiClient.get(API_ENDPOINTS.CUSTOMER.PROFILE),
+ 
+  updateProfile: (data: { fullName?: string; phone?: string; avatarUrl?: string }) =>
+    apiClient.patch(API_ENDPOINTS.CUSTOMER.UPDATE, data),
+ 
+  getStats:     () =>
+    apiClient.get(API_ENDPOINTS.CUSTOMER.STATS),
+ 
+  getSaved:     () =>
+    apiClient.get(API_ENDPOINTS.CUSTOMER.SAVED),
+ 
+  toggleSaved:  (listingId: string) =>
+    apiClient.post(API_ENDPOINTS.CUSTOMER.TOGGLE_SAVED(listingId), {}),
+ 
+  isSaved:      (listingId: string) =>
+    apiClient.get(API_ENDPOINTS.CUSTOMER.IS_SAVED(listingId)),
 };
