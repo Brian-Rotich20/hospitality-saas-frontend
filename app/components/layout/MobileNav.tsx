@@ -25,17 +25,17 @@ interface NavItem {
 const navigationByRole: Record<UserRole, NavItem[]> = {
   customer: [
     {
-      href: '/dashboard',
+      href: '/customer/dashboard',
       label: 'Dashboard',
       icon: <LayoutDashboard size={20} />,
     },
     {
-      href: '/bookings',
+      href: '/customer/bookings',
       label: 'My Bookings',
       icon: <Calendar size={20} />,
     },
     {
-      href: '/profile',
+      href: '/customer/profile',
       label: 'Profile',
       icon: <User size={20} />,
     },
