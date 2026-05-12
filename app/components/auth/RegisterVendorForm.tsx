@@ -83,7 +83,7 @@ export function RegisterVendorForm() {
       // 3. Store token for onboarding — bypass auth context redirect
       sessionStorage.setItem('vendorToken', accessToken);
       toast.success('Account created! Complete your store setup.');
-      router.push('/vendor/onboarding');
+      router.push('/vendor/verify-email');
 
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
