@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth }   from '../../../lib/auth/auth.context';
-import { vendorsService } from '../../../lib/api/endpoints';
-import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
+import { useAuth }   from '../lib/auth/auth.context';
+import { vendorsService } from '../lib/api/endpoints';
+import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { Mail, RefreshCw, CheckCircle, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
