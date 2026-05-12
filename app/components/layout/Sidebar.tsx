@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth/auth.context';
@@ -7,16 +8,11 @@ import Image from 'next/image';
 import {
   LayoutDashboard, Package, Calendar, BarChart3,
   Users, LogOut, User, Settings, ShoppingBag,
-  ChevronRight, X, Heart,                       
+  ChevronRight, X, Heart,
 } from 'lucide-react';
 
 type Role = 'customer' | 'vendor' | 'admin';
-
-interface NavItem {
-  href:  string;
-  label: string;
-  Icon:  React.ElementType;
-}
+interface NavItem { href: string; label: string; Icon: React.ElementType; }
 
 const NAV: Record<Role, NavItem[]> = {
   vendor: [
@@ -37,8 +33,8 @@ const NAV: Record<Role, NavItem[]> = {
   customer: [
     { href: '/customer/dashboard', label: 'Dashboard',   Icon: LayoutDashboard },
     { href: '/customer/bookings',  label: 'My Bookings', Icon: Calendar        },
-    { href: '/customer/saved',     label: 'Saved',        Icon: Heart           }, // ← added
-    { href: '/customer/profile',   label: 'Profile',      Icon: User            },
+    { href: '/customer/saved',     label: 'Saved',       Icon: Heart           },
+    { href: '/customer/profile',   label: 'Profile',     Icon: User            },
   ],
 };
 
@@ -60,30 +56,17 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
     <div className="flex flex-col h-full">
 
       {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5 border-b border-gray-100">
+      <div className="flex items-center justify-between px-5 py-5"
+        style={{ borderBottom: '1px solid var(--color-border)' }}>
         <Link
-          href={
-            role === 'vendor' ? '/vendor/dashboard'
-            : role === 'admin' ? '/admin/dashboard'
-            : '/store'
-          }
-          className="flex items-center no-underline shrink-0"
-        >
-          <Image
-            src="/images/logo.png"
-            alt="LinkMart Logo"
-            width={120}
-            height={28}
-            className="h-7 w-auto"
-            priority
-          />
+          href={role === 'vendor' ? '/vendor/dashboard' : role === 'admin' ? '/admin/dashboard' : '/store'}
+          className="flex items-center no-underline shrink-0">
+          <Image src="/images/logo.png" alt="LinkMart Logo"
+            width={120} height={28} className="h-7 w-auto" priority />
         </Link>
-
-        <button
-          onClick={onMobileClose}
-          className="lg:hidden flex items-center justify-center w-7 h-7 rounded-lg
-            text-gray-500 hover:bg-gray-100 transition"
-        >
+        <button onClick={onMobileClose}
+          className="lg:hidden flex items-center justify-center w-7 h-7 transition"
+          style={{ borderRadius: 'var(--radius-lg)', color: 'var(--color-text-muted)' }}>
           <X size={16} />
         </button>
       </div>
@@ -94,14 +77,10 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           const active = isActive(href);
           return (
             <Link key={href} href={href} onClick={onMobileClose}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold
-                no-underline transition-colors
-                ${active
-                  ? 'bg-[#2D3B45] text-white'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+              className={`nav-item${active ? ' nav-item-active' : ''}`}>
               <Icon size={15} className="shrink-0" />
               <span className="flex-1">{label}</span>
-              {active && <ChevronRight size={12} className="opacity-60" />}
+              {active && <ChevronRight size={12} style={{ opacity: 0.6 }} />}
             </Link>
           );
         })}
@@ -109,19 +88,17 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
 
       {/* Browse store */}
       <div className="px-3 pb-2">
-        <Link href="/store" onClick={onMobileClose}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold
-            text-gray-400 hover:bg-gray-100 hover:text-gray-700 no-underline transition-colors">
+        <Link href="/store" onClick={onMobileClose} className="nav-item">
           <ShoppingBag size={15} className="shrink-0" />
           Browse Store
         </Link>
       </div>
 
       {/* Logout */}
-      <div className="px-3 pb-5 pt-1 border-t border-gray-100">
+      <div className="px-3 pb-5 pt-1"
+        style={{ borderTop: '1px solid var(--color-border)' }}>
         <button onClick={() => { logout(); onMobileClose(); }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold
-            text-red-500 hover:bg-red-50 transition-colors">
+          className="nav-item-danger w-full">
           <LogOut size={15} className="shrink-0" />
           Logout
         </button>
@@ -131,9 +108,12 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
 
   return (
     <>
-      {/* Desktop — fixed */}
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-56
-        bg-white border-r border-gray-100 z-40">
+      {/* Desktop */}
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-56 z-40"
+        style={{
+          backgroundColor: 'var(--color-card)',
+          borderRight: '1px solid var(--color-border)',
+        }}>
         <SidebarContent />
       </aside>
 
@@ -143,10 +123,14 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           onClick={onMobileClose} />
       )}
 
-      {/* Mobile drawer — w-56 not w-57 */}
-      <aside className={`fixed left-0 top-0 h-screen w-56 bg-white border-r border-gray-100
-        z-50 lg:hidden transform transition-transform duration-200 ease-in-out
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {/* Mobile drawer */}
+      <aside className={`fixed left-0 top-0 h-screen w-56 z-50 lg:hidden
+        transform transition-transform duration-200 ease-in-out
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{
+          backgroundColor: 'var(--color-card)',
+          borderRight: '1px solid var(--color-border)',
+        }}>
         <SidebarContent />
       </aside>
     </>

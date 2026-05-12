@@ -14,38 +14,47 @@ export function SearchBar() {
   };
 
   return (
-    <div className="bg-white border-b border-gray-100 py-3">
+    <div style={{
+      backgroundColor: 'var(--color-card)',
+      borderBottom: '1px solid var(--color-border)',
+      paddingBlock: '12px',
+    }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-center">
-        <div className="flex items-center w-full max-w-2xl bg-white border border-gray-200
-          rounded-2xl shadow-sm overflow-hidden hover:border-gray-300
-          focus-within:border-[#2D3B45] focus-within:shadow-[0_0_0_3px_rgba(45,59,69,0.08)] transition-all">
+        <div className="search-wrapper w-full max-w-2xl">
 
+          {/* Input */}
           <div className="flex items-center gap-2 flex-1 px-4 py-2.5 min-w-0">
-            <MapPin size={14} className="text-gray-400 shrink-0" />
+            <MapPin size={14} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
             <input
               type="text"
               placeholder="Search by location or keyword…"
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              className="flex-1 text-sm text-gray-700 placeholder-gray-400 bg-transparent outline-none min-w-0"
+              className="flex-1 text-sm bg-transparent outline-none min-w-0"
+              style={{
+                color: 'var(--color-text-primary)',
+                fontFamily: 'var(--font-sans)',
+              }}
             />
           </div>
 
-          <div className="w-px h-6 bg-gray-200 shrink-0" />
+          <div className="search-divider" />
 
-          <button className="hidden sm:flex items-center gap-1.5 px-3 py-2.5 text-xs text-gray-500
-            hover:text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap shrink-0">
-            <Calendar size={13} className="text-gray-400" />
+          {/* Date filter */}
+          <button className="hidden sm:flex items-center gap-1.5 px-3 py-2.5
+            transition-colors whitespace-nowrap shrink-0 text-xs"
+            style={{ color: 'var(--color-text-muted)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-muted)')}>
+            <Calendar size={13} style={{ color: 'var(--color-text-muted)' }} />
             Any Date
           </button>
 
-          <div className="hidden sm:block w-px h-6 bg-gray-200 shrink-0" />
+          <div className="hidden sm:block search-divider" />
 
-          <button
-            onClick={handleSearch}
-            className="flex items-center gap-1.5 px-4 py-2.5 m-1 bg-[#2D3B45] text-white
-              text-xs font-bold rounded-xl hover:bg-[#3a4d5a] transition-colors shrink-0 whitespace-nowrap">
+          {/* Search button */}
+          <button onClick={handleSearch} className="search-btn">
             <Search size={14} />
             <span className="hidden sm:inline">Search</span>
           </button>

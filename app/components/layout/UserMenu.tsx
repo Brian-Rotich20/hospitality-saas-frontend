@@ -21,19 +21,16 @@ export function UserMenu() {
   if (!isAuthenticated) {
     return (
       <div className="flex items-center gap-1.5">
-        <Link href="/auth/login"
-          className="px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-200
-            rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-colors no-underline">
+        <Link href="/auth/login" className="btn btn-ghost btn-sm no-underline">
           Sign in
         </Link>
       </div>
     );
   }
 
-  const dashboardHref =
+  const dashboardHref  =
     user?.role === 'vendor' ? '/vendor/dashboard' :
     user?.role === 'admin'  ? '/admin/dashboard'  : '/dashboard';
-    
   const dashboardLabel =
     user?.role === 'vendor' ? 'Vendor Dashboard' :
     user?.role === 'admin'  ? 'Admin Dashboard'  : 'Dashboard';
@@ -48,46 +45,40 @@ export function UserMenu() {
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 bg-gray-50 border border-gray-200
-          rounded-full hover:border-[#2D3B45] hover:bg-white transition-colors cursor-pointer">
-        <span className="text-xs font-semibold text-gray-700 max-w-[64px] truncate hidden sm:block">
+      <button onClick={() => setOpen(v => !v)} className="avatar-trigger">
+        <span className="text-xs font-semibold hidden sm:block max-w-[64px] truncate"
+          style={{ color: 'var(--color-text-secondary)' }}>
           {user?.email?.split('@')[0]}
         </span>
-        <div className="w-7 h-7 rounded-full bg-[#2D3B45] flex items-center justify-center
-          text-[#F5C842] text-xs font-black shrink-0">
-          {initials}
-        </div>
+        <div className="avatar-circle">{initials}</div>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-white border border-gray-200
-          rounded-2xl shadow-xl overflow-hidden z-50">
+        <div className="dropdown-card absolute right-0 w-48 z-50"
+          style={{ top: 'calc(100% + 8px)' }}>
 
-          <div className="px-4 py-3 border-b border-gray-100">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#F5C842]
-              bg-[#2D3B45] px-2 py-0.5 rounded-md inline-block mb-1">
-              {user?.role ?? 'Member'}
-            </span>
-            <p className="text-[11px] text-gray-400 truncate">{user?.email}</p>
+          {/* User info header */}
+          <div className="px-4 py-3"
+            style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <span className="role-badge">{user?.role ?? 'Member'}</span>
+            <p className="text-[11px] truncate" style={{ color: 'var(--color-text-muted)' }}>
+              {user?.email}
+            </p>
           </div>
 
+          {/* Menu items */}
           {menuItems.map(({ href, Icon, label }) => (
             <Link key={href} href={href} onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium
-                text-gray-700 hover:bg-gray-50 no-underline transition-colors">
-              <Icon size={13} className="text-gray-400" />
+              className="dropdown-item">
+              <Icon size={13} style={{ color: 'var(--color-text-muted)' }} />
               {label}
             </Link>
           ))}
 
-          <div className="h-px bg-gray-100" />
+          <div style={{ height: '1px', backgroundColor: 'var(--color-border)' }} />
 
-          <button
-            onClick={() => { logout(); setOpen(false); }}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium
-              text-red-500 hover:bg-red-50 transition-colors cursor-pointer">
+          <button onClick={() => { logout(); setOpen(false); }}
+            className="dropdown-item dropdown-item-danger">
             <LogOut size={13} />
             Logout
           </button>
@@ -96,4 +87,3 @@ export function UserMenu() {
     </div>
   );
 }
-
