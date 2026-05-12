@@ -48,27 +48,24 @@ export default async function ListingDetailPage({ params }: Props) {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-10">
 
         {/* ── Breadcrumb ──────────────────────────────────────────── */}
-        <nav className="flex items-center gap-1.5 text-[11px] mb-4 flex-wrap">
-          <Link href="/store"
-            className="flex items-center gap-1 text-gray-400 hover:text-[#2D3B45] transition font-medium no-underline">
-            <ArrowLeft size={11} />
-            Listings
-          </Link>
-          {categoryName && (
-            <>
-              <ChevronRight size={10} className="text-gray-300" />
-              <Link href={`/store?category=${listing.category?.slug ?? ''}`}
-                className="flex items-center gap-1 text-gray-400 hover:text-[#2D3B45] transition no-underline font-medium">
-                <Tag size={9} />
-                {categoryName}
-              </Link>
-            </>
-          )}
-          <ChevronRight size={10} className="text-gray-300" />
-          <span className="text-gray-600 font-semibold truncate max-w-[200px]">
-            {listing.title}
-          </span>
-        </nav>
+       <nav className="flex items-center gap-1.5 mb-4 flex-wrap">
+        <Link href="/store" className="breadcrumb-link">
+          <ArrowLeft size={11} /> Listings
+        </Link>
+        {categoryName && (
+          <>
+            <ChevronRight size={10} style={{ color: 'var(--color-border)' }} />
+            <Link href={`/store?category=${listing.category?.slug ?? ''}`} className="breadcrumb-link">
+              <Tag size={9} /> {categoryName}
+            </Link>
+          </>
+        )}
+        <ChevronRight size={10} style={{ color: 'var(--color-border)' }} />
+        <span className="text-[11px] font-semibold truncate max-w-[200px]"
+          style={{ color: 'var(--color-text-secondary)' }}>
+          {listing.title}
+        </span>
+      </nav>
 
         {/* ── Gallery ─────────────────────────────────────────────── */}
         <div className="mb-5">
@@ -135,11 +132,13 @@ export default async function ListingDetailPage({ params }: Props) {
             vendor={listing.vendor}
           />
 
-          <div className="flex items-start gap-3 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-            <Shield size={14} className="text-gray-400 shrink-0 mt-px" />
+          <div className="card flex items-start gap-3 p-4">
+            <Shield size={14} style={{ color: 'var(--color-text-muted)', flexShrink: 0, marginTop: 2 }} />
             <div>
-              <p className="text-xs font-bold text-gray-700 mb-0.5">Secure & trusted</p>
-              <p className="text-[11px] text-gray-500 leading-relaxed">
+              <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                Secure & trusted
+              </p>
+              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                 Payments protected via M-Pesa Daraja. Vendor verified by LinkMart.
               </p>
             </div>
