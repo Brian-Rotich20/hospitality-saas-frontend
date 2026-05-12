@@ -1,40 +1,112 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-:root {
-  --font-sans: 'DM Sans', sans-serif;
+@theme {
+  /* ─── Fonts ─────────────────────────────────────── */
+  --font-sans: 'Poppins', system-ui, sans-serif;
+  --font-display: 'Poppins', system-ui, sans-serif;
+
+  /* ─── Semantic Color Tokens ──────────────────────── */
+
+  /* Text */
+  --color-text-primary:   #1A1A1A;
+  --color-text-secondary: #4A5568;
+  --color-text-muted:     #718096;
+
+  /* Surface */
+  --color-page:           #F8F6F1;
+  --color-card:           #FFFFFF;
+
+  /* Border */
+  --color-border:         #E8E3D9;
+
+  /* Status */
+  --color-success:        #2D6A4F;
+  --color-warning:        #B7791F;
+  --color-error:          #C53030;
+
+  /* Brand accent — warm amber drawn from your palette */
+  --color-accent:         #B7791F;
+  --color-accent-hover:   #975f14;
+
+  /* ─── Typography Scale ───────────────────────────── */
+  --font-size-xs:   0.75rem;    /* 12px */
+  --font-size-sm:   0.875rem;   /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg:   1.125rem;   /* 18px */
+  --font-size-xl:   1.25rem;    /* 20px */
+  --font-size-2xl:  1.5rem;     /* 24px */
+  --font-size-3xl:  1.875rem;   /* 30px */
+  --font-size-4xl:  2.25rem;    /* 36px */
+  --font-size-5xl:  3rem;       /* 48px */
+
+  /* ─── Border Radius ──────────────────────────────── */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-full: 9999px;
+
+  /* ─── Shadows ─────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.03);
+
+  /* ─── Animations ─────────────────────────────────── */
+  --animate-fade-in:        fadeIn 0.3s ease-in;
+  --animate-slide-in-right: slideInRight 0.3s ease-out;
+  --animate-slide-in-left:  slideInLeft 0.3s ease-out;
+  --animate-scale-in:       scaleIn 0.2s ease-out;
+  --animate-drop-in:        dropIn 0.15s ease forwards;
+  --animate-slide-down:     slideDown 0.18s ease forwards;
 }
 
-* { box-sizing: border-box; }
-
-body {
-  background: #f8f9fb;
-  color: #1e293b;
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  
+/* ─── Keyframes ───────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-
-.scrollbar-none {
-  scrollbar-width: none;        /* Firefox */
-  -ms-overflow-style: none;     /* IE/Edge */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
 }
-.scrollbar-none::-webkit-scrollbar {
-  display: none;                /* Chrome/Safari */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
 }
-
-/* Only truly un-tailwindable things */
-.hide-scrollbar { scrollbar-width: none; }
-.hide-scrollbar::-webkit-scrollbar { display: none; }
-
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
-.animate-drop-in { animation: dropIn 0.15s ease forwards; }
-
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-slide-down { animation: slideDown 0.18s ease forwards; }
+
+/* ─── Base Styles ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Utility: hide scrollbar ────────────────────── */
+.scrollbar-none,
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
