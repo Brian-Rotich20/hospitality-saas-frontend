@@ -81,7 +81,11 @@ export function RegisterVendorForm() {
       if (!vendorRes.ok) throw new Error(vendorJson.error || 'Failed to create vendor profile');
 
       // 3. Store token for onboarding — bypass auth context redirect
-      sessionStorage.setItem('vendorToken', accessToken);
+      const secure   = window.location.protocol === 'https:';
+      const sameSite = secure ? 'None' : 'Lax';
+      document.cookie = `access_token=${accessToken}; path=/; max-age=${15 * 60}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
+      document.cookie = `user_role=customer; path=/; max-age=${7 * 24 * 3600}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
+
       toast.success('Account created! Complete your store setup.');
       router.push('/vendor/verify-email');
 
