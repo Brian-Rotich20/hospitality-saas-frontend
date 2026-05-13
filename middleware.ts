@@ -49,9 +49,16 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/vendor')) {
-    if (!role || !hasValidToken) 
+
+    // ✅ MUST be first — user is still 'customer' during email verification
+    if (pathname === '/vendor/verify-email') {
+      return NextResponse.next();
+    }
+
+    // All other /vendor/* routes require vendor role
+    if (!role || !hasValidToken)
       return NextResponse.redirect(new URL('/auth/login', request.url));
-    if (role !== 'vendor') 
+    if (role !== 'vendor')
       return NextResponse.redirect(new URL('/store', request.url));
     return NextResponse.next();
   }
@@ -61,7 +68,7 @@ export function middleware(request: NextRequest) {
     if (!hasValidToken) return NextResponse.next(); // ✅ no valid token = show login
     if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     if (role === 'vendor')   return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
-    if (role === 'customer') return NextResponse.redirect(new URL('/store', request.url));
+    // if (role === 'customer') return NextResponse.redirect(new URL('/store', request.url));
   }
 
   return NextResponse.next();
