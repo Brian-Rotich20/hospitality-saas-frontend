@@ -9,13 +9,29 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { User, Mail, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Field        from '../ui/Field';
+import Field         from '../ui/Field';
 import PasswordField from '../ui/PasswordField';
-import GoogleIcon   from '../ui/GoogleIcon';
-import Divider      from '../ui/Divider';
-import Spinner      from '../ui/Spinner';
+import GoogleIcon    from '../ui/GoogleIcon';
+import Divider       from '../ui/Divider';
+import Spinner       from '../ui/Spinner';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
+
+type Step = 'idle' | 'creating' | 'setting-up' | 'done';
+
+const LABELS: Record<Step, string> = {
+  'idle':       'Create Vendor Account',
+  'creating':   'Creating your account…',
+  'setting-up': 'Setting up your store…',
+  'done':       'Redirecting…',
+};
+
+const HINTS: Record<Step, string> = {
+  'idle':       '',
+  'creating':   'May take up to 30s on first load while server wakes up',
+  'setting-up': 'Almost there — sending your verification code',
+  'done':       'Taking you to email verification',
+};
 
 const schema = z.object({
   fullName: z.string().min(2, 'At least 2 characters'),
@@ -37,21 +53,39 @@ const inp = (err: boolean) =>
    placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842]
    focus:border-transparent transition ${err ? 'border-red-400' : 'border-gray-200'}`;
 
+async function fetchWithTimeout(url: string, options: RequestInit, ms = 40000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error('Server is starting up. Please wait 30 seconds and try again.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export function RegisterVendorForm() {
   const router = useRouter();
+  const [step,        setStep]        = useState<Step>('idle');
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading,     setLoading]     = useState(false);
+
+  const loading = step !== 'idle' && step !== 'done';
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   const onSubmit = async (data: FormData) => {
-    setLoading(true);
+    setStep('creating');
     try {
-      // 1. Create user account
-      const regRes = await fetch(`${API}/auth/register`, {
+
+      // ── Step 1: Create user account ───────────────────────────────────
+      const regRes  = await fetchWithTimeout(`${API}/auth/register`, {
         method:      'POST',
         credentials: 'include',
         headers:     { 'Content-Type': 'application/json' },
@@ -68,94 +102,149 @@ export function RegisterVendorForm() {
       const accessToken = regJson.data?.accessToken;
       if (!accessToken) throw new Error('No token received');
 
-      // 2. Create vendor record — minimal, onboarding fills the rest
-      const vendorRes = await fetch(`${API}/vendors/apply`, {
+      // ── Step 2: Create vendor record ──────────────────────────────────
+      setStep('setting-up');
+
+      const vendorRes  = await fetchWithTimeout(`${API}/vendors/apply`, {
         method:  'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization:  `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ businessName: data.fullName }),
-      });
+      }, 15000);
       const vendorJson = await vendorRes.json();
-      if (!vendorRes.ok) throw new Error(vendorJson.error || 'Failed to create vendor profile');
 
-      // 3. Store token for onboarding — bypass auth context redirect
+      if (!vendorRes.ok) {
+        // Account created but vendor failed — still redirect, user can resend OTP
+        console.warn('[RegisterVendor] vendor apply failed:', vendorJson.error);
+      }
+
+      // ── Step 3: Set cookies + redirect ────────────────────────────────
+      setStep('done');
+
       const secure   = window.location.protocol === 'https:';
       const sameSite = secure ? 'None' : 'Lax';
       document.cookie = `access_token=${accessToken}; path=/; max-age=${15 * 60}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
       document.cookie = `user_role=customer; path=/; max-age=${7 * 24 * 3600}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
 
-      toast.success('Account created! Complete your store setup.');
-      router.push('/verify-email');
+      toast.success('Account created! Check your email for a verification code.');
+
+      // ✅ Correct path — app/vendor/verify-email/page.tsx
+      router.push('/vendor/verify-email');
 
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
-      setLoading(false);
+      setStep('idle');
+      toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     }
   };
 
   return (
     <div className="min-h-screen bg-[#2D3B45] flex items-center justify-center p-4 py-10">
       <div className="w-full max-w-sm">
+
         <div className="flex justify-center mb-6">
-          <Image src="/images/logo.png" alt="LinkMart" width={120} height={28} className="h-7 w-auto" priority />
+          <Image src="/images/logo.png" alt="LinkMart" width={120} height={28}
+            className="h-7 w-auto" priority />
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-xl">
           <h2 className="text-base font-black text-gray-900 mb-0.5">Become a vendor</h2>
           <p className="text-xs text-gray-400 mb-5">Create your account — set up your store next</p>
 
-          <button type="button"
+          {/* Step indicator — visible while loading */}
+          {loading && (
+            <div className="mb-4 bg-amber-50 border border-amber-100 rounded-xl
+              px-4 py-3 flex items-start gap-3">
+              <div className="mt-0.5 shrink-0">
+                <Spinner />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-amber-800">{LABELS[step]}</p>
+                <p className="text-[10px] text-amber-600 mt-0.5">{HINTS[step]}</p>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            disabled={loading}
             onClick={() => { window.location.href = `${API}/auth/google?intent=vendor`; }}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
               border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
-              transition active:scale-[0.98] mb-4">
+              transition active:scale-[0.98] mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <GoogleIcon /> Continue with Google
           </button>
 
           <Divider label="or sign up with email" />
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 mt-4">
+
             <Field label="Full Name" error={errors.fullName?.message}>
               <User className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
               <input type="text" placeholder="John Doe"
-                {...register('fullName')} disabled={loading} className={inp(!!errors.fullName)} />
+                {...register('fullName')} disabled={loading}
+                className={inp(!!errors.fullName)} />
             </Field>
 
             <Field label="Email" error={errors.email?.message}>
               <Mail className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
               <input type="email" placeholder="you@business.com"
-                {...register('email')} disabled={loading} className={inp(!!errors.email)} />
+                {...register('email')} disabled={loading}
+                className={inp(!!errors.email)} />
             </Field>
 
             <Field label="Phone" error={errors.phone?.message}>
               <Phone className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
               <input type="tel" placeholder="+254 712 345 678"
-                {...register('phone')} disabled={loading} className={inp(!!errors.phone)} />
+                {...register('phone')} disabled={loading}
+                className={inp(!!errors.phone)} />
             </Field>
 
-            <PasswordField label="Password" name="password" register={register}
+            <PasswordField
+              label="Password" name="password" register={register}
               error={errors.password?.message} hint="8+ chars · uppercase · number"
-              show={showPass} toggle={() => setShowPass(v => !v)} disabled={loading} inp={inp} />
+              show={showPass} toggle={() => setShowPass(v => !v)}
+              disabled={loading} inp={inp}
+            />
 
-            <PasswordField label="Confirm Password" name="confirmPassword" register={register}
+            <PasswordField
+              label="Confirm Password" name="confirmPassword" register={register}
               error={errors.confirmPassword?.message}
-              show={showConfirm} toggle={() => setShowConfirm(v => !v)} disabled={loading} inp={inp} />
+              show={showConfirm} toggle={() => setShowConfirm(v => !v)}
+              disabled={loading} inp={inp}
+            />
 
-            <button type="submit" disabled={loading}
-              className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white
-                text-xs font-bold transition disabled:opacity-50 flex items-center justify-center gap-2 mt-1">
-              {loading ? <Spinner /> : 'Create Vendor Account'}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white
+                text-xs font-bold transition disabled:opacity-60 disabled:cursor-not-allowed
+                flex items-center justify-center gap-2 mt-1"
+            >
+              {loading
+                ? <><Spinner /><span>{LABELS[step]}</span></>
+                : 'Create Vendor Account'
+              }
             </button>
           </form>
 
           <p className="text-center text-[11px] text-gray-400 mt-4">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-[#2D3B45] font-bold hover:underline">Sign in</Link>
+            <Link href="/auth/login"
+              className="text-[#2D3B45] font-bold hover:underline">
+              Sign in
+            </Link>
           </p>
         </div>
+
+        {step === 'creating' && (
+          <p className="text-center text-[11px] text-white/40 mt-3 px-4">
+            First visit of the day may take up to 30s while the server wakes up
+          </p>
+        )}
+
       </div>
     </div>
   );

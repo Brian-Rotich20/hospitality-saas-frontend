@@ -56,6 +56,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+ 
   if (pathname.startsWith('/auth/login') || pathname.startsWith('/auth/register')) {
     if (!hasValidToken) return NextResponse.next(); // ✅ no valid token = show login
     if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
