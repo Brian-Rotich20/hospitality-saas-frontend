@@ -87,7 +87,7 @@ export function RegisterVendorForm() {
       document.cookie = `user_role=customer; path=/; max-age=${7 * 24 * 3600}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
 
       toast.success('Account created! Complete your store setup.');
-      router.push('/vendor/verify-email');
+      router.push('/verify-email');
 
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
