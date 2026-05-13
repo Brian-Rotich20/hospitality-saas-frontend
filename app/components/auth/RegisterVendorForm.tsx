@@ -68,6 +68,12 @@ async function fetchWithTimeout(url: string, options: RequestInit, ms = 40000) {
   }
 }
 
+function setCookie(name: string, value: string, maxAge: number) {
+  const secure   = window.location.protocol === 'https:';
+  const sameSite = secure ? 'None' : 'Lax';
+  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
+}
+
 export function RegisterVendorForm() {
   const router = useRouter();
   const [step,        setStep]        = useState<Step>('idle');
@@ -84,8 +90,8 @@ export function RegisterVendorForm() {
     setStep('creating');
     try {
 
-      // ── Step 1: Create user account ───────────────────────────────────
-      const regRes  = await fetchWithTimeout(`${API}/auth/register`, {
+      // ── Step 1: Register with intent=vendor ───────────────────────────
+      const regRes = await fetchWithTimeout(`${API}/auth/register`, {
         method:      'POST',
         credentials: 'include',
         headers:     { 'Content-Type': 'application/json' },
@@ -94,6 +100,7 @@ export function RegisterVendorForm() {
           email:    data.email,
           password: data.password,
           phone:    data.phone,
+          intent:   'vendor',   // ✅ backend sets role=vendor in JWT immediately
         }),
       });
       const regJson = await regRes.json();
@@ -102,10 +109,10 @@ export function RegisterVendorForm() {
       const accessToken = regJson.data?.accessToken;
       if (!accessToken) throw new Error('No token received');
 
-      // ── Step 2: Create vendor record ──────────────────────────────────
+      // ── Step 2: Create vendor record + send OTP ───────────────────────
       setStep('setting-up');
 
-      const vendorRes  = await fetchWithTimeout(`${API}/vendors/apply`, {
+      const vendorRes = await fetchWithTimeout(`${API}/vendors/apply`, {
         method:  'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,21 +123,20 @@ export function RegisterVendorForm() {
       const vendorJson = await vendorRes.json();
 
       if (!vendorRes.ok) {
-        // Account created but vendor failed — still redirect, user can resend OTP
+        // Vendor record failed but account exists — redirect anyway
+        // OTP can be resent from verify-email page
         console.warn('[RegisterVendor] vendor apply failed:', vendorJson.error);
       }
 
-      // ── Step 3: Set cookies + redirect ────────────────────────────────
+      // ── Step 3: Set cookies as VENDOR + redirect ──────────────────────
       setStep('done');
 
-      const secure   = window.location.protocol === 'https:';
-      const sameSite = secure ? 'None' : 'Lax';
-      document.cookie = `access_token=${accessToken}; path=/; max-age=${15 * 60}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
-      document.cookie = `user_role=customer; path=/; max-age=${7 * 24 * 3600}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
+      // ✅ Cookies must say 'vendor' — JWT also says vendor
+      // Middleware will allow /vendor/verify-email without redirecting to /store
+      setCookie('access_token', accessToken, 15 * 60);
+      setCookie('user_role',    'vendor',    7 * 24 * 3600);
 
       toast.success('Account created! Check your email for a verification code.');
-
-      // ✅ Correct path — app/vendor/verify-email/page.tsx
       router.push('/vendor/verify-email');
 
     } catch (err) {
@@ -152,13 +158,10 @@ export function RegisterVendorForm() {
           <h2 className="text-base font-black text-gray-900 mb-0.5">Become a vendor</h2>
           <p className="text-xs text-gray-400 mb-5">Create your account — set up your store next</p>
 
-          {/* Step indicator — visible while loading */}
           {loading && (
             <div className="mb-4 bg-amber-50 border border-amber-100 rounded-xl
               px-4 py-3 flex items-start gap-3">
-              <div className="mt-0.5 shrink-0">
-                <Spinner />
-              </div>
+              <div className="mt-0.5 shrink-0"><Spinner /></div>
               <div>
                 <p className="text-xs font-bold text-amber-800">{LABELS[step]}</p>
                 <p className="text-[10px] text-amber-600 mt-0.5">{HINTS[step]}</p>
@@ -166,21 +169,17 @@ export function RegisterVendorForm() {
             </div>
           )}
 
-          <button
-            type="button"
-            disabled={loading}
+          <button type="button" disabled={loading}
             onClick={() => { window.location.href = `${API}/auth/google?intent=vendor`; }}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
               border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
-              transition active:scale-[0.98] mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+              transition active:scale-[0.98] mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
             <GoogleIcon /> Continue with Google
           </button>
 
           <Divider label="or sign up with email" />
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 mt-4">
-
             <Field label="Full Name" error={errors.fullName?.message}>
               <User className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
               <input type="text" placeholder="John Doe"
@@ -202,38 +201,29 @@ export function RegisterVendorForm() {
                 className={inp(!!errors.phone)} />
             </Field>
 
-            <PasswordField
-              label="Password" name="password" register={register}
+            <PasswordField label="Password" name="password" register={register}
               error={errors.password?.message} hint="8+ chars · uppercase · number"
               show={showPass} toggle={() => setShowPass(v => !v)}
-              disabled={loading} inp={inp}
-            />
+              disabled={loading} inp={inp} />
 
-            <PasswordField
-              label="Confirm Password" name="confirmPassword" register={register}
+            <PasswordField label="Confirm Password" name="confirmPassword" register={register}
               error={errors.confirmPassword?.message}
               show={showConfirm} toggle={() => setShowConfirm(v => !v)}
-              disabled={loading} inp={inp}
-            />
+              disabled={loading} inp={inp} />
 
-            <button
-              type="submit"
-              disabled={loading}
+            <button type="submit" disabled={loading}
               className="w-full py-2.5 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white
                 text-xs font-bold transition disabled:opacity-60 disabled:cursor-not-allowed
-                flex items-center justify-center gap-2 mt-1"
-            >
+                flex items-center justify-center gap-2 mt-1">
               {loading
                 ? <><Spinner /><span>{LABELS[step]}</span></>
-                : 'Create Vendor Account'
-              }
+                : 'Create Vendor Account'}
             </button>
           </form>
 
           <p className="text-center text-[11px] text-gray-400 mt-4">
             Already have an account?{' '}
-            <Link href="/auth/login"
-              className="text-[#2D3B45] font-bold hover:underline">
+            <Link href="/auth/login" className="text-[#2D3B45] font-bold hover:underline">
               Sign in
             </Link>
           </p>
@@ -244,7 +234,6 @@ export function RegisterVendorForm() {
             First visit of the day may take up to 30s while the server wakes up
           </p>
         )}
-
       </div>
     </div>
   );
