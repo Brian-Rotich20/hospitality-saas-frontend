@@ -58,9 +58,7 @@ export function middleware(request: NextRequest) {
     // All other /vendor/* routes require vendor role
     if (!role || !hasValidToken)
       return NextResponse.redirect(new URL('/auth/login', request.url));
-    if (role !== 'vendor')
-      return NextResponse.redirect(new URL('/store', request.url));
-    return NextResponse.next();
+    
   }
 
  
