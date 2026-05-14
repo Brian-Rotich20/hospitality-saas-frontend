@@ -3,17 +3,17 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '../../lib/auth/auth.context';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Field from "../../components/ui/Field"
-import PasswordField from "../../components/ui/PasswordField"
-import GoogleIcon from "../../components/ui/GoogleIcon"
-import Divider from "../../components/ui/Divider"
-import Spinner from "../../components/ui/Spinner"
+import Field         from '../ui/Field';
+import PasswordField from '../ui/PasswordField';
+import GoogleIcon    from '../ui/GoogleIcon';
+import Divider       from '../ui/Divider';
+import Spinner       from '../ui/Spinner';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
@@ -23,8 +23,8 @@ const schema = z.object({
   phone:    z.string().regex(/^(\+254|0)[17]\d{8}$/, 'Enter a valid Kenyan number'),
   password: z.string()
     .min(8, 'At least 8 characters')
-    .regex(/[A-Z]/, 'Must include an uppercase letter')
-    .regex(/[0-9]/, 'Must include a number'),
+    .regex(/[A-Z]/, 'Needs uppercase')
+    .regex(/[0-9]/, 'Needs a number'),
   confirmPassword: z.string().min(1, 'Required'),
 }).refine(d => d.password === d.confirmPassword, {
   message: 'Passwords do not match', path: ['confirmPassword'],
@@ -32,22 +32,22 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const handleGoogleLogin = async (intent: 'customer' | 'vendor') => {
-  // Set intent cookie so callback knows where to redirect
-  document.cookie = `oauth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
-  window.location.href = `${API}/auth/google`;
-};
-
 const inp = (err: boolean) =>
-  `w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300
-   focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition
-   ${err ? 'border-red-400' : 'border-gray-200'}`;
+  `w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900
+   placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842]
+   focus:border-transparent transition ${err ? 'border-red-400' : 'border-gray-200'}`;
+
+function setCookie(name: string, value: string, maxAge: number) {
+  const secure   = window.location.protocol === 'https:';
+  const sameSite = secure ? 'None' : 'Lax';
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
+}
 
 export function RegisterForm() {
-  const { register: registerUser } = useAuth();
+  const router = useRouter();
+  const [loading,     setLoading]     = useState(false);
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading,     setLoading]     = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -56,35 +56,62 @@ export function RegisterForm() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      await registerUser({ fullName: data.fullName, email: data.email, password: data.password, phone: data.phone });
+      const res  = await fetch(`${API}/auth/register`, {
+        method:      'POST',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: data.fullName,
+          email:    data.email,
+          password: data.password,
+          phone:    data.phone,
+          intent:   'customer',
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Registration failed');
+
+      const { accessToken, user, requiresVerification } = json.data;
+
+      // Always set the token — needed to call /auth/verify-email or /auth/resend-otp
+      setCookie('access_token', accessToken, 15 * 60);
+      setCookie('user_role',    user.role,    7 * 24 * 3600);
+
+      if (requiresVerification) {
+        toast.success('Account created! Check your email for a verification code.');
+        router.push('/auth/verify-email');
+      } else {
+        // Google-linked account — already verified
+        toast.success('Account created!');
+        router.push('/store');
+      }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Registration failed');
+      toast.error(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#2D3B45] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#2D3B45] flex items-center justify-center p-4 py-10">
       <div className="w-full max-w-sm">
         <div className="flex justify-center mb-6">
-          <Image src="/images/logo.png" alt="LinkMart" width={120} height={28} className="h-7 w-auto" priority />
+          <Image src="/images/logo.png" alt="LinkMart" width={120} height={28}
+            className="h-7 w-auto" priority />
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-xl">
           <h2 className="text-base font-bold text-gray-900 mb-0.5">Create account</h2>
           <p className="text-xs text-gray-400 mb-5">Join as a customer — it's free</p>
 
-          {/* Google */}
           <button
             type="button"
-            onClick={() => handleGoogleLogin('customer')}
+            onClick={() => { window.location.href = `${API}/auth/google`; }}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
               border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
               transition active:scale-[0.98] mb-4"
           >
-            <GoogleIcon />
-            Continue with Google
+            <GoogleIcon /> Continue with Google
           </button>
 
           <Divider label="or sign up with email" />
@@ -92,39 +119,59 @@ export function RegisterForm() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 mt-4">
             <Field label="Full Name" error={errors.fullName?.message}>
               <User className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-              <input type="text" placeholder="John Doe" {...register('fullName')} disabled={loading} className={inp(!!errors.fullName)} />
+              <input type="text" placeholder="John Doe"
+                {...register('fullName')} disabled={loading}
+                className={inp(!!errors.fullName)} />
             </Field>
 
             <Field label="Email" error={errors.email?.message}>
               <Mail className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-              <input type="email" placeholder="you@example.com" {...register('email')} disabled={loading} className={inp(!!errors.email)} />
+              <input type="email" placeholder="you@example.com"
+                {...register('email')} disabled={loading}
+                className={inp(!!errors.email)} />
             </Field>
 
             <Field label="Phone" error={errors.phone?.message}>
               <Phone className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
-              <input type="tel" placeholder="+254 712 345 678" {...register('phone')} disabled={loading} className={inp(!!errors.phone)} />
+              <input type="tel" placeholder="+254 712 345 678"
+                {...register('phone')} disabled={loading}
+                className={inp(!!errors.phone)} />
             </Field>
 
-            <PasswordField label="Password" name="password" register={register} error={errors.password?.message}
-              hint="8+ chars · uppercase · number" show={showPass} toggle={() => setShowPass(v => !v)} disabled={loading} inp={inp} />
+            <PasswordField
+              label="Password" name="password" register={register}
+              error={errors.password?.message} hint="8+ chars · uppercase · number"
+              show={showPass} toggle={() => setShowPass(v => !v)}
+              disabled={loading} inp={inp}
+            />
 
-            <PasswordField label="Confirm Password" name="confirmPassword" register={register}
-              error={errors.confirmPassword?.message} show={showConfirm} toggle={() => setShowConfirm(v => !v)} disabled={loading} inp={inp} />
+            <PasswordField
+              label="Confirm Password" name="confirmPassword" register={register}
+              error={errors.confirmPassword?.message}
+              show={showConfirm} toggle={() => setShowConfirm(v => !v)}
+              disabled={loading} inp={inp}
+            />
 
-            <button type="submit" disabled={loading}
-              className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold
-                transition disabled:opacity-50 flex items-center justify-center gap-2 mt-1">
-              {loading ? <Spinner /> : 'Create Account'}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white
+                text-xs font-bold transition disabled:opacity-60 disabled:cursor-not-allowed
+                flex items-center justify-center gap-2 mt-1"
+            >
+              {loading ? <><Spinner /><span>Creating account…</span></> : 'Create Account'}
             </button>
           </form>
 
           <p className="text-center text-[11px] text-gray-400 mt-4">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-[#2D3B45] font-bold hover:underline">Sign in</Link>
+            <Link href="/auth/login"
+              className="text-[#2D3B45] font-bold hover:underline">Sign in</Link>
           </p>
           <p className="text-center text-[11px] text-gray-400 mt-1">
             Want to sell?{' '}
-            <Link href="/auth/register-vendor" className="text-[#F5C842] font-bold hover:underline">Become a vendor →</Link>
+            <Link href="/auth/register-vendor"
+              className="text-[#F5C842] font-bold hover:underline">Become a vendor →</Link>
           </p>
         </div>
       </div>
