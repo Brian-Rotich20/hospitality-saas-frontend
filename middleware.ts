@@ -1,4 +1,4 @@
-// middleware.ts  (Next.js root)
+// middleware.ts  (Next.js root — same level as app/)
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtDecode }                 from 'jwt-decode';
 
@@ -11,8 +11,9 @@ interface JWTPayload {
 
 function decodeToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwtDecode<JWTPayload>(token);
-    return decoded.exp > Date.now() / 1000 ? decoded : null;
+    const d = jwtDecode<JWTPayload>(token);
+    // Token must not be expired
+    return d.exp > Date.now() / 1000 ? d : null;
   } catch {
     return null;
   }
@@ -21,52 +22,55 @@ function decodeToken(token: string): JWTPayload | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Decode JWT (most reliable source) ─────────────────────────────────────
-  const accessToken = request.cookies.get('access_token')?.value;
-  const decoded     = accessToken ? decodeToken(accessToken) : null;
+  const rawToken = request.cookies.get('access_token')?.value;
+  const decoded  = rawToken ? decodeToken(rawToken) : null;
 
-  const hasValidToken   = decoded !== null;
-  const role            = decoded?.role ?? request.cookies.get('user_role')?.value ?? null;
-  const emailVerified   = decoded?.emailVerified ?? false;
+  const hasValidToken = decoded !== null;
+  const role          = decoded?.role ?? null;
+  const verified      = decoded?.emailVerified ?? false;
 
-  // ── Verification pages — always open (user holds a token but is unverified) ─
-  if (
-    pathname === '/auth/verify-email' ||
-    pathname === '/vendor/verify-email'
-  ) {
+  // ── 1. Verify-email pages — ALWAYS open ────────────────────────────────────
+  // User has a token but emailVerified=false — they must be able to reach these.
+  if (pathname === '/auth/verify-email' || pathname === '/vendor/verify-email') {
     return NextResponse.next();
   }
 
-  // ── /admin/* ────────────────────────────────────────────────────────────────
+  // ── 2. /admin/* ────────────────────────────────────────────────────────────
   if (pathname.startsWith('/admin')) {
-    if (!hasValidToken)    return NextResponse.redirect(new URL('/auth/login', request.url));
-    if (!emailVerified)    return NextResponse.redirect(new URL('/auth/verify-email', request.url));
-    if (role !== 'admin')  return NextResponse.redirect(new URL('/store', request.url));
+    if (!hasValidToken) return NextResponse.redirect(new URL('/auth/login', request.url));
+    if (!verified)      return NextResponse.redirect(new URL('/auth/verify-email', request.url));
+    if (role !== 'admin') return NextResponse.redirect(new URL('/store', request.url));
     return NextResponse.next();
   }
 
-  // ── /vendor/* ───────────────────────────────────────────────────────────────
+  // ── 3. /vendor/* ───────────────────────────────────────────────────────────
   if (pathname.startsWith('/vendor')) {
-    if (!hasValidToken)    return NextResponse.redirect(new URL('/auth/login', request.url));
-    if (!emailVerified)    return NextResponse.redirect(new URL('/vendor/verify-email', request.url));
+    if (!hasValidToken) return NextResponse.redirect(new URL('/auth/login', request.url));
+    if (!verified)      return NextResponse.redirect(new URL('/vendor/(vendor)/verify-email', request.url));
     if (role !== 'vendor') return NextResponse.redirect(new URL('/store', request.url));
     return NextResponse.next();
   }
 
-  // ── /customer/* ─────────────────────────────────────────────────────────────
+  // ── 4. /customer/* ─────────────────────────────────────────────────────────
   if (pathname.startsWith('/customer')) {
-    if (!hasValidToken)      return NextResponse.redirect(new URL('/auth/login', request.url));
-    if (!emailVerified)      return NextResponse.redirect(new URL('/auth/verify-email', request.url));
+    if (!hasValidToken)    return NextResponse.redirect(new URL('/auth/login', request.url));
+    if (!verified)         return NextResponse.redirect(new URL('/auth/verify-email', request.url));
     if (role !== 'customer') return NextResponse.redirect(new URL('/store', request.url));
     return NextResponse.next();
   }
 
-  // ── /auth/login + /auth/register — skip if already logged in ───────────────
-  if (pathname.startsWith('/auth/login') || pathname.startsWith('/auth/register')) {
-    if (!hasValidToken || !emailVerified) return NextResponse.next();
-    if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-    if (role === 'vendor')   return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
-    if (role === 'customer') return NextResponse.redirect(new URL('/store', request.url));
+  // ── 5. Auth pages — redirect away if already logged in + verified ──────────
+  if (
+    pathname === '/auth/login' ||
+    pathname === '/auth/register' ||
+    pathname === '/auth/register-vendor'
+  ) {
+    if (hasValidToken && verified) {
+      if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      if (role === 'vendor')   return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
+      if (role === 'customer') return NextResponse.redirect(new URL('/store', request.url));
+    }
+    return NextResponse.next();
   }
 
   return NextResponse.next();
@@ -81,5 +85,6 @@ export const config = {
     '/auth/register',
     '/auth/register-vendor',
     '/auth/verify-email',
+    '/vendor/verify-email',
   ],
 };

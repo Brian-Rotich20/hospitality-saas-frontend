@@ -1,105 +1,150 @@
 'use client';
+// app/vendor/verify-email/page.tsx
+// Does NOT depend on useAuth context — reads access_token cookie directly.
+// This is intentional: the user just registered, context may not be hydrated yet.
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth }   from '../../../lib/auth/auth.context';
-import { vendorsService } from '../../../lib/api/endpoints';
-import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { Mail, RefreshCw, CheckCircle, ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, RefreshCw, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Link from 'next/link';
+
+const API          = process.env.NEXT_PUBLIC_API_URL ?? '/api';
+const OTP_LENGTH   = 6;
+const RESEND_WAIT  = 60;
+
+// ── Read raw cookie (no httpOnly, set by RegisterVendorForm) ──────────────────
+function getToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const m = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+function setCookie(name: string, value: string, maxAge: number) {
+  const secure   = window.location.protocol === 'https:';
+  const sameSite = secure ? 'None' : 'Lax';
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
+}
 
 export default function VendorVerifyEmailPage() {
-  const router          = useRouter();
-  const { user, refreshToken } = useAuth();
-  const [otp,        setOtp]       = useState(['', '', '', '', '', '']);
-  const [verifying,  setVerifying] = useState(false);
-  const [resending,  setResending] = useState(false);
-  const [verified,   setVerified]  = useState(false);
-  const [cooldown,   setCooldown]  = useState(0);
+  const router = useRouter();
+
+  const [otp,       setOtp]       = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [verified,  setVerified]  = useState(false);
+  const [cooldown,  setCooldown]  = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Countdown timer for resend
+  // Focus first input on mount
+  useEffect(() => { inputRefs.current[0]?.focus(); }, []);
+
+  // Redirect to register if no token (direct URL visit / session expired)
+  useEffect(() => {
+    if (!getToken()) {
+      toast.error('Session expired. Please register again.');
+      router.replace('/auth/register-vendor');
+    }
+  }, [router]);
+
+  // Countdown
   useEffect(() => {
     if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown(c => c - 1), 1000);
-    return () => clearTimeout(t);
+    const id = setInterval(() => setCooldown(c => c <= 1 ? (clearInterval(id), 0) : c - 1), 1000);
+    return () => clearInterval(id);
   }, [cooldown]);
 
-  const handleInput = (index: number, value: string) => {
-    // Only allow digits
-    const digit = value.replace(/\D/g, '').slice(-1);
-    const next  = [...otp];
-    next[index] = digit;
-    setOtp(next);
+  // ── Submit OTP ──────────────────────────────────────────────────────────────
+  const submitOtp = useCallback(async (digits: string[]) => {
+    const code = digits.join('');
+    if (code.length < OTP_LENGTH) return;
 
-    // Auto-advance
-    if (digit && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    // Auto-submit when all 6 filled
-    if (digit && index === 5 && next.every(d => d !== '')) {
-      handleVerify(next.join(''));
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (pasted.length === 6) {
-      setOtp(pasted.split(''));
-      handleVerify(pasted);
-    }
-  };
-
-  const handleVerify = async (code?: string) => {
-    const otpCode = code ?? otp.join('');
-    if (otpCode.length !== 6) {
-      toast.error('Enter all 6 digits');
-      return;
-    }
+    const token = getToken();
+    if (!token) { toast.error('Session expired.'); router.replace('/auth/register-vendor'); return; }
 
     setVerifying(true);
     try {
-      await (vendorsService as any).verifyEmail(otpCode);
+      const res  = await fetch(`${API}/vendors/verify-email`, {
+        method:      'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization:  `Bearer ${token}`,
+        },
+        body: JSON.stringify({ otp: code }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Verification failed');
+
+      // Swap cookies — new token has role=vendor, emailVerified=true
+      const { accessToken, refreshToken } = json.data;
+      if (accessToken) setCookie('access_token', accessToken, 15 * 60);
+      if (refreshToken) setCookie('refresh_token', refreshToken, 7 * 24 * 3600); // optional, mostly httpOnly
+      setCookie('user_role', 'vendor', 7 * 24 * 3600);
+
       setVerified(true);
-      toast.success('Email verified! Redirecting to your dashboard…');
-
-      // Refresh the auth token so user role updates to 'vendor'
-      await refreshToken();
-
-      setTimeout(() => router.push('/vendor/dashboard'), 1500);
+      toast.success('Email verified! Welcome to LinkMart 🎉');
+      setTimeout(() => router.push('/vendor/dashboard'), 1800);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Invalid code');
-      // Clear OTP on error
-      setOtp(['', '', '', '', '', '']);
+      toast.error(err instanceof Error ? err.message : 'Invalid code. Try again.');
+      setOtp(Array(OTP_LENGTH).fill(''));
       inputRefs.current[0]?.focus();
     } finally {
       setVerifying(false);
     }
+  }, [router]);
+
+  // ── Input handling ──────────────────────────────────────────────────────────
+  const handleChange = (index: number, value: string) => {
+    // Handle paste of full code into any box
+    if (value.length > 1) {
+      const digits = value.replace(/\D/g, '').slice(0, OTP_LENGTH).split('');
+      const filled = Array(OTP_LENGTH).fill('');
+      digits.forEach((d, i) => { filled[i] = d; });
+      setOtp(filled);
+      inputRefs.current[Math.min(digits.length, OTP_LENGTH - 1)]?.focus();
+      if (digits.length === OTP_LENGTH) submitOtp(filled);
+      return;
+    }
+    const digit = value.replace(/\D/g, '');
+    const next  = [...otp];
+    next[index] = digit;
+    setOtp(next);
+    if (digit && index < OTP_LENGTH - 1) inputRefs.current[index + 1]?.focus();
+    if (next.every(d => d !== ''))       submitOtp(next);
   };
 
-  const handleResend = async () => {
-    if (cooldown > 0) return;
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) inputRefs.current[index - 1]?.focus();
+  };
+
+  // ── Resend OTP ──────────────────────────────────────────────────────────────
+  const resendOtp = async () => {
+    if (cooldown > 0 || resending) return;
+    const token = getToken();
+    if (!token) { toast.error('Session expired.'); router.replace('/auth/register-vendor'); return; }
+
     setResending(true);
     try {
-      await (vendorsService as any).resendOTP();
-      toast.success('New code sent to your email');
-      setCooldown(60);
+      const res  = await fetch(`${API}/vendors/resend-otp`, {
+        method:      'POST',
+        credentials: 'include',
+        headers:     { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to resend');
+      toast.success('New code sent! Check your inbox.');
+      setCooldown(RESEND_WAIT);
+      setOtp(Array(OTP_LENGTH).fill(''));
+      inputRefs.current[0]?.focus();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to resend');
+      toast.error(err instanceof Error ? err.message : 'Could not resend code.');
     } finally {
       setResending(false);
     }
   };
 
+  // ── Verified state ──────────────────────────────────────────────────────────
   if (verified) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
@@ -108,27 +153,18 @@ export default function VendorVerifyEmailPage() {
             <CheckCircle size={28} className="text-emerald-500" />
           </div>
           <h2 className="text-lg font-black text-gray-900 mb-1">Verified!</h2>
-          <p className="text-sm text-gray-500 mb-4">Your vendor account is now active.</p>
-          <LoadingSpinner size="sm" text="Redirecting to dashboard…" />
+          <p className="text-sm text-gray-500">Your vendor account is now active. Redirecting…</p>
         </div>
       </div>
     );
   }
 
+  // ── Main UI ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
 
-        {/* Back link */}
-        <Link href="/store"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400
-            hover:text-gray-700 no-underline transition-colors mb-6">
-          <ArrowLeft size={13} />
-          Back to store
-        </Link>
-
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-
           {/* Header */}
           <div className="bg-[#2D3B45] px-6 py-5">
             <p className="text-[#F5C842] text-lg font-black">LinkMart</p>
@@ -136,74 +172,73 @@ export default function VendorVerifyEmailPage() {
           </div>
 
           <div className="p-6">
-            {/* Icon */}
             <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
               <Mail size={20} className="text-blue-500" />
             </div>
 
             <h1 className="text-xl font-black text-gray-900 mb-1">Check your email</h1>
             <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-              We sent a 6-digit code to{' '}
-              <strong className="text-gray-700">{user?.email}</strong>.
+              We sent a 6-digit code to your email address.
               Enter it below to activate your vendor account.
             </p>
 
             {/* OTP inputs */}
-            <div className="flex gap-2 justify-between mb-6" onPaste={handlePaste}>
+            <div className="flex gap-2 justify-between mb-6">
               {otp.map((digit, i) => (
                 <input
                   key={i}
                   ref={el => { inputRefs.current[i] = el; }}
                   type="text"
                   inputMode="numeric"
-                  maxLength={1}
+                  maxLength={6}       /* allow paste */
                   value={digit}
-                  onChange={e => handleInput(i, e.target.value)}
+                  disabled={verifying}
+                  onChange={e  => handleChange(i, e.target.value)}
                   onKeyDown={e => handleKeyDown(i, e)}
+                  onFocus={e   => e.target.select()}
                   className={`w-12 h-14 text-center text-xl font-black rounded-xl border
                     focus:outline-none focus:ring-2 focus:ring-[#2D3B45] focus:border-transparent
-                    transition-all
-                    ${digit
-                      ? 'border-[#2D3B45] bg-[#2D3B45]/5 text-[#2D3B45]'
-                      : 'border-gray-200 bg-white text-gray-900'}`}
+                    transition disabled:opacity-50
+                    ${digit ? 'border-[#2D3B45] bg-[#2D3B45]/5 text-[#2D3B45]' : 'border-gray-200 bg-white text-gray-900'}`}
                 />
               ))}
             </div>
 
             {/* Verify button */}
             <button
-              onClick={() => handleVerify()}
-              disabled={verifying || otp.some(d => d === '')}
+              onClick={() => submitOtp(otp)}
+              disabled={verifying || otp.some(d => !d)}
               className="w-full py-3 bg-[#2D3B45] text-white text-sm font-black rounded-xl
                 hover:bg-[#3a4d5a] transition disabled:opacity-40 disabled:cursor-not-allowed
                 flex items-center justify-center gap-2 mb-4"
             >
-              {verifying ? (
-                <><div className="w-4 h-4 border-2 border-white border-t-transparent
-                  rounded-full animate-spin" /> Verifying…</>
-              ) : 'Verify & Activate Account'}
+              {verifying
+                ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Verifying…</>
+                : 'Verify & Activate Account'}
             </button>
 
             {/* Resend */}
             <div className="text-center">
               <p className="text-xs text-gray-400 mb-2">Didn't receive a code?</p>
-              <button
-                onClick={handleResend}
-                disabled={resending || cooldown > 0}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2D3B45]
-                  hover:underline disabled:opacity-50 disabled:no-underline transition-opacity"
-              >
-                <RefreshCw size={11} className={resending ? 'animate-spin' : ''} />
-                {cooldown > 0
-                  ? `Resend in ${cooldown}s`
-                  : resending ? 'Sending…' : 'Resend code'}
-              </button>
+              {cooldown > 0 ? (
+                <p className="text-xs text-gray-400 font-bold">Resend in {cooldown}s</p>
+              ) : (
+                <button
+                  onClick={resendOtp}
+                  disabled={resending || verifying}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2D3B45]
+                    hover:underline disabled:opacity-50 transition-opacity"
+                >
+                  <RefreshCw size={11} className={resending ? 'animate-spin' : ''} />
+                  {resending ? 'Sending…' : 'Resend code'}
+                </button>
+              )}
             </div>
           </div>
         </div>
 
         <p className="text-center text-[11px] text-gray-400 mt-4">
-          Code expires in 15 minutes
+          Code expires in 15 minutes · Max 5 attempts
         </p>
       </div>
     </div>
