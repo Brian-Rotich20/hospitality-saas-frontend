@@ -198,6 +198,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(err.error || 'Invalid credentials');
       }
       const json = await res.json();
+
+      if (!res.ok) {
+        if (json.code === 'EMAIL_NOT_VERIFIED' && json.accessToken) {
+          setAuth(json.accessToken);
+          toast.error(json.error || 'Please verify your email address first.');
+          router.push('/auth/verify-email'); 
+          return;
+        }
+        throw new Error(json.error || 'Invalid credentials');
+      }
+
       const at   = json.data?.accessToken;
       if (!at) throw new Error('No token received');
       const parsed = setAuth(at);
@@ -223,7 +234,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const json = await res.json();
       const at   = json.data?.accessToken;
+      const requiresVerification = json.data?.requiresVerification;
       if (!at) throw new Error('No token received');
+
+      
+
+      if(requiresVerification) {
+        setAuth(at);
+        toast.success('Account created! Check your email for a verification code.');
+        router.push('/auth/verify-email');
+        return;
+      }
+
       const parsed = setAuth(at);
       toast.success('Account created successfully');
       router.push(ROLE_REDIRECT[parsed.role]);
