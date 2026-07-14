@@ -14,6 +14,7 @@ import PasswordField from '../ui/PasswordField';
 import GoogleIcon    from '../ui/GoogleIcon';
 import Divider       from '../ui/Divider';
 import Spinner       from '../ui/Spinner';
+import { useAuth } from '../../lib/auth/auth.context';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
@@ -45,6 +46,7 @@ function setCookie(name: string, value: string, maxAge: number) {
 
 export function RegisterForm() {
   const router = useRouter();
+  const { setAuth } = useAuth();
   const [loading,     setLoading]     = useState(false);
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -71,11 +73,10 @@ export function RegisterForm() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Registration failed');
 
-      const { accessToken, user, requiresVerification } = json.data;
+      const { accessToken, requiresVerification } = json.data;
 
-      // Always set the token — needed to call /auth/verify-email or /auth/resend-otp
-      setCookie('access_token', accessToken, 15 * 60);
-      setCookie('user_role',    user.role,    7 * 24 * 3600);
+      if (!accessToken) throw new Error('No token received');
+      setAuth(accessToken);
 
       if (requiresVerification) {
         toast.success('Account created! Check your email for a verification code.');

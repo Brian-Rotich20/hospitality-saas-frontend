@@ -36,6 +36,7 @@ interface AuthContextType {
   logout:               () => Promise<void>;
   refreshToken:         () => Promise<void>;
   setTokenAndFetchUser: (token: string) => Promise<void>;
+  setAuth:              (accessToken: string) => User;
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -285,6 +286,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user, isLoading, token,
       isAuthenticated: !!user,
       login, register, logout, refreshToken, setTokenAndFetchUser,
+      setAuth,
     }}>
       {children}
     </AuthContext.Provider>

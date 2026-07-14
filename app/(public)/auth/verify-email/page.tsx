@@ -5,22 +5,11 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../../lib/auth/auth.context';
 
 const API          = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 const OTP_LENGTH   = 6;
 const RESEND_WAIT  = 60;
-
-function getAccessToken(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-function setCookie(name: string, value: string, maxAge: number) {
-  const secure   = window.location.protocol === 'https:';
-  const sameSite = secure ? 'None' : 'Lax';
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
-}
 
 export default function CustomerVerifyEmailPage() {
   const router = useRouter();
@@ -30,13 +19,14 @@ export default function CustomerVerifyEmailPage() {
   const [resending, setResending] = useState(false);
   const [cooldown,  setCooldown]  = useState(0);
   const [verified,  setVerified]  = useState(false);
+  const { token, setAuth } = useAuth();
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => { inputRefs.current[0]?.focus(); }, []);
 
   useEffect(() => {
-    if (!getAccessToken()) {
+    if (!token) {
       toast.error('Session expired. Please register again.');
       router.replace('/auth/register');
     }
@@ -51,8 +41,6 @@ export default function CustomerVerifyEmailPage() {
   const submitOtp = useCallback(async (digits: string[]) => {
     const code = digits.join('');
     if (code.length < OTP_LENGTH) return;
-
-    const token = getAccessToken();
     if (!token) { toast.error('Session expired.'); router.replace('/auth/register'); return; }
 
     setLoading(true);
@@ -70,11 +58,7 @@ export default function CustomerVerifyEmailPage() {
       if (!res.ok) throw new Error(json.error || 'Verification failed');
 
       // Swap token — now has emailVerified=true
-      if (json.data?.accessToken) {
-        setCookie('access_token', json.data.accessToken, 15 * 60);
-      }
-      setCookie('user_role', json.data?.user?.role ?? 'customer', 7 * 24 * 3600);
-
+      if (json.data?.accessToken) setAuth(json.data.accessToken); // update context with new token
       setVerified(true);
       toast.success('Email verified! Welcome to LinkMart 🎉');
       setTimeout(() => router.push('/store'), 1800);
@@ -85,7 +69,7 @@ export default function CustomerVerifyEmailPage() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, token, setAuth]);
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) {
@@ -114,7 +98,6 @@ export default function CustomerVerifyEmailPage() {
 
   const resendOtp = async () => {
     if (cooldown > 0 || resending) return;
-    const token = getAccessToken();
     if (!token) { toast.error('Session expired.'); router.replace('/auth/register'); return; }
 
     setResending(true);

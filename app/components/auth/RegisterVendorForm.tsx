@@ -14,6 +14,7 @@ import PasswordField from '../ui/PasswordField';
 import GoogleIcon    from '../ui/GoogleIcon';
 import Divider       from '../ui/Divider';
 import Spinner       from '../ui/Spinner';
+import { useAuth } from '../../lib/auth/auth.context';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
@@ -79,6 +80,7 @@ export function RegisterVendorForm() {
   const [step,        setStep]        = useState<Step>('idle');
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const { setAuth } = useAuth();
 
   const loading = step !== 'idle' && step !== 'done';
 
@@ -129,11 +131,7 @@ export function RegisterVendorForm() {
 
       // ── Step 3: Set cookies as VENDOR + redirect ──────────────────────
       setStep('done');
-
-      // ✅ Cookies must say 'vendor' — JWT also says vendor
-      // Middleware will allow /vendor/verify-email without redirecting to /store
-      setCookie('access_token', accessToken, 15 * 60);
-      setCookie('user_role',    'vendor',    7 * 24 * 3600);
+      setAuth(accessToken);
 
       toast.success('Account created! Check your email for a verification code.');
       router.push('/vendor/verify-email');

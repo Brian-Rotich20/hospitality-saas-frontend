@@ -1,30 +1,16 @@
 'use client';
 // app/vendor/verify-email/page.tsx
-// Does NOT depend on useAuth context — reads access_token cookie directly.
-// This is intentional: the user just registered, context may not be hydrated yet.
-
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Mail, RefreshCw, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../../lib/auth/auth.context';
 
 const API          = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 const OTP_LENGTH   = 6;
 const RESEND_WAIT  = 60;
 
-// ── Read raw cookie (no httpOnly, set by RegisterVendorForm) ──────────────────
-function getToken(): string | null {
-  if (typeof document === 'undefined') return null;
-  const m = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : null;
-}
-
-function setCookie(name: string, value: string, maxAge: number) {
-  const secure   = window.location.protocol === 'https:';
-  const sameSite = secure ? 'None' : 'Lax';
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
-}
 
 export default function VendorVerifyEmailPage() {
   const router = useRouter();
@@ -35,17 +21,18 @@ export default function VendorVerifyEmailPage() {
   const [verified,  setVerified]  = useState(false);
   const [cooldown,  setCooldown]  = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const { token, setAuth } = useAuth();
 
   // Focus first input on mount
   useEffect(() => { inputRefs.current[0]?.focus(); }, []);
 
   // Redirect to register if no token (direct URL visit / session expired)
   useEffect(() => {
-    if (!getToken()) {
+    if (!token) {
       toast.error('Session expired. Please register again.');
       router.replace('/auth/register-vendor');
     }
-  }, [router]);
+  }, [token, router]);
 
   // Countdown
   useEffect(() => {
@@ -58,8 +45,6 @@ export default function VendorVerifyEmailPage() {
   const submitOtp = useCallback(async (digits: string[]) => {
     const code = digits.join('');
     if (code.length < OTP_LENGTH) return;
-
-    const token = getToken();
     if (!token) { toast.error('Session expired.'); router.replace('/auth/register-vendor'); return; }
 
     setVerifying(true);
@@ -76,12 +61,9 @@ export default function VendorVerifyEmailPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Verification failed');
 
-      // Swap cookies — new token has role=vendor, emailVerified=true
-      const { accessToken, refreshToken } = json.data;
-      if (accessToken) setCookie('access_token', accessToken, 15 * 60);
-      if (refreshToken) setCookie('refresh_token', refreshToken, 7 * 24 * 3600); // optional, mostly httpOnly
-      setCookie('user_role', 'vendor', 7 * 24 * 3600);
-
+      const { accessToken } = json.data;
+      if (accessToken) setAuth(accessToken); // update context with new token
+      
       setVerified(true);
       toast.success('Email verified! Welcome to LinkMart 🎉');
       setTimeout(() => router.push('/vendor/dashboard'), 1800);
@@ -92,7 +74,7 @@ export default function VendorVerifyEmailPage() {
     } finally {
       setVerifying(false);
     }
-  }, [router]);
+  }, [router, token, setAuth]);
 
   // ── Input handling ──────────────────────────────────────────────────────────
   const handleChange = (index: number, value: string) => {
@@ -121,7 +103,6 @@ export default function VendorVerifyEmailPage() {
   // ── Resend OTP ──────────────────────────────────────────────────────────────
   const resendOtp = async () => {
     if (cooldown > 0 || resending) return;
-    const token = getToken();
     if (!token) { toast.error('Session expired.'); router.replace('/auth/register-vendor'); return; }
 
     setResending(true);
