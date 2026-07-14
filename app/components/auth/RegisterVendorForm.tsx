@@ -100,7 +100,6 @@ export function RegisterVendorForm() {
           email:    data.email,
           password: data.password,
           phone:    data.phone,
-          intent:   'vendor',   // ✅ backend sets role=vendor in JWT immediately
         }),
       });
       const regJson = await regRes.json();
