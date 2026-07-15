@@ -186,39 +186,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []); // eslint-disable-line
 
   // ── login ──────────────────────────────────────────────────────────────────
-  const login = useCallback(async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API}/auth/login`, {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email, password }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Invalid credentials');
-      }
-      const json = await res.json();
+    const login = useCallback(async (email: string, password: string) => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ email, password }),
+        });
+        const json = await res.json().catch(() => ({}));
 
-      if (!res.ok) {
-        if (json.code === 'EMAIL_NOT_VERIFIED' && json.accessToken) {
-          setAuth(json.accessToken);
-          toast.error(json.error || 'Please verify your email address first.');
-          router.push('/auth/verify-email'); 
-          return;
+        if (!res.ok) {
+          if (json.code === 'EMAIL_NOT_VERIFIED' && json.accessToken) {
+            const parsed = setAuth(json.accessToken);
+            toast.error(json.error || 'Please verify your email address first.');
+            router.push(parsed.role === 'vendor' ? '/vendor/verify-email' : '/auth/verify-email');
+            return;
+          }
+          throw new Error(json.error || 'Invalid credentials');
         }
-        throw new Error(json.error || 'Invalid credentials');
-      }
 
-      const at   = json.data?.accessToken;
-      if (!at) throw new Error('No token received');
-      const parsed = setAuth(at);
-      toast.success('Signed in successfully');
-      router.push(ROLE_REDIRECT[parsed.role]);
-    } finally {
-      setLoading(false);
-    }
-  }, [router, setAuth]);
+        const at = json.data?.accessToken;
+        if (!at) throw new Error('No token received');
+        const parsed = setAuth(at);
+        toast.success('Signed in successfully');
+        router.push(ROLE_REDIRECT[parsed.role]);
+      } finally {
+        setLoading(false);
+      }
+    }, [router, setAuth]);
 
   // ── register ───────────────────────────────────────────────────────────────
   const register = useCallback(async (data: RegisterData) => {
