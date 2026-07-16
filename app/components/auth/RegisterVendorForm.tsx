@@ -69,11 +69,6 @@ async function fetchWithTimeout(url: string, options: RequestInit, ms = 40000) {
   }
 }
 
-function setCookie(name: string, value: string, maxAge: number) {
-  const secure   = window.location.protocol === 'https:';
-  const sameSite = secure ? 'None' : 'Lax';
-  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
-}
 
 export function RegisterVendorForm() {
   const router = useRouter();
@@ -128,10 +123,11 @@ export function RegisterVendorForm() {
         // OTP can be resent from verify-email page
         console.warn('[RegisterVendor] vendor apply failed:', vendorJson.error);
       }
-
+      
+      const VendorAcessToken = vendorJson.data?.accessToken ?? accessToken; // fallback to user token if vendor token not returned
       // ── Step 3: Set cookies as VENDOR + redirect ──────────────────────
       setStep('done');
-      setAuth(accessToken);
+      setAuth(VendorAcessToken);
 
       toast.success('Account created! Check your email for a verification code.');
       router.push('/vendor/verify-email');
