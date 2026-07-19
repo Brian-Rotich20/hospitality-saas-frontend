@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth }         from '../../../lib/auth/auth.context';
-import { customerService } from '../.././../lib/api/endpoints';
-import { LoadingSpinner }  from '../../../components/common/LoadingSpinner';
-import { User, Phone, Mail, Save, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useAuth }         from '../../../../lib/auth/auth.context';
+import { customerService, uploadService } from '../../../../lib/api/endpoints';
+import { LoadingSpinner }  from '../../../../components/common/LoadingSpinner';
+import { User, Phone, Mail, Save, Loader2, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
@@ -14,16 +14,46 @@ export default function ProfilePage() {
   const [saving,   setSaving]   = useState(false);
   const [loading,  setLoading]  = useState(true);
 
-  useEffect(() => {
-    customerService.getProfile()
-      .then(res => {
-        const p = (res as any).data;
-        setFullName(p.fullName ?? '');
-        setPhone(p.phone ?? '');
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+
+ useEffect(() => {
+  customerService.getProfile()
+    .then(res => {
+      const p = (res as any).data;
+      setFullName(p.fullName ?? '');
+      setPhone(p.phone ?? '');
+      setAvatarUrl(p.avatarUrl ?? null);   // ← ADD
+    })
+    .catch(() => {})
+    .finally(() => setLoading(false));
+}, []);
+
+
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
+  if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
+
+  setUploadingAvatar(true);
+  try {
+    const uploadRes = await uploadService.uploadImage(file, 'profile_photo');
+    const uploaded = (uploadRes as any).data;
+    const newUrl = uploaded.url;
+
+    await customerService.updateProfile({ avatarUrl: newUrl });
+    setAvatarUrl(newUrl);
+    toast.success('Profile photo updated');
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : 'Failed to upload photo');
+  } finally {
+    setUploadingAvatar(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+};
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,11 +78,37 @@ export default function ProfilePage() {
       </div>
 
       {/* Avatar card */}
+      {/* Avatar card */}
       <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-[#2D3B45] flex items-center justify-center shrink-0">
-          <span className="text-[#F5C842] text-xl font-black">
-            {(fullName || user?.email || 'U').charAt(0).toUpperCase()}
-          </span>
+        <div className="relative shrink-0">
+          <div className="w-14 h-14 rounded-full bg-[#2D3B45] flex items-center justify-center overflow-hidden">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-[#F5C842] text-xl font-black">
+                {(fullName || user?.email || 'U').charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingAvatar}
+            className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#F5C842] rounded-full
+              flex items-center justify-center border-2 border-white
+              hover:brightness-95 transition disabled:opacity-50"
+          >
+            {uploadingAvatar
+              ? <Loader2 size={11} className="text-[#2D3B45] animate-spin" />
+              : <Camera size={11} className="text-[#2D3B45]" />}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleAvatarSelect}
+          />
         </div>
         <div>
           <p className="text-sm font-bold text-gray-900">{fullName || 'Your Name'}</p>

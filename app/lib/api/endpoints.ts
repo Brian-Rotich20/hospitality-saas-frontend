@@ -274,16 +274,18 @@ export const adminService = {
 
 // ── Upload ────────────────────────────────────────────────────────────────────
 export const uploadService = {
-  uploadImage:     (file: File) =>
-    apiClient.uploadFile<{ url: string }>(API_ENDPOINTS.UPLOAD.SINGLE_IMAGE, file),
+  uploadImage: (file: File, uploadType: string = 'listing_photo') =>
+    apiClient.uploadFile<{ url: string; publicId?: string }>(
+      API_ENDPOINTS.UPLOAD.SINGLE_IMAGE, file, { uploadType, optimize: 'true' }
+    ),
 
-  uploadImages:    (files: File[]) =>
+  uploadImages: (files: File[]) =>
     apiClient.uploadMultipleFiles<{ urls: string[] }>(API_ENDPOINTS.UPLOAD.MULTIPLE_IMAGES, files),
 
-  uploadDocument:  (file: File) =>
+  uploadDocument: (file: File) =>
     apiClient.uploadFile<{ url: string }>(API_ENDPOINTS.UPLOAD.DOCUMENT, file),
 
-  deleteFile:      (url: string) =>
+  deleteFile: (url: string) =>
     apiClient.post<{ message: string }>(API_ENDPOINTS.UPLOAD.DELETE, { url }),
 };
 
