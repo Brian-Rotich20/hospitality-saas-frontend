@@ -20,7 +20,8 @@ const NAV: Record<Role, NavItem[]> = {
     { href: '/vendor/listings',         label: 'My Listings', Icon: Package         },
     { href: '/vendor/bookings',         label: 'Bookings',    Icon: Calendar        },
     { href: '/vendor/analytics',        label: 'Analytics',   Icon: BarChart3       },
-    { href: '/vendor/settings/profile', label: 'Settings',    Icon: Settings        },
+    { href: '/vendor/settings/account', label: 'Account',     Icon: User            },  // ← ADD
+    { href: '/vendor/settings/profile', label: 'Business',    Icon: Settings        },  // ← relabeled from 'Settings'
   ],
   admin: [
     { href: '/admin/dashboard',  label: 'Dashboard',  Icon: LayoutDashboard },
@@ -31,13 +32,12 @@ const NAV: Record<Role, NavItem[]> = {
     { href: '/admin/categories', label: 'Categories', Icon: Settings        },
   ],
   customer: [
-    { href: '/customer/dashboard', label: 'Dashboard',   Icon: LayoutDashboard },
-    { href: '/customer/bookings',  label: 'My Bookings', Icon: Calendar        },
-    { href: '/customer/saved',     label: 'Saved',       Icon: Heart           },
-    { href: '/customer/profile',   label: 'Profile',     Icon: User            },
+    { href: '/customer/dashboard',        label: 'Dashboard',   Icon: LayoutDashboard },
+    { href: '/customer/bookings',         label: 'My Bookings', Icon: Calendar        },
+    { href: '/customer/saved',            label: 'Saved',       Icon: Heart           },
+    { href: '/customer/account/profile',  label: 'Profile',     Icon: User            },  // ← FIXED path
   ],
 };
-
 interface SidebarProps {
   mobileOpen:    boolean;
   onMobileClose: () => void;

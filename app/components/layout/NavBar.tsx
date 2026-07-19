@@ -22,7 +22,7 @@ const CUSTOMER_NAV = [
 const VENDOR_NAV = [
   { href: '/vendor/dashboard', Icon: LayoutDashboard, label: 'Dashboard'   },
   { href: '/vendor/listings',  Icon: LayoutList,       label: 'My Listings' },
-  { href: '/bookings',         Icon: CalendarCheck,    label: 'Bookings'    },
+  { href: '/vendor/bookings',         Icon: CalendarCheck,    label: 'Bookings'    },
 ];
 
 export function NavBar() {

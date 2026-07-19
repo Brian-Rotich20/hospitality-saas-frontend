@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth/auth.context';
+import { apiClient } from '../../lib/api/client';
 import { LogOut, User, Store, Bookmark } from 'lucide-react';
 
 export function UserMenu() {
   const { user, isAuthenticated, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,6 +19,20 @@ export function UserMenu() {
     document.addEventListener('mousedown', fn);
     return () => document.removeEventListener('mousedown', fn);
   }, []);
+
+  // Lightweight fetch for avatar — JWT doesn't carry avatarUrl, so pull it separately
+  useEffect(() => {
+    if (!isAuthenticated) { setAvatarUrl(null); return; }
+    let cancelled = false;
+    apiClient.get<{ avatarUrl?: string | null }>('/users/me')
+      .then(res => {
+        if (cancelled) return;
+        const data = (res.data as any)?.data ?? res.data;
+        setAvatarUrl(data?.avatarUrl ?? null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isAuthenticated, user?.userId]);
 
   if (!isAuthenticated) {
     return (
@@ -28,19 +44,28 @@ export function UserMenu() {
     );
   }
 
+  const isVendor = user?.role === 'vendor';
+  const isAdmin  = user?.role === 'admin';
+
   const dashboardHref  =
-    user?.role === 'vendor' ? '/vendor/dashboard' :
-    user?.role === 'admin'  ? '/admin/dashboard'  : '/dashboard';
+    isVendor ? '/vendor/dashboard' :
+    isAdmin  ? '/admin/dashboard'  : '/customer/dashboard';
   const dashboardLabel =
-    user?.role === 'vendor' ? 'Vendor Dashboard' :
-    user?.role === 'admin'  ? 'Admin Dashboard'  : 'Dashboard';
+    isVendor ? 'Vendor Dashboard' :
+    isAdmin  ? 'Admin Dashboard'  : 'Dashboard';
+
+  const profileHref =
+    isVendor ? '/vendor/settings/account' :
+    isAdmin  ? '/admin/dashboard'          : '/customer/account/profile';
 
   const initials = user?.email?.[0]?.toUpperCase() ?? 'U';
 
   const menuItems = [
-    { href: '/profile',    Icon: User,     label: 'My Account'   },
+    { href: profileHref,   Icon: User,     label: 'My Account'   },
     { href: dashboardHref, Icon: Store,    label: dashboardLabel },
-    { href: '/saved',      Icon: Bookmark, label: 'Saved'        },
+    ...(!isVendor && !isAdmin
+      ? [{ href: '/customer/saved', Icon: Bookmark, label: 'Saved' }]
+      : []),
   ];
 
   return (
@@ -50,7 +75,14 @@ export function UserMenu() {
           style={{ color: 'var(--color-text-secondary)' }}>
           {user?.email?.split('@')[0]}
         </span>
-        <div className="avatar-circle">{initials}</div>
+        <div className="avatar-circle overflow-hidden">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            initials
+          )}
+        </div>
       </button>
 
       {open && (
