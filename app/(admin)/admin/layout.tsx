@@ -15,8 +15,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-[#F8FAFC]">
       <Sidebar
         mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-      />
+        onMobileClose={() => setMobileOpen(false)} onMobileOpen={function (): void {
+          throw new Error('Function not implemented.');
+        } }      />
       <div className="lg:ml-56 min-h-screen flex flex-col">
         <AdminTopbar onMobileMenuToggle={() => setMobileOpen(v => !v)} />
         <main className="flex-1 p-6 max-w-[1200px] w-full mx-auto">
