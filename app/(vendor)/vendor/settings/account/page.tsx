@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../../../../lib/auth/auth.context';
 import { customerService, uploadService } from '../../../../lib/api/endpoints';
 import { LoadingSpinner } from '../../../../components/common/LoadingSpinner';
@@ -18,18 +18,29 @@ export default function VendorAccountPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Snapshot of last-saved values — used to detect unsaved changes
+  const [initial, setInitial] = useState({ fullName: '', phone: '' });
+
   useEffect(() => {
     customerService.getProfile()
       .then(res => {
         const p = (res as any).data;
-        setFullName(p.fullName ?? '');
-        setPhone(p.phone ?? '');
+        const loadedName  = p.fullName ?? '';
+        const loadedPhone = p.phone ?? '';
+        setFullName(loadedName);
+        setPhone(loadedPhone);
         setAvatarUrl(p.avatarUrl ?? null);
         setVerified(!!p.verified);
+        setInitial({ fullName: loadedName, phone: loadedPhone });
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const isDirty = useMemo(
+    () => fullName !== initial.fullName || phone !== initial.phone,
+    [fullName, phone, initial]
+  );
 
   const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,14 +49,15 @@ export default function VendorAccountPage() {
     if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
 
     setUploadingAvatar(true);
+    const toastId = toast.loading('Uploading photo…');
     try {
       const uploadRes = await uploadService.uploadImage(file, 'profile_photo');
       const uploaded = (uploadRes as any).data;
       await customerService.updateProfile({ avatarUrl: uploaded.url });
       setAvatarUrl(uploaded.url);
-      toast.success('Profile photo updated');
+      toast.success('Profile photo updated', { id: toastId });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to upload photo');
+      toast.error(err instanceof Error ? err.message : 'Failed to upload photo', { id: toastId });
     } finally {
       setUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -54,9 +66,11 @@ export default function VendorAccountPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isDirty) return;
     setSaving(true);
     try {
       await customerService.updateProfile({ fullName, phone });
+      setInitial({ fullName, phone });   // ← reset baseline so button hides again
       toast.success('Profile updated!');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update');
@@ -94,6 +108,7 @@ export default function VendorAccountPage() {
           <div style={{
             width: 56, height: 56, borderRadius: '50%', background: '#2D3B45',
             display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+            opacity: uploadingAvatar ? 0.5 : 1, transition: 'opacity 0.2s',
           }}>
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -104,6 +119,14 @@ export default function VendorAccountPage() {
               </span>
             )}
           </div>
+          {uploadingAvatar && (
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Loader2 size={18} color="#fff" className="animate-spin" />
+            </div>
+          )}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingAvatar}
@@ -156,20 +179,28 @@ export default function VendorAccountPage() {
           <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Email cannot be changed</p>
         </div>
 
-        <div style={{ marginBottom: 18 }}>
+        <div style={{ marginBottom: isDirty ? 18 : 0 }}>
           <label style={labelStyle}>Phone</label>
           <input style={inputStyle} value={phone} onChange={e => setPhone(e.target.value)}
             placeholder="+254 7XX XXX XXX" />
         </div>
 
-        <button type="submit" disabled={saving} style={{
-          width: '100%', padding: '10px 22px', border: 'none', borderRadius: 9,
-          background: saving ? '#9CA3AF' : '#111827', color: '#fff',
-          fontSize: 13, fontWeight: 700, cursor: saving ? 'wait' : 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        {/* Save button — only rendered when there are unsaved changes */}
+        <div style={{
+          maxHeight: isDirty ? 60 : 0, opacity: isDirty ? 1 : 0,
+          overflow: 'hidden', transition: 'all 0.25s ease',
         }}>
-          <Save size={13} /> {saving ? 'Saving...' : 'Save changes'}
-        </button>
+          <button type="submit" disabled={saving || !isDirty} style={{
+            width: '100%', padding: '10px 22px', border: 'none', borderRadius: 9,
+            background: saving ? '#9CA3AF' : '#111827', color: '#fff',
+            fontSize: 13, fontWeight: 700, cursor: saving ? 'wait' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+            {saving
+              ? <><Loader2 size={13} className="animate-spin" /> Saving…</>
+              : <><Save size={13} /> Save changes</>}
+          </button>
+        </div>
       </form>
     </div>
   );
