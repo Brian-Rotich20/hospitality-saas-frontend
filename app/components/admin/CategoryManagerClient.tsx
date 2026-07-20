@@ -10,6 +10,9 @@ import {
 import toast from 'react-hot-toast';
 import { apiClient } from '../../lib/api/client';
 
+// Color system: 60% neutral (white/gray) · 30% navy #2D3B45 · 10% lime #D9F062 accent
+// Red is kept as-is for destructive actions (delete) — a semantic convention, not part of the brand accent pair.
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Category {
   id:        string;
@@ -75,7 +78,7 @@ function CategoryModal({ mode, initial, parentId, parentName, allCategories, onC
     }
   };
 
-  // ✅ Upload image via existing /api/upload/image endpoint
+  // Upload image via existing /api/upload/image endpoint
   const handleImageUpload = async (file: File) => {
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -170,7 +173,7 @@ return (
             />
           </div>
 
-          {/* ✅ Image upload */}
+          {/* Image upload */}
           <div>
             <label className="block text-xs font-bold text-gray-600 mb-1.5">
               Category Image
@@ -249,9 +252,9 @@ return (
               }}
             />
 
-            {/* Icon fallback note */}
+            {/* Icon fallback note — lime accent chip instead of generic amber */}
             {!imageUrl && (
-              <p className="text-[11px] text-amber-600 mt-1.5">
+              <p className="text-[11px] text-[#2D3B45] bg-[#D9F062]/25 inline-block px-2 py-1 rounded-md mt-1.5">
                 No image — icon will show as fallback in the store strip
               </p>
             )}
@@ -271,7 +274,7 @@ return (
                   onClick={() => setIcon(iconName)}
                   className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition
                     ${icon === iconName
-                      ? 'border-[#2D3B45] bg-[#2D3B45]/5 text-[#2D3B45]'
+                      ? 'border-[#2D3B45] bg-[#D9F062]/20 text-[#2D3B45]'
                       : 'border-gray-100 text-gray-400 hover:border-gray-300'}`}>
                   <Icon size={16} />
                   <span className="text-[9px] leading-none">{label}</span>
@@ -372,7 +375,7 @@ function CategoryRow({ category, depth, allCategories, onEdit, onDelete, onAddCh
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-gray-900">{category.name}</span>
             {depth === 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-[#2D3B45]/10
+              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-[#D9F062]
                 text-[#2D3B45] rounded-md">
                 Top-level
               </span>
@@ -516,7 +519,7 @@ export function CategoryManagerClient({ initialCategories }: { initialCategories
 
   // ── Create ────────────────────────────────────────────────────────────────
   const handleCreate = async (data: {
-    name: string; slug?: string; icon?: string; parentId?: string; imageUrl?: string; // ✅ add imageUrl
+    name: string; slug?: string; icon?: string; parentId?: string; imageUrl?: string;
   }) => {
     await apiClient.post('/categories', data);
     toast.success('Category created');
@@ -525,7 +528,7 @@ export function CategoryManagerClient({ initialCategories }: { initialCategories
 
   // ── Update ────────────────────────────────────────────────────────────────
   const handleUpdate = async (id: string, data: {
-    name: string; slug?: string; icon?: string; parentId?: string; imageUrl?: string; // ✅ add imageUrl
+    name: string; slug?: string; icon?: string; parentId?: string; imageUrl?: string;
   }) => {
     await apiClient.put(`/categories/${id}`, data);
     toast.success('Category updated');
