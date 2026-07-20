@@ -45,13 +45,19 @@ interface CardProps {
 
 function StatCard({ label, value, note, accent, icon: Icon }: CardProps) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5">
-      <div className={`inline-flex p-2 rounded-xl mb-3 ${accent}`}>
-        <Icon size={16} />
+    <div className="bg-white rounded-[22px] p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500">
+          <span className={`inline-flex p-1 rounded-lg ${accent}`}>
+            <Icon size={13} />
+          </span>
+          {label}
+        </div>
       </div>
-      <div className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-1">{value}</div>
-      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</div>
-      {note && <div className="text-[11px] text-gray-400 mt-0.5">{note}</div>}
+      <div className="flex items-end justify-between">
+        <span className="text-[26px] font-black text-gray-900 tracking-tight leading-none">{value}</span>
+        {note && <span className="text-[10px] text-gray-400 text-right">{note}</span>}
+      </div>
     </div>
   );
 }
@@ -60,32 +66,32 @@ export async function DashboardStats({ token }: { token: string }) {
   const stats = await fetchStats(token);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
       <StatCard
         label="Total Bookings"
         value={stats.totalBookings}
         icon={Calendar}
-        accent="bg-indigo-50 text-indigo-600"
+        accent="bg-[#EFEAFB] text-[#8B7FF0]"
       />
       <StatCard
         label="Pending"
         value={stats.pendingBookings}
         note={stats.pendingBookings > 0 ? 'Needs attention' : 'All clear'}
         icon={Clock}
-        accent="bg-amber-50 text-amber-600"
+        accent="bg-[#FBF3D9] text-[#B08900]"
       />
       <StatCard
         label="My Listings"
         value={stats.totalListings}
         icon={Package}
-        accent="bg-emerald-50 text-emerald-600"
+        accent="bg-[#EAF7D4] text-[#5C8A1E]"
       />
       <StatCard
         label="Revenue (KSh)"
         value={`${Math.round(stats.completedRevenue / 1000)}K`}
         note="Completed bookings"
         icon={TrendingUp}
-        accent="bg-purple-50 text-purple-600"
+        accent="bg-[#EFEAFB] text-[#8B7FF0]"
       />
     </div>
   );

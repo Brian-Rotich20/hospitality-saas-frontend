@@ -9,7 +9,7 @@ import Image from 'next/image';
 import {
   LayoutDashboard, Package, Calendar, BarChart3,
   Users, LogOut, User, Settings, ShoppingBag,
-  ChevronRight, X, Heart,
+  ChevronRight, X, Heart, Menu,
 } from 'lucide-react';
 
 type Role = 'customer' | 'vendor' | 'admin';
@@ -40,29 +40,18 @@ const NAV: Record<Role, NavItem[]> = {
   ],
 };
 
-// ── Dark-green sidebar palette — scoped to this component only ──────────────
-const C = {
-  bg:          '#0F1F17',
-  bgHover:     '#1A2F24',
-  activeBg:    '#FFFFFF',
-  activeText:  '#0F1F17',
-  text:        '#B9C8BE',
-  textMuted:   '#7C8F82',
-  border:      'rgba(255,255,255,0.07)',
-  gold:        '#F5C842',
-};
-
 interface SidebarProps {
   mobileOpen:    boolean;
+  onMobileOpen:  () => void;
   onMobileClose: () => void;
 }
 
-export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar({ mobileOpen, onMobileOpen, onMobileClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const profile           = useProfile();
   const pathname          = usePathname();
-  const role               = (user?.role ?? 'customer') as Role;
-  const navItems           = NAV[role] ?? NAV.customer;
+  const role              = (user?.role ?? 'customer') as Role;
+  const navItems          = NAV[role] ?? NAV.customer;
 
   const isActive = (href: string) =>
     href.endsWith('dashboard') ? pathname === href : pathname.startsWith(href);
@@ -75,59 +64,24 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const initial      = displayName.charAt(0).toUpperCase();
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full" style={{ background: C.bg }}>
+    <div className="flex flex-col h-full p-5">
 
       {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5"
-        style={{ borderBottom: `1px solid ${C.border}` }}>
+      <div className="flex items-center justify-between px-1 mb-8">
         <Link
           href={role === 'vendor' ? '/vendor/dashboard' : role === 'admin' ? '/admin/dashboard' : '/store'}
           className="flex items-center no-underline shrink-0">
-          <Image src="/images/logo-light.png" alt="LinkMart Logo"
-            width={110} height={26} className="h-6 w-auto" priority
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <span style={{ color: '#fff', fontWeight: 900, fontSize: 16, letterSpacing: '-0.02em' }}>
-            Link<span style={{ color: C.gold }}>Mart</span>
-          </span>
+          <Image src="/images/logo.png" alt="LinkMart Logo"
+            width={120} height={28} className="h-7 w-auto brightness-0 invert" priority />
         </Link>
         <button onClick={onMobileClose}
-          className="lg:hidden flex items-center justify-center w-7 h-7 rounded-lg transition"
-          style={{ color: C.text }}>
+          className="lg:hidden flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 transition">
           <X size={16} />
         </button>
       </div>
 
-      {/* User identity card */}
-      <Link
-        href={accountHref}
-        onClick={onMobileClose}
-        className="flex items-center gap-3 px-5 py-4 no-underline transition-colors"
-        style={{ borderBottom: `1px solid ${C.border}` }}
-        onMouseEnter={e => (e.currentTarget.style.background = C.bgHover)}
-        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-      >
-        <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
-          style={{ background: C.bgHover, border: `1px solid ${C.border}` }}>
-          {profile?.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <span style={{ color: C.gold, fontSize: 13, fontWeight: 800 }}>{initial}</span>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold truncate" style={{ color: '#fff' }}>
-            {displayName}
-          </p>
-          <p className="text-[10px] truncate capitalize" style={{ color: C.textMuted }}>
-            {role} account
-          </p>
-        </div>
-        <ChevronRight size={13} style={{ color: C.textMuted, flexShrink: 0 }} />
-      </Link>
-
       {/* Nav links */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-1">
+      <nav className="flex-1 overflow-y-auto space-y-1">
         {navItems.map(({ href, label, Icon }) => {
           const active = isActive(href);
           return (
@@ -135,61 +89,61 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
               key={href}
               href={href}
               onClick={onMobileClose}
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl no-underline text-sm font-semibold transition-all"
-              style={{
-                background: active ? C.activeBg : 'transparent',
-                color:      active ? C.activeText : C.text,
-              }}
-              onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.bgHover; }}
-              onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold transition-colors
+                ${active ? 'bg-white text-gray-900' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}
             >
-              <Icon size={16} className="shrink-0" />
+              <Icon size={15} className="shrink-0" />
               <span className="flex-1">{label}</span>
+              {active && <ChevronRight size={12} className="opacity-60" />}
             </Link>
           );
         })}
       </nav>
 
-      {/* Browse store — soft promo card */}
-      <div className="px-3 pb-3">
-        <Link
-          href="/store"
-          onClick={onMobileClose}
-          className="flex items-center gap-2.5 px-3.5 py-3 rounded-2xl no-underline text-sm font-bold transition"
-          style={{ background: C.bgHover, color: C.gold, border: `1px solid ${C.border}` }}
-        >
+      {/* Browse store */}
+      <div className="pt-2 pb-1">
+        <Link href="/store" onClick={onMobileClose}
+          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold text-gray-400 hover:text-gray-200 hover:bg-white/5">
           <ShoppingBag size={15} className="shrink-0" />
           Browse Store
         </Link>
       </div>
 
       {/* Logout */}
-      <div className="px-3 pb-5 pt-1" style={{ borderTop: `1px solid ${C.border}` }}>
-        <button
-          onClick={() => { logout(); onMobileClose(); }}
-          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-colors"
-          style={{ color: '#F87171' }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(248,113,113,0.08)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        >
-          <LogOut size={15} className="shrink-0" />
-          Logout
-        </button>
-      </div>
+      <button onClick={() => { logout(); onMobileClose(); }}
+        className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold text-gray-400 hover:text-red-400 hover:bg-white/5 w-full">
+        <LogOut size={15} className="shrink-0" />
+        Logout
+      </button>
     </div>
   );
 
   return (
     <>
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-60 z-40">
+      {/* Floating hamburger — mobile only */}
+      {!mobileOpen && (
+        <button
+          onClick={onMobileOpen}
+          className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
+          style={{ background: '#fff', border: '1px solid #E5E7EB' }}
+          aria-label="Open menu"
+        >
+          <Menu size={18} color="#374151" />
+        </button>
+      )}
+
+      {/* Desktop */}
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[220px] z-40 bg-[#17181C]">
         <SidebarContent />
       </aside>
 
+      {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onMobileClose} />
+        <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={onMobileClose} />
       )}
 
-      <aside className={`fixed left-0 top-0 h-screen w-60 z-50 lg:hidden
+      {/* Mobile drawer */}
+      <aside className={`fixed left-0 top-0 h-screen w-[220px] z-50 lg:hidden bg-[#17181C]
         transform transition-transform duration-200 ease-in-out
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent />
