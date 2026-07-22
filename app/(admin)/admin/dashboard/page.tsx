@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic';
 import { cookies }     from 'next/headers';
 import { serverFetch } from '../../../lib/api/server';
 import Link            from 'next/link';
-import { Users, Calendar, TrendingUp, Clock, ArrowRight, AlertCircle } from 'lucide-react';
+import { StatCard }    from '../../../components/ui/StatCard';
+import { Users, Calendar, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 
 export default async function AdminDashboardPage() {
   const token = (await cookies()).get('access_token')?.value ?? '';
@@ -26,15 +27,6 @@ export default async function AdminDashboardPage() {
                      .reduce((s: number, x: any) => s + (x.totalAmount ?? 0), 0),
   };
 
-  const cards = [
-    { label: 'Total Vendors',    value: stats.totalVendors,   icon: Users,      accent: 'bg-[#2D3B45]/5 text-[#2D3B45]' },
-    { label: 'Pending Approval', value: stats.pendingVendors, icon: Clock,      accent: 'bg-[#D9F062]/30 text-[#2D3B45]',
-      urgent: stats.pendingVendors > 0, href: '/admin/vendors' },
-    { label: 'Total Bookings',   value: stats.totalBookings,  icon: Calendar,   accent: 'bg-[#2D3B45]/5 text-[#2D3B45]' },
-    { label: 'Revenue (KSh)',    value: `${Math.round(stats.revenue / 1000)}K`,
-      icon: TrendingUp, accent: 'bg-[#2D3B45]/5 text-[#2D3B45]' },
-  ];
-
   return (
     <div>
       <div className="mb-8">
@@ -43,22 +35,20 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {cards.map(({ label, value, icon: Icon, accent, urgent, href }: any) => (
-          <div key={label}
-            className={`bg-white border rounded-2xl p-5 ${urgent ? 'border-[#D9F062] ring-1 ring-[#D9F062]/40' : 'border-gray-100'}`}>
-            <div className={`inline-flex p-2 rounded-xl mb-3 ${accent}`}>
-              <Icon size={16} />
-            </div>
-            <div className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-1">{value}</div>
-            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</div>
-            {urgent && href && (
-              <Link href={href}
-                className="mt-2 text-[10px] font-bold text-[#2D3B45] flex items-center gap-1 no-underline hover:opacity-70">
-                Review now <ArrowRight size={10} />
-              </Link>
-            )}
-          </div>
-        ))}
+        <StatCard label="Total Vendors" value={stats.totalVendors} icon={Users} />
+        <StatCard
+          label="Pending Approval"
+          value={stats.pendingVendors}
+          icon={Clock}
+          urgent={stats.pendingVendors > 0}
+          actionHref="/admin/vendors"
+        />
+        <StatCard label="Total Bookings" value={stats.totalBookings} icon={Calendar} />
+        <StatCard
+          label="Revenue (KSh)"
+          value={`${Math.round(stats.revenue / 1000)}K`}
+          icon={TrendingUp}
+        />
       </div>
 
       <div className="mb-8">
