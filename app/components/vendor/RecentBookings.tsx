@@ -1,23 +1,27 @@
 // components/vendor/dashboard/RecentBookings.tsx
 // ✅ Server Component
+// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
+// Status badges stay semantic (pending=amber caution, declined=red, cancelled=gray)
+// rather than forcing everything into the brand palette — "confirmed" now
+// reads naturally as brand green since success and our primary color align.
 
 import Link from 'next/link';
 import { ArrowRight, Calendar } from 'lucide-react';
 
 const STATUS: Record<string, string> = {
   pending:   'bg-amber-50 text-amber-700',
-  confirmed: 'bg-emerald-50 text-emerald-700',
+  confirmed: 'bg-[#EAF7F5] text-[#085F19]',
   declined:  'bg-red-50 text-red-700',
   cancelled: 'bg-gray-100 text-gray-600',
-  completed: 'bg-purple-50 text-purple-700',
+  completed: 'bg-slate-100 text-slate-700',
 };
 
 const DOT: Record<string, string> = {
   pending:   'bg-amber-400',
-  confirmed: 'bg-emerald-500',
+  confirmed: 'bg-[#085F19]',
   declined:  'bg-red-500',
   cancelled: 'bg-gray-500',
-  completed: 'bg-purple-500',
+  completed: 'bg-slate-500',
 };
 
 async function fetchRecentBookings(token: string) {
@@ -42,7 +46,7 @@ export async function RecentBookings({ token }: { token: string }) {
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Recent Bookings</p>
         <Link href="/vendor/bookings"
-          className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 no-underline">
+          className="text-xs font-bold text-[#085F19] hover:opacity-70 flex items-center gap-1 no-underline">
           View all <ArrowRight size={12} />
         </Link>
       </div>
@@ -53,7 +57,7 @@ export async function RecentBookings({ token }: { token: string }) {
           <p className="text-sm font-bold text-gray-700 mb-1">No bookings yet</p>
           <p className="text-xs text-gray-400 mb-4">Create a listing to start receiving bookings</p>
           <Link href="/vendor/listings/new"
-            className="px-4 py-2 bg-[#2D3B45] text-white text-xs font-bold rounded-xl hover:bg-[#3a4d5a] transition no-underline inline-block">
+            className="px-4 py-2 bg-[#085F19] text-white text-xs font-bold rounded-xl hover:bg-[#0a7a21] transition no-underline inline-block">
             Create Listing
           </Link>
         </div>

@@ -9,15 +9,19 @@ import Image from 'next/image';
 import {
   LayoutDashboard, Package, Calendar, BarChart3,
   Users, LogOut, User, Settings, ShoppingBag,
-  ChevronRight, X, Heart, Menu,
+  X, Heart, Menu,
 } from 'lucide-react';
+
+// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
+// White sidebar/cards, gray for secondary text/icons — green is reserved for
+// active/selected state and primary actions only.
 
 type Role = 'customer' | 'vendor' | 'admin';
 interface NavItem { href: string; label: string; Icon: React.ElementType; }
 
 const NAV: Record<Role, NavItem[]> = {
   vendor: [
-    { href: '/vendor/dashboard',        label: 'Dashboard',   Icon: LayoutDashboard },
+    { href: '/vendor/dashboard',        label: 'Home',   Icon: LayoutDashboard },
     { href: '/vendor/listings',         label: 'My Listings', Icon: Package         },
     { href: '/vendor/bookings',         label: 'Bookings',    Icon: Calendar        },
     { href: '/vendor/analytics',        label: 'Analytics',   Icon: BarChart3       },
@@ -25,7 +29,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: '/vendor/settings/profile', label: 'Business',    Icon: Settings        },
   ],
   admin: [
-    { href: '/admin/dashboard',  label: 'Dashboard',  Icon: LayoutDashboard },
+    { href: '/admin/dashboard',  label: 'Home',  Icon: LayoutDashboard },
     { href: '/admin/vendors',    label: 'Vendors',    Icon: Users           },
     { href: '/admin/listings',   label: 'Listings',   Icon: Package         },
     { href: '/admin/bookings',   label: 'Bookings',   Icon: Calendar        },
@@ -33,7 +37,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: '/admin/categories', label: 'Categories', Icon: Settings        },
   ],
   customer: [
-    { href: '/customer/dashboard',       label: 'Dashboard',   Icon: LayoutDashboard },
+    { href: '/customer/dashboard',       label: 'Home',   Icon: LayoutDashboard },
     { href: '/customer/bookings',        label: 'My Bookings', Icon: Calendar        },
     { href: '/customer/saved',           label: 'Saved',       Icon: Heart           },
     { href: '/customer/account/profile', label: 'Profile',     Icon: User            },
@@ -56,13 +60,6 @@ export function Sidebar({ mobileOpen, onMobileOpen, onMobileClose }: SidebarProp
   const isActive = (href: string) =>
     href.endsWith('dashboard') ? pathname === href : pathname.startsWith(href);
 
-  const accountHref =
-    role === 'vendor' ? '/vendor/settings/account' :
-    role === 'admin'  ? '/admin/dashboard'          : '/customer/account/profile';
-
-  const displayName = profile?.fullName || user?.email?.split('@')[0] || 'User';
-  const initial      = displayName.charAt(0).toUpperCase();
-
   const SidebarContent = () => (
     <div className="flex flex-col h-full p-5">
 
@@ -72,10 +69,10 @@ export function Sidebar({ mobileOpen, onMobileOpen, onMobileClose }: SidebarProp
           href={role === 'vendor' ? '/vendor/dashboard' : role === 'admin' ? '/admin/dashboard' : '/store'}
           className="flex items-center no-underline shrink-0">
           <Image src="/images/logo.png" alt="LinkMart Logo"
-            width={120} height={28} className="h-7 w-auto brightness-0 invert" priority />
+            width={120} height={28} className="h-7 w-auto" priority />
         </Link>
         <button onClick={onMobileClose}
-          className="lg:hidden flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 transition">
+          className="lg:hidden flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:bg-gray-50 transition">
           <X size={16} />
         </button>
       </div>
@@ -90,11 +87,12 @@ export function Sidebar({ mobileOpen, onMobileOpen, onMobileClose }: SidebarProp
               href={href}
               onClick={onMobileClose}
               className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold transition-colors
-                ${active ? 'bg-white text-gray-900' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}
+                ${active
+                  ? 'bg-[#EAF7F5] text-[#085F19]'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
             >
               <Icon size={15} className="shrink-0" />
               <span className="flex-1">{label}</span>
-              {active && <ChevronRight size={12} className="opacity-60" />}
             </Link>
           );
         })}
@@ -103,15 +101,15 @@ export function Sidebar({ mobileOpen, onMobileOpen, onMobileClose }: SidebarProp
       {/* Browse store */}
       <div className="pt-2 pb-1">
         <Link href="/store" onClick={onMobileClose}
-          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold text-gray-400 hover:text-gray-200 hover:bg-white/5">
+          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold text-gray-500 hover:text-[#085F19] hover:bg-[#EAF7F5] transition-colors">
           <ShoppingBag size={15} className="shrink-0" />
           Browse Store
         </Link>
       </div>
 
-      {/* Logout */}
+      {/* Logout — destructive action, stays red regardless of brand palette */}
       <button onClick={() => { logout(); onMobileClose(); }}
-        className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold text-gray-400 hover:text-red-400 hover:bg-white/5 w-full">
+        className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors w-full">
         <LogOut size={15} className="shrink-0" />
         Logout
       </button>
@@ -124,16 +122,15 @@ export function Sidebar({ mobileOpen, onMobileOpen, onMobileClose }: SidebarProp
       {!mobileOpen && (
         <button
           onClick={onMobileOpen}
-          className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-          style={{ background: '#fff', border: '1px solid #E5E7EB' }}
+          className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-white border border-gray-200"
           aria-label="Open menu"
         >
-          <Menu size={18} color="#374151" />
+          <Menu size={18} className="text-gray-700" />
         </button>
       )}
 
       {/* Desktop */}
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[220px] z-40 bg-[#17181C]">
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[220px] z-40 bg-white border-r border-gray-100">
         <SidebarContent />
       </aside>
 
@@ -143,7 +140,7 @@ export function Sidebar({ mobileOpen, onMobileOpen, onMobileClose }: SidebarProp
       )}
 
       {/* Mobile drawer */}
-      <aside className={`fixed left-0 top-0 h-screen w-[220px] z-50 lg:hidden bg-[#17181C]
+      <aside className={`fixed left-0 top-0 h-screen w-[220px] z-50 lg:hidden bg-white border-r border-gray-100
         transform transition-transform duration-200 ease-in-out
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent />

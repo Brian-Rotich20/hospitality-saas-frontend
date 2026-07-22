@@ -2,6 +2,7 @@
 // ✅ Server Component — NO 'use client'
 // Auth already enforced by middleware — no useEffect auth check needed
 // Data fetched server-side — no loading spinners, no useEffect
+// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
 
 import { Suspense }       from 'react';
 import { cookies }        from 'next/headers';
@@ -70,7 +71,7 @@ export default async function VendorDashboardPage() {
         </div>
         <div className="text-right shrink-0">
           <p className="text-[11px] text-gray-400 mb-1">{today}</p>
-          <button className="bg-white border border-gray-100 rounded-full px-3 py-1.5 text-[11px] font-bold flex items-center gap-1">
+          <button className="bg-white border border-gray-100 rounded-full px-3 py-1.5 text-[11px] font-bold flex items-center gap-1 hover:border-[#085F19] hover:text-[#085F19] transition-colors">
             Today <ChevronDown size={12} />
           </button>
         </div>

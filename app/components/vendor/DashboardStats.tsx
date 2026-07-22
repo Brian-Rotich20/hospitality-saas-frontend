@@ -1,8 +1,9 @@
 // components/vendor/dashboard/DashboardStats.tsx
 // ✅ Server Component — no 'use client', fetches on the server
-// Color system: 60% neutral (cream bg / white cards) · 30% navy #2D3B45 · 10% lime #D9F062 accent
+// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
 
 import { Calendar, Clock, Package, TrendingUp } from 'lucide-react';
+import { StatCard } from '../ui/StatCard';
 
 interface Stats {
   totalBookings:    number;
@@ -36,65 +37,25 @@ async function fetchStats(token: string): Promise<Stats> {
   };
 }
 
-interface CardProps {
-  label:   string;
-  value:   string | number;
-  note?:   string;
-  accent:  string;
-  urgent?: boolean;
-  icon:    React.ElementType;
-}
-
-function StatCard({ label, value, note, accent, urgent, icon: Icon }: CardProps) {
-  return (
-    <div className={`bg-white rounded-[22px] p-4 border ${urgent ? 'border-[#D9F062] ring-1 ring-[#D9F062]/40' : 'border-transparent'}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500">
-          <span className={`inline-flex p-1 rounded-lg ${accent}`}>
-            <Icon size={13} />
-          </span>
-          {label}
-        </div>
-      </div>
-      <div className="flex items-end justify-between">
-        <span className="text-[26px] font-black text-gray-900 tracking-tight leading-none">{value}</span>
-        {note && <span className="text-[10px] text-gray-400 text-right">{note}</span>}
-      </div>
-    </div>
-  );
-}
-
 export async function DashboardStats({ token }: { token: string }) {
   const stats = await fetchStats(token);
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-      <StatCard
-        label="Total Bookings"
-        value={stats.totalBookings}
-        icon={Calendar}
-        accent="bg-[#2D3B45]/5 text-[#2D3B45]"
-      />
+      <StatCard label="Total Bookings" value={stats.totalBookings} icon={Calendar} />
       <StatCard
         label="Pending"
         value={stats.pendingBookings}
         note={stats.pendingBookings > 0 ? 'Needs attention' : 'All clear'}
         icon={Clock}
-        accent="bg-[#D9F062]/30 text-[#2D3B45]"
         urgent={stats.pendingBookings > 0}
       />
-      <StatCard
-        label="My Listings"
-        value={stats.totalListings}
-        icon={Package}
-        accent="bg-[#2D3B45]/5 text-[#2D3B45]"
-      />
+      <StatCard label="My Listings" value={stats.totalListings} icon={Package} />
       <StatCard
         label="Revenue (KSh)"
         value={`${Math.round(stats.completedRevenue / 1000)}K`}
         note="Completed bookings"
         icon={TrendingUp}
-        accent="bg-[#2D3B45]/5 text-[#2D3B45]"
       />
     </div>
   );

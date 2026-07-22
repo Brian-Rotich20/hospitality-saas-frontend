@@ -1,5 +1,6 @@
 // components/vendor/dashboard/QuickActions.tsx
 // ✅ Client Component — only interactive links, no data fetching
+// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
 'use client';
 
 import Link from 'next/link';
@@ -21,8 +22,8 @@ export function QuickActions() {
           <Link key={href} href={href}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold no-underline transition-colors
               ${primary
-                ? 'bg-[#2D3B45] text-white hover:bg-[#3a4d5a]'
-                : 'bg-white text-gray-700 border border-gray-200 hover:border-[#2D3B45] hover:text-[#2D3B45]'
+                ? 'bg-[#085F19] text-white hover:bg-[#0a7a21]'
+                : 'bg-white text-gray-700 border border-gray-200 hover:border-[#085F19] hover:text-[#085F19]'
               }`}>
             {primary && <Plus size={13} />}
             {label}

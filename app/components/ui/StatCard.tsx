@@ -1,8 +1,8 @@
 // components/dashboard/StatCard.tsx
 // Shared by both the admin dashboard and the vendor dashboard so the two
-// never drift out of sync again. No 'use client' needed — it's pure
-// presentation and works fine inside a Server Component tree.
-// Color system: 60% neutral (white/gray) · 30% navy #2D3B45 · 10% lime #D9F062 accent
+// never drift out of sync. No 'use client' needed — pure presentation,
+// works fine inside a Server Component tree.
+// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -12,9 +12,8 @@ export interface StatCardProps {
   value:   string | number;
   note?:   string;
   icon:    React.ElementType;
-  /** true = highlight this card with the lime 10% accent (the "needs attention" card) */
+  /** true = highlight this card (the "needs attention" card) */
   urgent?: boolean;
-  /** optional call-to-action link shown only when `urgent` is true */
   actionHref?:  string;
   actionLabel?: string;
 }
@@ -22,12 +21,12 @@ export interface StatCardProps {
 export function StatCard({
   label, value, note, icon: Icon, urgent, actionHref, actionLabel = 'Review now',
 }: StatCardProps) {
-  const accent = urgent ? 'bg-[#D9F062]/30 text-[#2D3B45]' : 'bg-[#2D3B45]/5 text-[#2D3B45]';
+  const accent = urgent ? 'bg-[#EAF7F5] text-[#085F19]' : 'bg-[#085F19]/5 text-[#085F19]';
 
   return (
     <div
       className={`bg-white rounded-[22px] p-4 border ${
-        urgent ? 'border-[#D9F062] ring-1 ring-[#D9F062]/40' : 'border-gray-100'
+        urgent ? 'border-[#085F19]/20 ring-1 ring-[#EAF7F5]' : 'border-gray-100'
       }`}
     >
       <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500 mb-3">
@@ -45,7 +44,7 @@ export function StatCard({
       {urgent && actionHref && (
         <Link
           href={actionHref}
-          className="mt-2 text-[10px] font-bold text-[#2D3B45] flex items-center gap-1 no-underline hover:opacity-70"
+          className="mt-2 text-[10px] font-bold text-[#085F19] flex items-center gap-1 no-underline hover:opacity-70"
         >
           {actionLabel} <ArrowRight size={10} />
         </Link>
