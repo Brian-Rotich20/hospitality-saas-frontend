@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth/auth.context';
+import { authClient } from '../../lib/auth/authClient';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,20 +13,11 @@ import { useSearchParams } from 'next/navigation';
 import Image from "next/image";
 import GoogleIcon from '../ui/GoogleIcon';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
-
-
 const loginSchema = z.object({
   email:    z.string().min(1, 'Email is required').email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 type LoginFormData = z.infer<typeof loginSchema>;
-
-
-const handleGoogleLogin = (intent: 'customer' | 'vendor') => {
-  document.cookie = `oauth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
-  window.location.href = `${API}/auth/google`;
-};
 
 export function LoginForm() {
   const { login, isLoading } = useAuth();
@@ -45,6 +37,10 @@ export function LoginForm() {
     }
   };
 
+  const handleGoogleLogin = () => {
+    authClient.signIn.social({ provider: 'google', callbackURL: '/store' });
+  };
+
   return (
     <div className="min-h-screen bg-gray-300 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
@@ -54,7 +50,7 @@ export function LoginForm() {
           <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5 mb-4">
             <CheckCircle size={14} className="text-emerald-500 shrink-0 mt-0.5" />
             <p className="text-xs text-emerald-700 leading-relaxed">
-              <strong>Application submitted!</strong> Sign in once approved by our team.
+              <strong>Account created!</strong> Sign in and verify your email to activate your account.
             </p>
           </div>
         )}
@@ -126,7 +122,7 @@ export function LoginForm() {
             {/* Google sign-in */}
           <button
             type="button"
-            onClick={() => handleGoogleLogin('customer')} // Default to customer intent for Google login
+            onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
               border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
               transition active:scale-[0.98] mt-3"
