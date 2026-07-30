@@ -1,11 +1,11 @@
 // app/(vendor)/vendor/listings/new/page.tsx
-// ✅ Server Component — fetches categories server-side, passes to client form
+// ✅ Server Component — fetches categories server-side, passes to client wizard
 // Auth enforced by middleware — no useEffect auth checks
 
-import { cookies }         from 'next/headers';
-import { NewListingForm }  from '../../../../components/listings/NewListingForm';
-import Link                from 'next/link';
-import { ChevronLeft }     from 'lucide-react';
+import { cookies }        from 'next/headers';
+import { NewListingForm } from '../../../../components/listings/new-listing/NewListingForm';
+import Link               from 'next/link';
+import { ChevronLeft }    from 'lucide-react';
 
 async function fetchCategories(token: string) {
   const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
@@ -22,13 +22,12 @@ async function fetchCategories(token: string) {
 }
 
 export default async function NewListingPage() {
-  const cookieStore  = await cookies();
-  const token        = cookieStore.get('access_token')?.value ?? '';
-  const categories   = await fetchCategories(token);
+  const cookieStore = await cookies();
+  const token       = cookieStore.get('access_token')?.value ?? '';
+  const categories  = await fetchCategories(token);
 
   return (
     <div>
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6">
         <Link href="/vendor/listings"
           className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-gray-700 no-underline transition-colors">
@@ -43,7 +42,6 @@ export default async function NewListingPage() {
         <p className="text-sm text-gray-500">Fill in the details below to publish your venue or service.</p>
       </div>
 
-      {/* Client form gets categories from server */}
       <NewListingForm categories={categories} />
     </div>
   );
