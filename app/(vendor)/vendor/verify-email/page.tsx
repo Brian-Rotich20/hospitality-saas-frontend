@@ -1,19 +1,18 @@
 'use client';
-// app/vendor/verify-email/page.tsx
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Mail, RefreshCw, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../lib/auth/auth.context';
+import { vendorsService } from '../../../lib/api/endpoints';
 
-const API          = process.env.NEXT_PUBLIC_API_URL ?? '/api';
-const OTP_LENGTH   = 6;
-const RESEND_WAIT  = 60;
-
+const OTP_LENGTH  = 6;
+const RESEND_WAIT = 60;
 
 export default function VendorVerifyEmailPage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading, refetchUser } = useAuth();
 
   const [otp,       setOtp]       = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [verifying, setVerifying] = useState(false);
@@ -21,49 +20,34 @@ export default function VendorVerifyEmailPage() {
   const [verified,  setVerified]  = useState(false);
   const [cooldown,  setCooldown]  = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const { token, setAuth } = useAuth();
 
-  // Focus first input on mount
   useEffect(() => { inputRefs.current[0]?.focus(); }, []);
 
-  // Redirect to register if no token (direct URL visit / session expired)
+  // Redirect if there's no session at all (direct URL visit, never registered)
   useEffect(() => {
-    if (!token) {
+    if (!isLoading && !isAuthenticated) {
       toast.error('Session expired. Please register again.');
       router.replace('/auth/register-vendor');
     }
-  }, [token, router]);
+  }, [isLoading, isAuthenticated, router]);
 
-  // Countdown
   useEffect(() => {
     if (cooldown <= 0) return;
     const id = setInterval(() => setCooldown(c => c <= 1 ? (clearInterval(id), 0) : c - 1), 1000);
     return () => clearInterval(id);
   }, [cooldown]);
 
-  // ── Submit OTP ──────────────────────────────────────────────────────────────
   const submitOtp = useCallback(async (digits: string[]) => {
     const code = digits.join('');
     if (code.length < OTP_LENGTH) return;
-    if (!token) { toast.error('Session expired.'); router.replace('/auth/register-vendor'); return; }
 
     setVerifying(true);
     try {
-      const res  = await fetch(`${API}/vendors/verify-email`, {
-        method:      'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization:  `Bearer ${token}`,
-        },
-        body: JSON.stringify({ otp: code }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Verification failed');
+      const res = await vendorsService.verifyEmail(code) as any;
+      if (!res.success) throw new Error(res.error || 'Verification failed');
 
-      const { accessToken } = json.data;
-      if (accessToken) setAuth(accessToken); // update context with new token
-      
+      await refetchUser();   // pulls the fresh verified=true, role=vendor state
+
       setVerified(true);
       toast.success('Email verified! Welcome to LinkMart 🎉');
       setTimeout(() => router.push('/vendor/dashboard'), 1800);
@@ -74,11 +58,9 @@ export default function VendorVerifyEmailPage() {
     } finally {
       setVerifying(false);
     }
-  }, [router, token, setAuth]);
+  }, [router, refetchUser]);
 
-  // ── Input handling ──────────────────────────────────────────────────────────
   const handleChange = (index: number, value: string) => {
-    // Handle paste of full code into any box
     if (value.length > 1) {
       const digits = value.replace(/\D/g, '').slice(0, OTP_LENGTH).split('');
       const filled = Array(OTP_LENGTH).fill('');
@@ -100,20 +82,13 @@ export default function VendorVerifyEmailPage() {
     if (e.key === 'Backspace' && !otp[index] && index > 0) inputRefs.current[index - 1]?.focus();
   };
 
-  // ── Resend OTP ──────────────────────────────────────────────────────────────
   const resendOtp = async () => {
     if (cooldown > 0 || resending) return;
-    if (!token) { toast.error('Session expired.'); router.replace('/auth/register-vendor'); return; }
 
     setResending(true);
     try {
-      const res  = await fetch(`${API}/vendors/resend-otp`, {
-        method:      'POST',
-        credentials: 'include',
-        headers:     { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to resend');
+      const res = await vendorsService.resendOTP() as any;
+      if (!res.success) throw new Error(res.error || 'Failed to resend');
       toast.success('New code sent! Check your inbox.');
       setCooldown(RESEND_WAIT);
       setOtp(Array(OTP_LENGTH).fill(''));
@@ -125,7 +100,6 @@ export default function VendorVerifyEmailPage() {
     }
   };
 
-  // ── Verified state ──────────────────────────────────────────────────────────
   if (verified) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
@@ -140,13 +114,10 @@ export default function VendorVerifyEmailPage() {
     );
   }
 
-  // ── Main UI ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          {/* Header */}
           <div className="bg-[#2D3B45] px-6 py-5">
             <p className="text-[#F5C842] text-lg font-black">LinkMart</p>
             <p className="text-white/60 text-xs mt-0.5">Vendor verification</p>
@@ -163,7 +134,6 @@ export default function VendorVerifyEmailPage() {
               Enter it below to activate your vendor account.
             </p>
 
-            {/* OTP inputs */}
             <div className="flex gap-2 justify-between mb-6">
               {otp.map((digit, i) => (
                 <input
@@ -171,7 +141,7 @@ export default function VendorVerifyEmailPage() {
                   ref={el => { inputRefs.current[i] = el; }}
                   type="text"
                   inputMode="numeric"
-                  maxLength={6}       /* allow paste */
+                  maxLength={6}
                   value={digit}
                   disabled={verifying}
                   onChange={e  => handleChange(i, e.target.value)}
@@ -185,7 +155,6 @@ export default function VendorVerifyEmailPage() {
               ))}
             </div>
 
-            {/* Verify button */}
             <button
               onClick={() => submitOtp(otp)}
               disabled={verifying || otp.some(d => !d)}
@@ -198,7 +167,6 @@ export default function VendorVerifyEmailPage() {
                 : 'Verify & Activate Account'}
             </button>
 
-            {/* Resend */}
             <div className="text-center">
               <p className="text-xs text-gray-400 mb-2">Didn't receive a code?</p>
               {cooldown > 0 ? (

@@ -1,36 +1,36 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../lib/auth/auth.context';
+import { otpService } from '../../../lib/api/endpoints';
 
-const API          = process.env.NEXT_PUBLIC_API_URL ?? '/api';
-const OTP_LENGTH   = 6;
-const RESEND_WAIT  = 60;
+const OTP_LENGTH  = 6;
+const RESEND_WAIT = 60;
 
 export default function CustomerVerifyEmailPage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading, refetchUser } = useAuth();
 
   const [otp,       setOtp]       = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [loading,   setLoading]   = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown,  setCooldown]  = useState(0);
   const [verified,  setVerified]  = useState(false);
-  const { token, setAuth } = useAuth();
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => { inputRefs.current[0]?.focus(); }, []);
 
   useEffect(() => {
-    if (!token) {
+    if (!isLoading && !isAuthenticated) {
       toast.error('Session expired. Please register again.');
       router.replace('/auth/register');
     }
-  }, [router]);
+  }, [isLoading, isAuthenticated, router]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -41,24 +41,14 @@ export default function CustomerVerifyEmailPage() {
   const submitOtp = useCallback(async (digits: string[]) => {
     const code = digits.join('');
     if (code.length < OTP_LENGTH) return;
-    if (!token) { toast.error('Session expired.'); router.replace('/auth/register'); return; }
 
     setLoading(true);
     try {
-      const res  = await fetch(`${API}/auth/verify-email`, {
-        method:      'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization:  `Bearer ${token}`,
-        },
-        body: JSON.stringify({ otp: code }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Verification failed');
+      const res = await otpService.verifyEmail(code) as any;
+      if (!res.success) throw new Error(res.error || 'Verification failed');
 
-      // Swap token — now has emailVerified=true
-      if (json.data?.accessToken) setAuth(json.data.accessToken); // update context with new token
+      await refetchUser();
+
       setVerified(true);
       toast.success('Email verified! Welcome to LinkMart 🎉');
       setTimeout(() => router.push('/store'), 1800);
@@ -69,7 +59,7 @@ export default function CustomerVerifyEmailPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, token, setAuth]);
+  }, [router, refetchUser]);
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) {
@@ -98,17 +88,11 @@ export default function CustomerVerifyEmailPage() {
 
   const resendOtp = async () => {
     if (cooldown > 0 || resending) return;
-    if (!token) { toast.error('Session expired.'); router.replace('/auth/register'); return; }
 
     setResending(true);
     try {
-      const res  = await fetch(`${API}/auth/resend-otp`, {
-        method:      'POST',
-        credentials: 'include',
-        headers:     { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to resend');
+      const res = await otpService.resend() as any;
+      if (!res.success) throw new Error(res.error || 'Failed to resend');
       toast.success('New code sent! Check your inbox.');
       setCooldown(RESEND_WAIT);
       setOtp(Array(OTP_LENGTH).fill(''));

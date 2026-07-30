@@ -15,8 +15,8 @@ import GoogleIcon    from '../ui/GoogleIcon';
 import Divider       from '../ui/Divider';
 import Spinner       from '../ui/Spinner';
 import { useAuth } from '../../lib/auth/auth.context';
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
+import { authClient } from '../../lib/auth/authClient';
+import { vendorsService } from '../../lib/api/endpoints';
 
 type Step = 'idle' | 'creating' | 'setting-up' | 'done';
 
@@ -54,28 +54,12 @@ const inp = (err: boolean) =>
    placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842]
    focus:border-transparent transition ${err ? 'border-red-400' : 'border-gray-200'}`;
 
-async function fetchWithTimeout(url: string, options: RequestInit, ms = 40000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
-      throw new Error('Server is starting up. Please wait 30 seconds and try again.');
-    }
-    throw err;
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-
 export function RegisterVendorForm() {
   const router = useRouter();
+  const { register: registerUser, refetchUser } = useAuth();
   const [step,        setStep]        = useState<Step>('idle');
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const { setAuth } = useAuth();
 
   const loading = step !== 'idle' && step !== 'done';
 
@@ -86,48 +70,25 @@ export function RegisterVendorForm() {
   const onSubmit = async (data: FormData) => {
     setStep('creating');
     try {
-
-      // ── Step 1: Register with intent=vendor ───────────────────────────
-      const regRes = await fetchWithTimeout(`${API}/auth/register`, {
-        method:      'POST',
-        credentials: 'include',
-        headers:     { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: data.fullName,
-          email:    data.email,
-          password: data.password,
-          phone:    data.phone,
-        }),
+      // Step 1: create a plain account. registerUser() sets context state and
+      // will try to redirect to the customer verify page — we override that below.
+      await registerUser({
+        fullName: data.fullName,
+        email:    data.email,
+        password: data.password,
+        phone:    data.phone,
       });
-      const regJson = await regRes.json();
-      if (!regRes.ok) throw new Error(regJson.error || 'Registration failed');
 
-      const accessToken = regJson.data?.accessToken;
-      if (!accessToken) throw new Error('No token received');
-
-      // ── Step 2: Create vendor record + send OTP ───────────────────────
+      // Step 2: create the vendor record (promotes role='vendor' in the DB)
       setStep('setting-up');
-
-      const vendorRes = await fetchWithTimeout(`${API}/vendors/apply`, {
-        method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization:  `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ businessName: data.fullName }),
-      }, 15000);
-      const vendorJson = await vendorRes.json();
-
-      if (!vendorRes.ok) {
-        // Vendor record failed but account exists — redirect anyway
-        // OTP can be resent from verify-email page
-        console.warn('[RegisterVendor] vendor apply failed:', vendorJson.error);
+      const vendorRes = await vendorsService.apply({ businessName: data.fullName });
+      if (!(vendorRes as any).success) {
+        throw new Error((vendorRes as any).error || 'Could not create your vendor application.');
       }
-      
-      const VendorAcessToken = vendorJson.data?.accessToken ?? accessToken; // fallback to user token if vendor token not returned
-      // ── Step 3: Set cookies as VENDOR + redirect ──────────────────────
+
+      // Step 3: refresh context so user.role reflects 'vendor' immediately
       setStep('done');
-      setAuth(VendorAcessToken);
+      await refetchUser();
 
       toast.success('Account created! Check your email for a verification code.');
       router.push('/vendor/verify-email');
@@ -163,7 +124,7 @@ export function RegisterVendorForm() {
           )}
 
           <button type="button" disabled={loading}
-            onClick={() => { window.location.href = `${API}/auth/google?intent=vendor`; }}
+            onClick={() => authClient.signIn.social({ provider: 'google', callbackURL: '/vendor/onboarding?intent=vendor' })}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
               border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
               transition active:scale-[0.98] mb-4 disabled:opacity-50 disabled:cursor-not-allowed">

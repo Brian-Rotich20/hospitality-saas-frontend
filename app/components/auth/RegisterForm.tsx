@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,8 +14,7 @@ import GoogleIcon    from '../ui/GoogleIcon';
 import Divider       from '../ui/Divider';
 import Spinner       from '../ui/Spinner';
 import { useAuth } from '../../lib/auth/auth.context';
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
+import { authClient } from '../../lib/auth/authClient';
 
 const schema = z.object({
   fullName: z.string().min(2, 'At least 2 characters'),
@@ -38,15 +36,8 @@ const inp = (err: boolean) =>
    placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842]
    focus:border-transparent transition ${err ? 'border-red-400' : 'border-gray-200'}`;
 
-function setCookie(name: string, value: string, maxAge: number) {
-  const secure   = window.location.protocol === 'https:';
-  const sameSite = secure ? 'None' : 'Lax';
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
-}
-
 export function RegisterForm() {
-  const router = useRouter();
-  const { setAuth } = useAuth();
+  const { register: registerUser } = useAuth();
   const [loading,     setLoading]     = useState(false);
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -58,34 +49,13 @@ export function RegisterForm() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const res  = await fetch(`${API}/auth/register`, {
-        method:      'POST',
-        credentials: 'include',
-        headers:     { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: data.fullName,
-          email:    data.email,
-          password: data.password,
-          phone:    data.phone,
-          intent:   'customer',
-        }),
+      await registerUser({
+        fullName: data.fullName,
+        email:    data.email,
+        password: data.password,
+        phone:    data.phone,
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Registration failed');
-
-      const { accessToken, requiresVerification } = json.data;
-
-      if (!accessToken) throw new Error('No token received');
-      setAuth(accessToken);
-
-      if (requiresVerification) {
-        toast.success('Account created! Check your email for a verification code.');
-        router.push('/auth/verify-email');
-      } else {
-        // Google-linked account — already verified
-        toast.success('Account created!');
-        router.push('/store');
-      }
+      // registerUser() already toasts + redirects to verify-email
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
@@ -107,7 +77,7 @@ export function RegisterForm() {
 
           <button
             type="button"
-            onClick={() => { window.location.href = `${API}/auth/google`; }}
+            onClick={() => authClient.signIn.social({ provider: 'google', callbackURL: '/store' })}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border
               border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700
               transition active:scale-[0.98] mb-4"

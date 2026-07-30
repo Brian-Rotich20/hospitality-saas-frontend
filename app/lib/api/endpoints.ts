@@ -1,13 +1,10 @@
 // lib/api/endpoints.ts
 
 export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN:           '/auth/login',
-    REGISTER:        '/auth/register',
-    LOGOUT:          '/auth/logout',
-    LOGOUT_ALL:      '/auth/logout-all',
-    REFRESH:         '/auth/refresh',         
-    ME:              '/auth/me',
+
+  OTP: {
+  VERIFY_EMAIL: '/otp/verify-email',
+  RESEND:       '/otp/resend-otp',
   },
 
   LISTINGS: {
@@ -115,25 +112,9 @@ import type {
   ListingFilters,
 } from '../types/listing';
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-export const authService = {
-  login:        (email: string, password: string) =>
-    apiClient.post<{ user: any; accessToken: string; refreshToken: string }>(
-      API_ENDPOINTS.AUTH.LOGIN, { email, password }),
-
-  register:     (data: any) =>
-    apiClient.post<{ user: any; accessToken: string; refreshToken: string }>(
-      API_ENDPOINTS.AUTH.REGISTER, data),
-
-  refresh:      () =>
-    apiClient.post<{ accessToken: string; refreshToken: string }>(
-      API_ENDPOINTS.AUTH.REFRESH, {}),
-
-  logout:       () =>
-    apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {}),
-
-  me:           () =>
-    apiClient.get<any>(API_ENDPOINTS.AUTH.ME),
+export const otpService = {
+  verifyEmail: (otp: string) => apiClient.post(API_ENDPOINTS.OTP.VERIFY_EMAIL, { otp }),
+  resend:      ()            => apiClient.post(API_ENDPOINTS.OTP.RESEND, {}),
 };
 
 // ── Categories ────────────────────────────────────────────────────────────────
