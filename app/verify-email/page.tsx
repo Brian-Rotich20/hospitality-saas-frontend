@@ -11,7 +11,7 @@ import Link from 'next/link';
 
 export default function VendorVerifyEmailPage() {
   const router          = useRouter();
-  const { user, refreshToken } = useAuth();
+  const { user, refetchUser } = useAuth();
   const [otp,        setOtp]       = useState(['', '', '', '', '', '']);
   const [verifying,  setVerifying] = useState(false);
   const [resending,  setResending] = useState(false);
@@ -73,7 +73,7 @@ export default function VendorVerifyEmailPage() {
       toast.success('Email verified! Redirecting to your dashboard…');
 
       // Refresh the auth token so user role updates to 'vendor'
-      await refreshToken();
+      await refetchUser();
 
       setTimeout(() => router.push('/vendor/dashboard'), 1500);
     } catch (err) {
