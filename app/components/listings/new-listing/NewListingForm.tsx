@@ -19,7 +19,7 @@ import { PreviewStep } from './steps/PreviewStep';
 
 export function NewListingForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
-  const { token } = useAuth();
+  
 
   const [step, setStep]           = useState<WizardStep>('category');
   const [furthest, setFurthest]   = useState<WizardStep>('category');
@@ -165,7 +165,6 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
             setValue={setValue}
             photos={photos}
             setPhotos={setPhotos}
-            token={token}
             onBack={() => jumpTo('category')}
             onNext={goPricing}
           />

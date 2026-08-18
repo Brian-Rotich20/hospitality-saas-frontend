@@ -15,14 +15,14 @@ import {
 import toast from 'react-hot-toast';
 import { ACCEPT, MAX_MB, MAX_PHOTOS } from './constants';
 import type { Photo } from './types';
+import { uploadService } from '../../../lib/api/endpoints';
 
 interface PhotoUploaderProps {
-  value:    string[];       // ordered URLs — index 0 is cover
+  value:    string[];
   onChange: (v: string[]) => void;
-  token:    string | null;
 }
 
-// ── Single sortable tile ─────────────────────────────────────────────────────
+// ── Single sortable tile (unchanged) ─────────────────────────────────────────
 function SortableTile({
   photo, index, onRemove,
 }: { photo: Photo; index: number; onRemove: (id: string) => void }) {
@@ -63,7 +63,6 @@ function SortableTile({
         </span>
       )}
 
-      {/* Drag handle — only active once the upload has settled */}
       {photo.url && !photo.uploading && !photo.error && (
         <button
           type="button"
@@ -92,7 +91,7 @@ function SortableTile({
   );
 }
 
-export function PhotoUploader({ value, onChange, token }: PhotoUploaderProps) {
+export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
   const [photos, setPhotos] = useState<Photo[]>(
     value.map(url => ({ id: url, url, uploading: false })),
   );
@@ -105,7 +104,6 @@ export function PhotoUploader({ value, onChange, token }: PhotoUploaderProps) {
   const uploadedCount = photos.filter(p => p.url && !p.error).length;
   const remaining     = MAX_PHOTOS - photos.filter(p => !p.error).length;
 
-  // Notify parent (order-preserving) whenever photos settle
   useEffect(() => {
     const urls = photos
       .filter(p => p.url && p.url.trim().length > 0 && !p.uploading && !p.error)
@@ -113,25 +111,11 @@ export function PhotoUploader({ value, onChange, token }: PhotoUploaderProps) {
     onChangeRef.current(urls);
   }, [photos]);
 
-  const BACKEND = process.env.NEXT_PUBLIC_API_URL!.replace(/\/+$/, '');
-
   const uploadFile = useCallback(async (file: File, id: string) => {
-    const fd = new FormData();
-    fd.append('image', file);
     try {
-      const res = await fetch(`${BACKEND}/upload/image`, {
-        method: 'POST',
-        body: fd,
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}));
-        throw new Error(e.error ?? e.message ?? `Upload failed (${res.status})`);
-      }
-
-      const json = await res.json();
-      const url: string = json.data?.url ?? json.url;
+      const res = await uploadService.uploadImage(file, 'listing_photo');
+      const data = (res as any).data;
+      const url: string = data?.url;
       if (!url) throw new Error('No URL returned from server');
 
       setPhotos(prev => prev.map(p => (p.id === id ? { ...p, url, uploading: false } : p)));
@@ -141,7 +125,7 @@ export function PhotoUploader({ value, onChange, token }: PhotoUploaderProps) {
         : p)));
       toast.error(err instanceof Error ? err.message : 'Upload failed');
     }
-  }, [token, BACKEND]);
+  }, []);
 
   const processFiles = useCallback((files: File[]) => {
     const valid = files.filter(f => ACCEPT.includes(f.type) && f.size <= MAX_MB * 1024 * 1024);

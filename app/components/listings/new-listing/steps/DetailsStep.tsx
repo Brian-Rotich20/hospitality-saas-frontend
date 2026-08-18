@@ -8,7 +8,7 @@ import { PhotoUploader } from '../PhotoUploader';
 
 export function DetailsStep({
   register, errors, watch, setValue,
-  photos, setPhotos, token,
+  photos, setPhotos,
   onBack, onNext,
 }: {
   register: any;
@@ -17,7 +17,6 @@ export function DetailsStep({
   setValue: any;
   photos: string[];
   setPhotos: (v: string[]) => void;
-  token: string | null;
   onBack: () => void;
   onNext: () => void;
 }) {
@@ -76,7 +75,7 @@ export function DetailsStep({
 
       <div>
         <Label req>Photos</Label>
-        <PhotoUploader value={photos} onChange={setPhotos} token={token} />
+        <PhotoUploader value={photos} onChange={setPhotos} />
       </div>
 
       <div className="flex gap-3 pt-2">
