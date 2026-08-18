@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth/auth.context';
+import { apiClient } from '../../lib/api/client';
 import {
   Building2, MapPin, FileText, CreditCard,
   CheckCircle, ChevronRight, ChevronLeft,
@@ -215,9 +216,9 @@ const DOC_LABELS: Record<keyof DocsState, string> = {
 };
 
 function StepDocuments({
-  token, vendorCreated, onNext, onBack, saving,
+  vendorCreated, onNext, onBack, saving,
 }: {
-  token: string; vendorCreated: boolean;
+  vendorCreated: boolean;
   onNext: () => void; onBack: () => void; saving: boolean;
 }) {
   const [docs, setDocs] = useState<DocsState>({
@@ -233,15 +234,12 @@ function StepDocuments({
       form.append('file',         file);
       form.append('documentType', type);
 
-      const res  = await fetch(`${API}/vendors/me/documents`, {
-        method:  'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body:    form,
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Upload failed');
+        const res = await apiClient.uploadFile<{ documentUrl?: string; url?: string }>(
+        '/vendors/me/documents', file, { documentType: type }
+      );
+      const url = (res.data as any)?.documentUrl ?? (res.data as any)?.url;
 
-      setDocs(p => ({ ...p, [type]: { file, uploading: false, uploaded: true, url: json.data?.documentUrl } }));
+      setDocs(p => ({ ...p, [type]: { file, uploading: false, uploaded: true, url } }));
       toast.success(`${DOC_LABELS[type]} uploaded`);
     } catch (err: any) {
       setDocs(p => ({ ...p, [type]: { file: null, uploading: false, uploaded: false } }));
@@ -443,41 +441,16 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
 
 export function VendorOnboarding() {
   const router          = useRouter();
-  const { user, token } = useAuth();
   const [step,          setStep]          = useState(1);
   const [saving,        setSaving]        = useState(false);
   const [vendorCreated, setVendorCreated] = useState(false);
-
-  // Token can come from auth context (email flow) or sessionStorage (Google flow)
-  const authToken = token ?? (typeof window !== 'undefined' ? sessionStorage.getItem('vendorToken') : null);
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!authToken) router.replace('/auth/register-vendor');
-  }, [authToken, router]);
+    if (!isLoading && !isAuthenticated) router.replace('/auth/register-vendor');
+  }, [isLoading, isAuthenticated, router]);
+    // ── API helpers ─────────────────────────────────────────────────────────────
 
-  // ── API helpers ─────────────────────────────────────────────────────────────
-
-  const apiFetch = async (path: string, body: object) => {
-    const res  = await fetch(`${API}${path}`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-      body:    JSON.stringify(body),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
-    return json;
-  };
-
-  const apiPut = async (path: string, body: object) => {
-    const res  = await fetch(`${API}${path}`, {
-      method:  'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-      body:    JSON.stringify(body),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || json.message || 'Request failed');
-    return json;
-  };
 
   // ── Step handlers ───────────────────────────────────────────────────────────
 
@@ -486,7 +459,7 @@ export function VendorOnboarding() {
     try {
       if (!vendorCreated) {
         // First time: create the vendor record
-        await apiFetch('/vendors/apply', {
+        await apiClient.post('/vendors/apply', {
           businessName:   data.businessName,
           description:    data.description,
           phoneNumber:    data.phoneNumber,
@@ -496,7 +469,7 @@ export function VendorOnboarding() {
         setVendorCreated(true);
       } else {
         // Resuming: update existing record
-        await apiPut('/vendors/me', {
+        await apiClient.put('/vendors/me', {
           businessName:   data.businessName,
           description:    data.description,
           phoneNumber:    data.phoneNumber,
@@ -516,7 +489,7 @@ export function VendorOnboarding() {
   const handleLocation = async (data: LocationData) => {
     setSaving(true);
     try {
-      await apiPut('/vendors/me', { ...data, onboardingStep: 2 });
+      await apiClient.put('/vendors/me', { ...data, onboardingStep: 2 });
       setStep(3);
     } catch (err: any) {
       toast.error(err.message);
@@ -530,9 +503,9 @@ export function VendorOnboarding() {
   const handlePayout = async (data: PayoutData) => {
     setSaving(true);
     try {
-      await apiFetch('/vendors/me/payout-details', data);
+      await apiClient.post('/vendors/me/payout-details', data);
       // Mark onboarding complete & status → pending review
-      await apiPut('/vendors/me', { onboardingStep: 5 });
+      await apiClient.put('/vendors/me', { onboardingStep: 5 });
       // Clear Google token from sessionStorage if present
       sessionStorage.removeItem('vendorToken');
       toast.success('Application submitted! We\'ll review and be in touch.');
@@ -581,7 +554,6 @@ export function VendorOnboarding() {
           {step === 2 && <StepLocation  onNext={handleLocation} onBack={() => setStep(1)} saving={saving} />}
           {step === 3 && (
             <StepDocuments
-              token={authToken!}
               vendorCreated={vendorCreated}
               onNext={handleDocsDone}
               onBack={() => setStep(2)}
