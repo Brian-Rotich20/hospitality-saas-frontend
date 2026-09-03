@@ -9,12 +9,13 @@ import { ListingInfo }       from '../../../components/listings/ListingQuickInfo
 import { BookingCard }       from '../../../components/listings/BookingCard';
 import { resolveListingPrice } from '../../../lib/types/listing';
 import { ReviewSection } from '../../../components/listings/ReviewSection';
+import { getServerApiUrl } from '../../../lib/api/server';
 
 
 export const dynamic = 'force-dynamic';
 
 async function fetchListing(id: string) {
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+  const API = getServerApiUrl();
   try {
     const res = await fetch(`${API}/listings/${id}`, { cache: 'no-store' });
     if (!res.ok) return null;

@@ -5,9 +5,10 @@ import { cookies }               from 'next/headers';
 import Link                      from 'next/link';
 import { Plus }                  from 'lucide-react';
 import { VendorListingsClient }  from '../../../components/listings/VendorListingsClient';
+import { getServerApiUrl }       from '../../../lib/api/server';
 
 async function fetchMyListings(token: string) {
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+  const API = getServerApiUrl();
   try {
     const res = await fetch(`${API}/listings/me`, {
       headers: { Authorization: `Bearer ${token}` },

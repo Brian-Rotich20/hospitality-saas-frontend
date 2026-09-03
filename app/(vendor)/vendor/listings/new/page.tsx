@@ -6,9 +6,10 @@ import { cookies }        from 'next/headers';
 import { NewListingForm } from '../../../../components/listings/new-listing/NewListingForm';
 import Link               from 'next/link';
 import { ChevronLeft }    from 'lucide-react';
+import { getServerApiUrl } from '../../../../lib/api/server';
 
 async function fetchCategories(token: string) {
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+  const API = getServerApiUrl();
   try {
     const res = await fetch(`${API}/categories`, {
       headers: { Authorization: `Bearer ${token}` },

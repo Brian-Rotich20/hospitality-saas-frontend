@@ -4,6 +4,7 @@
 
 import { Star, MessageSquare } from 'lucide-react';
 import { ReviewGate }          from './ReviewGate';
+import { getServerApiUrl }     from '../../lib/api/server';
 
 interface Review {
   id:              string;
@@ -30,7 +31,7 @@ interface Stats {
 }
 
 async function fetchReviews(listingId: string): Promise<{ reviews: Review[]; stats: Stats }> {
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+  const API = getServerApiUrl();
   try {
     const res = await fetch(`${API}/reviews/listing/${listingId}?limit=20`, { cache: 'no-store' });
     if (!res.ok) return { reviews: [], stats: { total: 0, average: 0, five: 0, four: 0, three: 0, two: 0, one: 0 } };

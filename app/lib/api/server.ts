@@ -3,7 +3,8 @@
 import { cookies } from 'next/headers';
 
 export function getServerApiUrl(): string {
-  const url = process.env.BACKEND_URL;
+  // Keep server rendering aligned with the fallback used by Next's `/api` rewrite.
+  const url = process.env.BACKEND_URL || 'https://hospitality-saas-platform.onrender.com/api';
   if (!url) {
     throw new Error(
       'BACKEND_URL environment variable is not set.\n' +

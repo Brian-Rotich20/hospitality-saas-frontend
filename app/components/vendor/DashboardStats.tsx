@@ -4,6 +4,7 @@
 
 import { Calendar, Clock, Package, TrendingUp } from 'lucide-react';
 import { StatCard } from '../ui/StatCard';
+import { getServerApiUrl } from '../../lib/api/server';
 
 interface Stats {
   totalBookings:    number;
@@ -13,7 +14,7 @@ interface Stats {
 }
 
 async function fetchStats(token: string): Promise<Stats> {
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+  const API = getServerApiUrl();
   const headers = { Authorization: `Bearer ${token}` };
 
   const [bookingsRes, listingsRes] = await Promise.allSettled([
