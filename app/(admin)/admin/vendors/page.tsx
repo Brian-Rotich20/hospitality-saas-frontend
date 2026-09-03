@@ -24,8 +24,8 @@ export default async function AdminVendorsPage() {
   const token = (await cookies()).get('access_token')?.value ?? '';
 
   const [{ data: allVendors, error }, { data: pendingVendors }] = await Promise.all([
-    serverFetch<Vendor[]>('/admin/vendors',         token),
-    serverFetch<Vendor[]>('/admin/vendors/pending', token),
+    serverFetch<Vendor[]>('/admin/vendors'),
+    serverFetch<Vendor[]>('/admin/vendors/pending'),
   ]);
 
   const pendingMap = new Map((pendingVendors ?? []).map(v => [v.id, v]));
