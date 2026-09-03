@@ -23,6 +23,7 @@ export function LoginForm() {
   const [showPass, setShowPass] = useState(false);
   const searchParams = useSearchParams();
   const message = searchParams.get('message')
+  const redirectTo = searchParams.get('redirect');
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -30,7 +31,7 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data.email, data.password);
+      await login(data.email, data.password, redirectTo);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Login failed. Please try again.');
     }

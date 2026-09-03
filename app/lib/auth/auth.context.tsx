@@ -30,7 +30,7 @@ interface AuthContextType {
   user:            User | null;
   isLoading:       boolean;
   isAuthenticated: boolean;
-  login:           (email: string, password: string) => Promise<void>;
+  login:           (email: string, password: string, redirectTo?: string | null) => Promise<void>;
   register:        (data: RegisterData) => Promise<void>;
   logout:          () => Promise<void>;
   refetchUser:     () => Promise<void>;
@@ -48,6 +48,11 @@ const VERIFY_REDIRECT: Record<UserRole, string> = {
   customer: '/auth/verify-email',
 };
 
+function getSafeRedirect(redirectTo: string | null | undefined): string | null {
+  if (!redirectTo || !redirectTo.startsWith('/') || redirectTo.startsWith('//')) return null;
+  return redirectTo;
+}
+
 function mapSessionUser(sessionUser: any): User {
   return {
     userId:        sessionUser.id,
@@ -59,7 +64,7 @@ function mapSessionUser(sessionUser: any): User {
   };
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -81,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchSession]);
 
   // ── login ──────────────────────────────────────────────────────────────────
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, redirectTo?: string | null) => {
     setLoading(true);
     try {
       const { data, error } = await authClient.signIn.email({ email, password });
@@ -90,9 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const mapped = mapSessionUser(data.user);
       setUser(mapped);
-      console.log('ABOUT TO REDIRECT TO:', ROLE_REDIRECT[mapped.role]);   // ← TEMPORARY
-      toast.success('Signed in successfully');
-      router.push(ROLE_REDIRECT[mapped.role]);
 
       if (!mapped.emailVerified) {
         toast.error('Please verify your email address first.');
@@ -101,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       toast.success('Signed in successfully');
-      router.push(ROLE_REDIRECT[mapped.role]);
+      router.push(getSafeRedirect(redirectTo) ?? ROLE_REDIRECT[mapped.role] ?? '/store');
     } finally {
       setLoading(false);
     }
