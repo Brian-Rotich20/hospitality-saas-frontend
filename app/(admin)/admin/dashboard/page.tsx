@@ -9,15 +9,14 @@ import { StatCard }    from '../../../components/ui/StatCard';
 import { Users, Calendar, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 
 export default async function AdminDashboardPage() {
-  const token = (await cookies()).get('access_token')?.value ?? '';
 
   const [{ data: vendors }, { data: bookings }] = await Promise.all([
-    serverFetch('/admin/vendors',  token),
-    serverFetch('/admin/bookings', token),
+    serverFetch('/admin/vendors'),
+    serverFetch('/admin/bookings'),
   ]);
 
-  const v = vendors  ?? [];
-  const b = bookings ?? [];
+  const v = Array.isArray(vendors) ? vendors : [];
+  const b = Array.isArray(bookings) ? bookings : [];
 
   const stats = {
     totalVendors:   v.length,

@@ -1,4 +1,6 @@
-// lib/api/server.ts
+// lib/api/server.ts - This is for server-side API calls in Next.js. It handles authentication, errors, and JSON parsing consistently.
+
+import { cookies } from 'next/headers';
 
 export function getServerApiUrl(): string {
   const url = process.env.BACKEND_URL;
@@ -12,24 +14,28 @@ export function getServerApiUrl(): string {
   return url.replace(/\/+$/, ''); // strip trailing slash
 }
 
-/**
+/*-*
  * Server-side authenticated fetch wrapper.
- * Handles auth, errors, and JSON parsing consistently.
+ * Forwards the incoming request's cookies (better Auth session) to backend API.
+  * instead of a Bearer token — there is no client-visible token under Better Auth.
  */
 export async function serverFetch<T = any>(
-  path: string,
-  token: string,
-  options: RequestInit = {}
-): Promise<{ data: T | null; error: string | null }> {
-  let base: string;
-  try {
-    base = getServerApiUrl();
-  } catch (err: any) {
-    console.error('[serverFetch]', err.message);
-    return { data: null, error: err.message };
-  }
+    path: string,
+    options: RequestInit = {}
+  ): Promise<{ data: T | null; error: string | null }> {
+    let base: string;
+    try {
+      base = getServerApiUrl();
+    } catch (err: any) {
+      console.error('[serverFetch]', err.message);
+      return { data: null, error: err.message };
+    }
 
-  if (!token) {
+    const cookieStore = await cookies();
+    const  cookieHeader = cookieStore.toString();
+
+
+    if (!cookieHeader) {
     return { data: null, error: 'Not authenticated — please log out and back in' };
   }
 
@@ -41,7 +47,7 @@ export async function serverFetch<T = any>(
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        Authorization:  `Bearer ${token}`,
+        'Cookie': cookieHeader,
         ...options.headers,
       },
       cache: 'no-store',
