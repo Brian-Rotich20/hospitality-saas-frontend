@@ -7,6 +7,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Calendar } from 'lucide-react';
+import { getServerApiUrl } from '../../lib/api/server';
 
 const STATUS: Record<string, string> = {
   pending:   'bg-amber-50 text-amber-700',
@@ -25,7 +26,7 @@ const DOT: Record<string, string> = {
 };
 
 async function fetchRecentBookings(token: string) {
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+  const API = getServerApiUrl();
   try {
     const res = await fetch(`${API}/bookings/vendor?limit=5`, {
       headers: { Authorization: `Bearer ${token}` },

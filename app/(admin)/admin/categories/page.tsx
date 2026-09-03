@@ -1,9 +1,10 @@
 import { cookies } from 'next/headers';
 import { CategoryManagerClient } from '../../../components/admin/CategoryManagerClient';
+import { getServerApiUrl } from '../../../lib/api/server';
 
 async function fetchCategories(token: string) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/tree`, {
+    const res = await fetch(`${getServerApiUrl()}/categories/tree`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
