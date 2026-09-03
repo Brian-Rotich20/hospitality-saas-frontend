@@ -1,6 +1,8 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// Route browser requests through Next's same-origin API rewrite. Calling the
+// backend directly omits the session cookie for the frontend origin.
+const API_BASE_URL = '/api';
 
 interface ApiError {
   message: string;
@@ -31,12 +33,22 @@ class ApiClient {
         // Session invalid/expired — hard redirect as a fallback for calls made
         // outside the React tree. AuthProvider's own getSession() call handles
         // the common in-app case; this just catches stragglers.
+        const isProtectedPage =
+          typeof window !== 'undefined' &&
+          (
+            window.location.pathname.startsWith('/admin') ||
+            window.location.pathname.startsWith('/vendor') ||
+            window.location.pathname.startsWith('/customer')
+          );
+
         if (
           typeof window !== 'undefined' &&
           error.response?.status === 401 &&
-          !error.config?.url?.includes('/auth/')
+          !error.config?.url?.includes('/auth/') &&
+          isProtectedPage
         ) {
-          window.location.href = '/auth/login';
+          const redirect = window.location.pathname + window.location.search;
+          window.location.assign('/auth/login?redirect=' + encodeURIComponent(redirect));
         }
         return Promise.reject(this.formatError(error));
       },

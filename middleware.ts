@@ -1,33 +1,65 @@
 // middleware.ts  (Next.js root — same level as app/)
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtDecode }                 from 'jwt-decode';
 
-interface JWTPayload {
-  userId:        string;
-  role:          'customer' | 'vendor' | 'admin';
-  emailVerified: boolean;
-  exp:           number;
+type UserRole = 'customer' | 'vendor' | 'admin';
+
+interface SessionUser {
+  role?: UserRole;
+  emailVerified?: boolean;
 }
 
-function decodeToken(token: string): JWTPayload | null {
+interface SessionResponse {
+  user?: SessionUser;
+}
+
+const API_URL =
+  process.env.BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:3001/api';
+const AUTH_ORIGIN = API_URL.replace(/\/api\/?$/, '');
+
+const DASHBOARD_BY_ROLE: Record<UserRole, string> = {
+  admin: '/admin/dashboard',
+  vendor: '/vendor/dashboard',
+  customer: '/store',
+};
+
+const VERIFY_EMAIL_BY_ROLE: Record<UserRole, string> = {
+  admin: '/auth/verify-email',
+  vendor: '/vendor/verify-email',
+  customer: '/auth/verify-email',
+};
+
+async function getSession(request: NextRequest): Promise<SessionUser | null> {
+  const cookie = request.headers.get('cookie');
+  if (!cookie) return null;
+
   try {
-    const d = jwtDecode<JWTPayload>(token);
-    // Token must not be expired
-    return d.exp > Date.now() / 1000 ? d : null;
+    const response = await fetch(AUTH_ORIGIN + '/api/auth/get-session', {
+      headers: { cookie },
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+
+    const session = (await response.json()) as SessionResponse | null;
+    return session?.user ?? null;
   } catch {
     return null;
   }
 }
 
-export function middleware(request: NextRequest) {
+function redirectToLogin(request: NextRequest) {
+  const url = new URL('/auth/login', request.url);
+  url.searchParams.set('redirect', request.nextUrl.pathname + request.nextUrl.search);
+  return NextResponse.redirect(url);
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const rawToken = request.cookies.get('access_token')?.value;
-  const decoded  = rawToken ? decodeToken(rawToken) : null;
-
-  const hasValidToken = decoded !== null;
-  const role          = decoded?.role ?? null;
-  const verified      = decoded?.emailVerified ?? false;
+  const user = await getSession(request);
+  const role = user?.role;
+  const isVerified = user?.emailVerified === true;
 
   // ── 1. Verify-email pages — ALWAYS open ────────────────────────────────────
   // User has a token but emailVerified=false — they must be able to reach these.
@@ -37,25 +69,25 @@ export function middleware(request: NextRequest) {
 
   // ── 2. /admin/* ────────────────────────────────────────────────────────────
   if (pathname.startsWith('/admin')) {
-    if (!hasValidToken) return NextResponse.redirect(new URL('/auth/login', request.url));
-    if (!verified)      return NextResponse.redirect(new URL('/auth/verify-email', request.url));
-    if (role !== 'admin') return NextResponse.redirect(new URL('/store', request.url));
+    if (!user) return redirectToLogin(request);
+    if (!isVerified) return NextResponse.redirect(new URL(VERIFY_EMAIL_BY_ROLE[role ?? 'customer'], request.url));
+    if (role !== 'admin') return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
     return NextResponse.next();
   }
 
   // ── 3. /vendor/* ───────────────────────────────────────────────────────────
   if (pathname.startsWith('/vendor')) {
-    if (!hasValidToken) return NextResponse.redirect(new URL('/auth/login', request.url));
-    if (!verified)      return NextResponse.redirect(new URL('/vendor/(vendor)/verify-email', request.url));
-    if (role !== 'vendor') return NextResponse.redirect(new URL('/store', request.url));
+    if (!user) return redirectToLogin(request);
+    if (!isVerified) return NextResponse.redirect(new URL(VERIFY_EMAIL_BY_ROLE[role ?? 'customer'], request.url));
+    if (role !== 'vendor') return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
     return NextResponse.next();
   }
 
   // ── 4. /customer/* ─────────────────────────────────────────────────────────
   if (pathname.startsWith('/customer')) {
-    if (!hasValidToken)    return NextResponse.redirect(new URL('/auth/login', request.url));
-    if (!verified)         return NextResponse.redirect(new URL('/auth/verify-email', request.url));
-    if (role !== 'customer') return NextResponse.redirect(new URL('/store', request.url));
+    if (!user) return redirectToLogin(request);
+    if (!isVerified) return NextResponse.redirect(new URL(VERIFY_EMAIL_BY_ROLE[role ?? 'customer'], request.url));
+    if (role !== 'customer') return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
     return NextResponse.next();
   }
 
@@ -65,10 +97,8 @@ export function middleware(request: NextRequest) {
     pathname === '/auth/register' ||
     pathname === '/auth/register-vendor'
   ) {
-    if (hasValidToken && verified) {
-      if (role === 'admin')    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-      if (role === 'vendor')   return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
-      if (role === 'customer') return NextResponse.redirect(new URL('/store', request.url));
+    if (user && isVerified) {
+      return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
     }
     return NextResponse.next();
   }
