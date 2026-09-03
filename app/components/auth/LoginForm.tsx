@@ -18,7 +18,6 @@ const loginSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 type LoginFormData = z.infer<typeof loginSchema>;
-
 export function LoginForm() {
   const { login, isLoading } = useAuth();
   const [showPass, setShowPass] = useState(false);

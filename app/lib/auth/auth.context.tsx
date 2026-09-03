@@ -90,6 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const mapped = mapSessionUser(data.user);
       setUser(mapped);
+      console.log('ABOUT TO REDIRECT TO:', ROLE_REDIRECT[mapped.role]);   // ← TEMPORARY
+      toast.success('Signed in successfully');
+      router.push(ROLE_REDIRECT[mapped.role]);
 
       if (!mapped.emailVerified) {
         toast.error('Please verify your email address first.');
