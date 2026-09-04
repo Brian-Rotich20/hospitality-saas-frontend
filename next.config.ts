@@ -3,7 +3,7 @@
 // This avoids CORS and preserves frontend session cookies.
 const backendUrl = (
   process.env.BACKEND_URL ||
-  'https://hospitality-saas-platform.onrender.com/api'
+  'https://hospitality-saas-platform.onrender.com'
 ).replace(/\/+$/, '');
 
 const nextConfig = {
