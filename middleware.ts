@@ -3,19 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 type UserRole = 'customer' | 'vendor' | 'admin';
 
-interface SessionUser {
-  role?: UserRole;
-  emailVerified?: boolean;
-}
+interface SessionUser { role?: UserRole; emailVerified?: boolean; }
+interface SessionResponse { user?: SessionUser; }
 
-interface SessionResponse {
-  user?: SessionUser;
-}
-
-const API_URL =
-  process.env.BACKEND_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'http://localhost:3001/api';
+const API_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 const AUTH_ORIGIN = API_URL.replace(/\/api\/?$/, '');
 
 const DASHBOARD_BY_ROLE: Record<UserRole, string> = {
@@ -33,16 +24,12 @@ const VERIFY_EMAIL_BY_ROLE: Record<UserRole, string> = {
 async function getSession(request: NextRequest): Promise<SessionUser | null> {
   const cookie = request.headers.get('cookie');
   if (!cookie) return null;
-
   try {
     const response = await fetch(AUTH_ORIGIN + '/api/auth/get-session', {
-      headers: { cookie },
-      cache: 'no-store',
+      headers: { cookie }, cache: 'no-store',
     });
     if (!response.ok) return null;
-
-    const session = (await response.json()) as SessionResponse | null;
-    return session?.user ?? null;
+    return ((await response.json()) as SessionResponse | null)?.user ?? null;
   } catch {
     return null;
   }
