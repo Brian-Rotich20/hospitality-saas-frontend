@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth }             from '../lib/auth/auth.context';
+import { useAuth }             from '../../lib/auth/auth.context';
 import { useRouter }           from 'next/navigation';
-import { LoadingSpinner }      from '../components/common/LoadingSpinner';
-import { CustomerTopbar }      from '../components/customer/CustomerTopbar';
+import { LoadingSpinner }      from '../../components/common/LoadingSpinner';
+import { CustomerTopbar }      from '../../components/customer/CustomerTopbar';
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();

@@ -3,8 +3,7 @@
 import { cookies } from 'next/headers';
 
 export function getServerApiUrl(): string {
-  // Keep server rendering aligned with the fallback used by Next's `/api` rewrite.
-  const url = process.env.BACKEND_URL || 'https://hospitality-saas-platform.onrender.com/api';
+  const url = process.env.BACKEND_URL || 'https://hospitality-saas-platform.onrender.com';
   if (!url) {
     throw new Error(
       'BACKEND_URL environment variable is not set.\n' +
@@ -12,7 +11,7 @@ export function getServerApiUrl(): string {
       'Value: https://hospitality-saas-platform.onrender.com'
     );
   }
-  return url.replace(/\/+$/, ''); // strip trailing slash
+  return url.replace(/\/+$/, '') + '/api/'; // strip trailing slash
 }
 
 /*-*
@@ -35,9 +34,12 @@ export async function serverFetch<T = any>(
     const cookieStore = await cookies();
     const  cookieHeader = cookieStore.toString();
 
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
 
     if (!cookieHeader) {
-    return { data: null, error: 'Not authenticated — please log out and back in' };
+    headers.Cookie = cookieHeader;
   }
 
   const url = `${base}${path}`;

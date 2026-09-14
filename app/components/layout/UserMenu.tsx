@@ -56,7 +56,7 @@ export function UserMenu() {
 
   const profileHref =
     isVendor ? '/vendor/settings/account' :
-    isAdmin  ? '/admin/dashboard'          : '/customer/account/profile';
+    isAdmin  ? '/admin/settings/account'          : '/customer/account/profile';
 
   const initials = user?.email?.[0]?.toUpperCase() ?? 'U';
 
