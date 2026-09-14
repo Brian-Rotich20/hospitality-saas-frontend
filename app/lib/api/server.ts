@@ -12,7 +12,7 @@ export function getServerApiUrl(): string {
       'Value: https://hospitality-saas-platform.onrender.com'
     );
   }
-  return url.replace(/\/+$/, ''); // strip trailing slash
+  return url.replace(/\/+$/, '') + '/api'; // strip trailing slash
 }
 
 /*-*
