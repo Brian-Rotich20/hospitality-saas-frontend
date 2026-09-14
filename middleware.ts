@@ -78,7 +78,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── 5. Auth pages — redirect away if already logged in + verified ──────────
+  // ── 5. Auth pages — length if already logged in + verified ──────────
   if (
     pathname === '/auth/login' ||
     pathname === '/auth/register' ||
