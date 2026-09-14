@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth/auth.context';
-import { apiClient } from '../../lib/api/client';
 import { LogOut, User, Store, Bookmark } from 'lucide-react';
+import { useProfile } from '../../lib/hooks/useProfile';
 
 export function UserMenu() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);;
   const ref = useRef<HTMLDivElement>(null);
+  const profile = useProfile();
 
   useEffect(() => {
     const fn = (e: MouseEvent) => {
@@ -20,19 +20,7 @@ export function UserMenu() {
     return () => document.removeEventListener('mousedown', fn);
   }, []);
 
-  // Lightweight fetch for avatar — JWT doesn't carry avatarUrl, so pull it separately
-  useEffect(() => {
-    if (!isAuthenticated) { setAvatarUrl(null); return; }
-    let cancelled = false;
-    apiClient.get<{ avatarUrl?: string | null }>('/users/me')
-      .then(res => {
-        if (cancelled) return;
-        const data = (res.data as any)?.data ?? res.data;
-        setAvatarUrl(data?.avatarUrl ?? null);
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [isAuthenticated, user?.userId]);
+ 
 
   if (!isAuthenticated) {
     return (
@@ -76,9 +64,9 @@ export function UserMenu() {
           {user?.email?.split('@')[0]}
         </span>
         <div className="avatar-circle overflow-hidden">
-          {avatarUrl ? (
+          {profile?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+            <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
           ) : (
             initials
           )}

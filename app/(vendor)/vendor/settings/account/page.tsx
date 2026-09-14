@@ -1,3 +1,4 @@
+///app/(vendor)/vendor/settings/account/page.tsx
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
