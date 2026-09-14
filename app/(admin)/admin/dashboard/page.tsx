@@ -2,7 +2,6 @@
 // Color system: 60% neutral (white/gray) · 30% navy #2D3B45 · 10% lime #D9F062 accent
 export const dynamic = 'force-dynamic';
 
-import { cookies }     from 'next/headers';
 import { serverFetch } from '../../../lib/api/server';
 import Link            from 'next/link';
 import { StatCard }    from '../../../components/ui/StatCard';
