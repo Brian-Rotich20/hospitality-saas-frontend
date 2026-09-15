@@ -38,7 +38,7 @@ export async function serverFetch<T = any>(
       'Content-Type': 'application/json',
     };
 
-    if (!cookieHeader) {
+    if (cookieHeader) {
     headers.Cookie = cookieHeader;
   }
 

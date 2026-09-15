@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 
 interface LoadingSpinnerProps {
@@ -8,47 +6,25 @@ interface LoadingSpinnerProps {
   fullPage?: boolean;
 }
 
-const sizeMap = {
-  sm: { wh: 24, border: 2 },
-  md: { wh: 36, border: 3 },
-  lg: { wh: 52, border: 4 },
+const sizeClasses = {
+  sm: 'w-6 h-6 border-2',
+  md: 'w-9 h-9 border-[3px]',
+  lg: 'w-13 h-13 border-4',
 };
 
 export function LoadingSpinner({ size = 'md', text, fullPage = false }: LoadingSpinnerProps) {
-  const { wh, border } = sizeMap[size];
-
-  const spinner = (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-      <div
-        style={{
-          width: wh,
-          height: wh,
-          borderRadius: '50%',
-          border: `${border}px solid #d4e8db`,
-          borderTopColor: '#1a6645',
-          animation: 'spin 0.75s linear infinite',
-        }}
-      />
-      {text && (
-        <p style={{ color: '#6b8a78', fontSize: 14, fontWeight: 500, margin: 0, fontFamily: 'DM Sans, sans-serif' }}>
-          {text}
-        </p>
-      )}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
-
-  if (fullPage) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh' }}>
-        {spinner}
-      </div>
-    );
-  }
+  const wrapperClass = fullPage
+    ? 'flex items-center justify-center min-h-[40vh]'
+    : 'flex items-center justify-center py-8';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0' }}>
-      {spinner}
+    <div className={wrapperClass}>
+      <div className="flex flex-col items-center gap-3.5">
+        <div className={`spinner ${sizeClasses[size]}`} />
+        {text && (
+          <p className="text-text-secondary text-sm font-medium m-0">{text}</p>
+        )}
+      </div>
     </div>
   );
 }

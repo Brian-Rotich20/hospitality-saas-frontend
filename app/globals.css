@@ -6,23 +6,29 @@
   --font-display: 'Poppins', system-ui, sans-serif;
 
   /* ── Text ───────────────────────────────── */
-  --color-text-primary:   #1A1A1A;
-  --color-text-secondary: #4A5568;
-  --color-text-muted:     #718096;
+  --color-text-primary:   #2B1810;
+  --color-text-secondary: #6B4A38;
+  --color-text-muted:     #9C8172;
 
   /* ── Surface ────────────────────────────── */
-  --color-page:           #F8F6F1;
+  --color-page:           #FBF7F2;
   --color-card:           #FFFFFF;
+  --color-surface-muted:  #F6ECE3;
 
   /* ── Border ─────────────────────────────── */
-  --color-border:         #E8E3D9;
+  --color-border:         #ECDCC9;
 
-  /* ── Brand ──────────────────────────────── */
-  --color-brand:          #2D3B45;
-  --color-brand-hover:    #3a4d5a;
-  --color-brand-subtle:   #2D3B45/8;
+  /* ── Brand (30%) ────────────────────────── */
+  --color-brand:          #BF3E0F;
+  --color-brand-hover:    #9C3209;
+  --color-brand-subtle:   #BF3E0F14; /* was invalid `#2D3B45/8` — fixed to real 8-digit hex alpha */
 
-  /* ── Status ─────────────────────────────── */
+  /* ── Accent (10%) ───────────────────────── */
+  --color-accent:         #FF7A1A;
+  --color-accent-bg:      #FFF1E4;
+  --color-star:           #FF9F1C;
+
+  /* ── Status (unchanged) ─────────────────── */
   --color-success:        #2D6A4F;
   --color-success-bg:     #F0F7F4;
   --color-warning:        #B7791F;
@@ -30,12 +36,8 @@
   --color-error:          #C53030;
   --color-error-bg:       #FEF2F2;
 
-  /* ── Accent (amber) ─────────────────────── */
-  --color-accent:         #B7791F;
-  --color-accent-bg:      #FEF9EE;
-  --color-star:           #F5C842;
-
-  /* ── Shadows ────────────────────────────── */
+  /* shadows / radius / animations — no changes */
+    /* ── Shadows ────────────────────────────── */
   --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
   --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -2px rgba(0,0,0,0.04);
