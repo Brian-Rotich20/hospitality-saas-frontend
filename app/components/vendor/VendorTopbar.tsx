@@ -1,6 +1,5 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Bell, Search, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../lib/auth/auth.context';
@@ -14,74 +13,41 @@ export function VendorTopbar() {
   const initial      = displayName.charAt(0).toUpperCase();
 
   return (
-    <div style={{
-      position: 'sticky', top: 0, zIndex: 20,
-      background: 'transparent',
-      padding: '24px 28px 8px', display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between', gap: 16,
-      fontFamily: 'DM Sans, system-ui, sans-serif',
-    }}>
+    <div className="sticky top-0 z-20 bg-transparent pl-16 pr-4 py-4 lg:pl-7 lg:pr-7 lg:pt-6 lg:pb-2
+      flex items-center justify-between gap-3">
 
-      {/* Left: identity — avatar + name + email, links to Account */}
-      <Link
-        href="/vendor/settings/account"
-        style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}
-      >
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%', overflow: 'hidden',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: '#D1D5DB', flexShrink: 0,
-        }}>
+      <Link href="/vendor/settings/account" className="flex items-center gap-2.5 no-underline min-w-0 shrink-0">
+        <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-surface-muted shrink-0">
           {profile?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
           ) : (
-            <span style={{ color: '#374151', fontSize: 13, fontWeight: 800 }}>{initial}</span>
+            <span className="text-text-secondary text-[13px] font-extrabold">{initial}</span>
           )}
         </div>
-        <div className="hidden sm:block">
-          <p style={{
-            fontSize: 13, fontWeight: 800, color: '#111827', margin: 0, lineHeight: 1.3,
-            display: 'flex', alignItems: 'center', gap: 4,
-          }}>
+        <div className="hidden sm:block min-w-0">
+          <p className="text-[13px] font-extrabold text-text-primary m-0 leading-tight flex items-center gap-1 truncate">
             {displayName}
-            <ChevronDown size={12} color="#9CA3AF" />
+            <ChevronDown size={12} className="text-text-muted shrink-0" />
           </p>
-          <p style={{ fontSize: 11, color: '#9CA3AF', margin: 0, lineHeight: 1.3 }}>
-            {user?.email}
-          </p>
+          <p className="text-[11px] text-text-muted m-0 leading-tight truncate">{user?.email}</p>
         </div>
       </Link>
 
-      {/* Center: search */}
-      <div className="hidden md:flex" style={{
-        flex: 1, maxWidth: 260, alignItems: 'center', gap: 8,
-        background: '#fff', border: '1px solid #ECECE6', borderRadius: 999,
-        padding: '9px 14px',
-      }}>
-        <Search size={13} color="#9CA3AF" />
+      <div className="hidden lg:flex flex-1 min-w-0 max-w-[260px] items-center gap-2
+        bg-card border border-border rounded-full px-3.5 py-2.5">
+        <Search size={13} className="text-text-muted shrink-0" />
         <input
           placeholder="Search..."
-          style={{
-            border: 'none', background: 'transparent', outline: 'none',
-            fontSize: 12, color: '#374151', width: '100%',
-          }}
+          className="border-none bg-transparent outline-none text-xs text-text-secondary w-full min-w-0"
         />
       </div>
 
-      {/* Right: notification bell */}
-      <button style={{
-        width: 36, height: 36, borderRadius: '50%',
-        border: '1px solid #ECECE6', background: '#fff',
-        cursor: 'pointer', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0,
-      }}>
-        <Bell size={15} color="#374151" />
-        <span style={{
-          position: 'absolute', top: 6, right: 7,
-          width: 6, height: 6, borderRadius: '50%',
-          background: '#EF4444', border: '1.5px solid #fff',
-        }} />
+      <button aria-label="Notifications"
+        className="w-9 h-9 rounded-full border border-border bg-card
+        flex items-center justify-center relative shrink-0 text-text-secondary hover:border-brand transition-colors">
+        <Bell size={15} />
+        <span className="absolute top-1.5 right-[7px] w-1.5 h-1.5 rounded-full bg-error border-[1.5px] border-card" />
       </button>
     </div>
   );
