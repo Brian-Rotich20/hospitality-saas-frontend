@@ -21,23 +21,24 @@ interface NavItem { href: string; label: string; Icon: React.ElementType; }
 
 const NAV: Record<Role, NavItem[]> = {
   vendor: [
-    { href: '/vendor/dashboard',        label: 'Home',   Icon: LayoutDashboard },
-    { href: '/vendor/listings',         label: 'My Listings', Icon: Package         },
+    { href: '/vendor/dashboard',        label: 'Dashboard',   Icon: LayoutDashboard },
     { href: '/vendor/bookings',         label: 'Bookings',    Icon: Calendar        },
     { href: '/vendor/analytics',        label: 'Analytics',   Icon: BarChart3       },
     { href: '/vendor/settings/account', label: 'Account',     Icon: User            },
     { href: '/vendor/settings/profile', label: 'Business',    Icon: Settings        },
   ],
   admin: [
-    { href: '/admin/dashboard',  label: 'Home',  Icon: LayoutDashboard },
+    { href: '/admin/dashboard',  label: 'Dashboard',  Icon: LayoutDashboard },
     { href: '/admin/vendors',    label: 'Vendors',    Icon: Users           },
     { href: '/admin/listings',   label: 'Listings',   Icon: Package         },
     { href: '/admin/bookings',   label: 'Bookings',   Icon: Calendar        },
     { href: '/admin/analytics',  label: 'Analytics',  Icon: BarChart3       },
     { href: '/admin/categories', label: 'Categories', Icon: Settings        },
+    { href: '/admin/settings/account', label: 'Account', Icon: User         },
+
   ],
   customer: [
-    { href: '/customer/dashboard',       label: 'Home',   Icon: LayoutDashboard },
+    { href: '/customer/dashboard',       label: 'Dashboard',   Icon: LayoutDashboard },
     { href: '/customer/bookings',        label: 'My Bookings', Icon: Calendar        },
     { href: '/customer/saved',           label: 'Saved',       Icon: Heart           },
     { href: '/customer/account/profile', label: 'Profile',     Icon: User            },

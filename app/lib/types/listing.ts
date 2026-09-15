@@ -53,6 +53,9 @@ export interface Listing {
   updatedAt:   string;
   vendor?:     ListingVendor;
   category?:   Category;
+  rating?:       number;
+  reviewCount?:  number;
+  review_count?: number; 
   _lat?:       number | undefined
   _lng?:       number | undefined
 }

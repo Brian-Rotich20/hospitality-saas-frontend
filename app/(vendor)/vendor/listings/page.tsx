@@ -1,30 +1,16 @@
 // app/(vendor)/vendor/listings/page.tsx
-// ✅ Server Component — fetches vendor's listings on the server
-
-import { cookies }               from 'next/headers';
-import Link                      from 'next/link';
-import { Plus }                  from 'lucide-react';
-import { VendorListingsClient }  from '../../../components/listings/VendorListingsClient';
-import { getServerApiUrl }       from '../../../lib/api/server';
-
-async function fetchMyListings(token: string) {
-  const API = getServerApiUrl();
-  try {
-    const res = await fetch(`${API}/listings/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store', // always fresh — vendor needs to see latest status
-    });
-    if (!res.ok) return [];
-    return (await res.json()).data ?? [];
-  } catch {
-    return [];
-  }
-}
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
+import { VendorListingsClient } from '../../../components/listings/VendorListingsClient';
+import { serverFetch } from '../../../lib/api/server';
+import type { Listing } from '../../../lib/types/listing';
 
 export default async function VendorListingsPage() {
-  const cookieStore = await cookies();
-  const token       = cookieStore.get('access_token')?.value ?? '';
-  const listings    = await fetchMyListings(token);
+  const { data: listings, error } = await serverFetch<Listing[]>('/listings/me');
+
+  if (error) {
+    console.error('[VendorListingsPage] failed to load listings:', error);
+  }
 
   return (
     <div>
@@ -40,7 +26,7 @@ export default async function VendorListingsPage() {
         </Link>
       </div>
 
-      <VendorListingsClient initialListings={listings} />
+      <VendorListingsClient initialListings={listings ?? []} />
     </div>
   );
 }
