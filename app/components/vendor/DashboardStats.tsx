@@ -1,6 +1,6 @@
 // components/vendor/dashboard/DashboardStats.tsx
 // ✅ Server Component — no 'use client', fetches on the server
-// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
+// Colors: `brand` / `brand-hover` / `brand-tint` come from tailwind.config.ts
 
 import { Calendar, Clock, Package, TrendingUp } from 'lucide-react';
 import { StatCard } from '../ui/StatCard';
@@ -13,6 +13,17 @@ interface Stats {
   completedRevenue: number;
 }
 
+// The API isn't consistent about response shape — some endpoints return
+// `{ data: [...] }`, others paginate as `{ data: { data: [...], meta } }`.
+// VendorBookingsPage already works around this on the client; this is the
+// same normalization so `.length` never silently becomes `undefined`.
+function unwrapList(json: any): any[] {
+  const data = json?.data;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+}
+
 async function fetchStats(token: string): Promise<Stats> {
   const API = getServerApiUrl();
   const headers = { Authorization: `Bearer ${token}` };
@@ -22,11 +33,27 @@ async function fetchStats(token: string): Promise<Stats> {
     fetch(`${API}/listings/me`,     { headers, next: { revalidate: 60 } }),
   ]);
 
-  const bookings: any[] = bookingsRes.status === 'fulfilled' && bookingsRes.value.ok
-    ? ((await bookingsRes.value.json()).data ?? []) : [];
+  let bookings: any[] = [];
+  if (bookingsRes.status === 'fulfilled') {
+    if (bookingsRes.value.ok) {
+      bookings = unwrapList(await bookingsRes.value.json());
+    } else {
+      console.error('[DashboardStats] /bookings/vendor failed:', bookingsRes.value.status);
+    }
+  } else {
+    console.error('[DashboardStats] /bookings/vendor errored:', bookingsRes.reason);
+  }
 
-  const listings: any[] = listingsRes.status === 'fulfilled' && listingsRes.value.ok
-    ? ((await listingsRes.value.json()).data ?? []) : [];
+  let listings: any[] = [];
+  if (listingsRes.status === 'fulfilled') {
+    if (listingsRes.value.ok) {
+      listings = unwrapList(await listingsRes.value.json());
+    } else {
+      console.error('[DashboardStats] /listings/me failed:', listingsRes.value.status);
+    }
+  } else {
+    console.error('[DashboardStats] /listings/me errored:', listingsRes.reason);
+  }
 
   return {
     totalBookings:    bookings.length,

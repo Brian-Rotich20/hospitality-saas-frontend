@@ -11,9 +11,9 @@ const OTP_LENGTH  = 6;
 const RESEND_WAIT = 60;
 
 export default function VendorVerifyEmailPage() {
+
   const router = useRouter();
   const { isAuthenticated, isLoading, refetchUser } = useAuth();
-
   const [otp,       setOtp]       = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);

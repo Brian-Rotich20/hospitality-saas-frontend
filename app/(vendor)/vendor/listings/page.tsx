@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { VendorListingsClient } from '../../../components/listings/VendorListingsClient';
+import { ExportLeadsButton } from '../../../components/listings/ExportLeadsButton';
 import { serverFetch } from '../../../lib/api/server';
 import type { Listing } from '../../../lib/types/listing';
 
@@ -19,11 +20,17 @@ export default async function VendorListingsPage() {
           <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">My Listings</h1>
           <p className="text-sm text-gray-500">Manage your venues and services</p>
         </div>
-        <Link href="/vendor/listings/new"
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-[#2D3B45] text-white text-xs font-bold
-            rounded-xl hover:bg-[#3a4d5a] transition no-underline shrink-0">
-          <Plus size={14} /> New Listing
-        </Link>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Plain <a download> — no client JS needed, browser handles the CSV fetch */}
+          <ExportLeadsButton />
+
+          <Link href="/vendor/listings/new"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-[#2D3B45] text-white text-xs font-bold
+              rounded-xl hover:bg-brand-hover transition no-underline">
+            <Plus size={14} /> New Listing
+          </Link>
+        </div>
       </div>
 
       <VendorListingsClient initialListings={listings ?? []} />

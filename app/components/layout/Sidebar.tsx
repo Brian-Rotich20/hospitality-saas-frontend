@@ -24,6 +24,7 @@ const NAV: Record<Role, { primary: NavItem[]; general: NavItem[] }> = {
   vendor: {
     primary: [
       { href: '/vendor/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+      { href: '/vendor/listings',  label: 'Listings',  Icon: Users           },
       { href: '/vendor/bookings',  label: 'Bookings',  Icon: Calendar        },
       { href: '/vendor/analytics', label: 'Analytics', Icon: BarChart3       },
     ],

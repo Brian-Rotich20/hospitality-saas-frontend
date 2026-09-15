@@ -18,22 +18,6 @@ import { useAuth } from '../../lib/auth/auth.context';
 import { authClient } from '../../lib/auth/authClient';
 import { vendorsService } from '../../lib/api/endpoints';
 
-type Step = 'idle' | 'creating' | 'setting-up' | 'done';
-
-const LABELS: Record<Step, string> = {
-  'idle':       'Create Vendor Account',
-  'creating':   'Creating your account…',
-  'setting-up': 'Setting up your store…',
-  'done':       'Redirecting…',
-};
-
-const HINTS: Record<Step, string> = {
-  'idle':       '',
-  'creating':   'May take up to 30s on first load while server wakes up',
-  'setting-up': 'Almost there — sending your verification code',
-  'done':       'Taking you to email verification',
-};
-
 const schema = z.object({
   fullName: z.string().min(2, 'At least 2 characters'),
   email:    z.string().min(1, 'Required').email('Invalid email'),
@@ -57,45 +41,43 @@ const inp = (err: boolean) =>
 export function RegisterVendorForm() {
   const router = useRouter();
   const { register: registerUser, refetchUser } = useAuth();
-  const [step,        setStep]        = useState<Step>('idle');
+  const [loading,     setLoading]     = useState(false);
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-
-  const loading = step !== 'idle' && step !== 'done';
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   const onSubmit = async (data: FormData) => {
-    setStep('creating');
+    setLoading(true);
     try {
-      // Step 1: create a plain account. registerUser() sets context state and
-      // will try to redirect to the customer verify page — we override that below.
+      // Step 1: create a plain account. `silent: true` stops AuthContext from
+      // firing its own toast/redirect — this form owns both, once, at the end
+      // of the full flow below, once the role is actually 'vendor'.
       await registerUser({
         fullName: data.fullName,
         email:    data.email,
         password: data.password,
         phone:    data.phone,
-      });
+      }, { silent: true });
 
       // Step 2: create the vendor record (promotes role='vendor' in the DB)
-      setStep('setting-up');
       const vendorRes = await vendorsService.apply({ businessName: data.fullName });
       if (!(vendorRes as any).success) {
         throw new Error((vendorRes as any).error || 'Could not create your vendor application.');
       }
 
       // Step 3: refresh context so user.role reflects 'vendor' immediately
-      setStep('done');
       await refetchUser();
 
       toast.success('Account created! Check your email for a verification code.');
       router.push('/vendor/verify-email');
 
     } catch (err) {
-      setStep('idle');
       toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -117,8 +99,10 @@ export function RegisterVendorForm() {
               px-4 py-3 flex items-start gap-3">
               <div className="mt-0.5 shrink-0"><Spinner /></div>
               <div>
-                <p className="text-xs font-bold text-amber-800">{LABELS[step]}</p>
-                <p className="text-[10px] text-amber-600 mt-0.5">{HINTS[step]}</p>
+                <p className="text-xs font-bold text-amber-800">Creating your vendor account…</p>
+                <p className="text-[10px] text-amber-600 mt-0.5">
+                  May take up to 30s on first load while the server wakes up
+                </p>
               </div>
             </div>
           )}
@@ -170,7 +154,7 @@ export function RegisterVendorForm() {
                 text-xs font-bold transition disabled:opacity-60 disabled:cursor-not-allowed
                 flex items-center justify-center gap-2 mt-1">
               {loading
-                ? <><Spinner /><span>{LABELS[step]}</span></>
+                ? <><Spinner /><span>Creating your account…</span></>
                 : 'Create Vendor Account'}
             </button>
           </form>
@@ -183,7 +167,7 @@ export function RegisterVendorForm() {
           </p>
         </div>
 
-        {step === 'creating' && (
+        {loading && (
           <p className="text-center text-[11px] text-white/40 mt-3 px-4">
             First visit of the day may take up to 30s while the server wakes up
           </p>

@@ -6,16 +6,32 @@ import toast from 'react-hot-toast';
 import { authClient } from './authClient';
 
 type UserRole = 'customer' | 'vendor' | 'admin';
+
 export interface User { userId: string; email: string; fullName?: string; role: UserRole; vendorId?: string; emailVerified: boolean; }
-interface RegisterData { fullName: string; email: string; password: string; phone: string; }
+
+interface RegisterData { 
+  fullName: string; 
+  email: string; 
+  password: string; 
+  phone: string; }
+
 interface AuthContextType {
-  user: User | null; isLoading: boolean; isAuthenticated: boolean;
+  user: User | null; 
+  isLoading: boolean; 
+  isAuthenticated: boolean;
   login: (email: string, password: string, redirectTo?: string | null) => Promise<void>;
   register: (data: RegisterData) => Promise<void>; logout: () => Promise<void>; refetchUser: () => Promise<void>;
 }
 
-const ROLE_REDIRECT: Record<UserRole, string> = { vendor: '/vendor/dashboard', admin: '/admin/dashboard', customer: '/store' };
-const VERIFY_REDIRECT: Record<UserRole, string> = { vendor: '/vendor/verify-email', admin: '/auth/verify-email', customer: '/auth/verify-email' };
+const ROLE_REDIRECT: Record<UserRole, string> = { 
+  vendor: '/vendor/dashboard', 
+  admin: '/admin/dashboard', 
+  customer: '/store' };
+  
+const VERIFY_REDIRECT: Record<UserRole, string> = { 
+  vendor: '/vendor/verify-email', 
+  admin: '/auth/verify-email', 
+  customer: '/auth/verify-email' };
 
 function getSafeRedirect(redirectTo: string | null | undefined) {
   return redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null;
