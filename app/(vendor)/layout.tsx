@@ -7,7 +7,6 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { VendorTopbar } from '../components/vendor/VendorTopbar';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 
-// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
 const PUBLIC_VENDOR_PATHS = ['/vendor/verify-email', '/vendor/onboarding'];
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
@@ -30,11 +29,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   if (isLoading) return <LoadingSpinner fullPage />;
   if (!isAuthenticated) return null;
   if (user?.role !== 'vendor' && !isMidOnboarding) return null;
-
   if (isMidOnboarding) return <>{children}</>;
 
   return (
-    <div className="min-h-screen bg-[#F7F9FB]">
+    <div className="min-h-screen bg-page">
       <Sidebar
         mobileOpen={mobileOpen}
         onMobileOpen={() => setMobileOpen(true)}

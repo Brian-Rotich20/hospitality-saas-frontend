@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -29,9 +29,9 @@ function CardSkeleton() {
         <div className="h-3.5 skeleton w-3/4" />
         <div className="h-3 skeleton w-1/2" />
         <div className="h-3 skeleton w-1/3" />
-        <div className="pt-2 border-t border-[var(--color-border)] flex justify-between">
+        <div className="pt-2 border-t border-border flex justify-between">
           <div className="h-5 skeleton w-16" />
-          <div className="h-6 skeleton w-12" style={{ borderRadius: 'var(--radius-xl)' }} />
+          <div className="h-6 skeleton w-12 rounded-xl" />
         </div>
       </div>
     </div>
@@ -95,16 +95,15 @@ function DesktopSidebar({ categories, activeSlug, loading }: {
                   className="w-full h-full object-cover" />
               ) : (
                 <Icon size={17}
-                  className={active ? 'text-white' : 'text-[var(--color-text-muted)]'}
+                  className={active ? 'text-white' : 'text-text-muted'}
                   strokeWidth={active ? 2.2 : 1.7} />
               )}
             </div>
-            <span className="flex-1 text-xs font-semibold leading-tight min-w-0"
-              style={{ color: active ? 'var(--color-brand)' : 'var(--color-text-secondary)' }}>
+            <span className={`flex-1 text-xs font-semibold leading-tight min-w-0
+              ${active ? 'text-brand' : 'text-text-secondary'}`}>
               {name}
             </span>
-            <ChevronRight size={13}
-              style={{ color: active ? 'var(--color-brand)' : 'var(--color-border)', flexShrink: 0 }} />
+            <ChevronRight size={13} className={active ? 'text-brand shrink-0' : 'text-border shrink-0'} />
           </Link>
         );
       })}
@@ -128,21 +127,19 @@ function MobileCategoryGrid({ categories, loading }: {
           return (
             <Link key={id} href={`/store?category=${slug}`}
               className="flex flex-col items-center gap-1 no-underline group">
-              <div className="w-14 h-14 overflow-hidden bg-[#F0EDE6] flex items-center
-                justify-center border border-[var(--color-border)] group-hover:border-[var(--color-brand)]/20
-                group-active:scale-95 transition-all duration-150 mx-auto"
-                style={{ borderRadius: 'var(--radius-xl)' }}>
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-surface-muted flex items-center
+                justify-center border border-border group-hover:border-brand/20
+                group-active:scale-95 transition-all duration-150 mx-auto">
                 {imageUrl ? (
                   <Image src={imageUrl} alt={name} width={56} height={56}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 ) : (
                   <Icon size={20} strokeWidth={1.5}
-                    className="text-[var(--color-text-muted)] group-hover:text-[var(--color-brand)] transition-colors" />
+                    className="text-text-muted group-hover:text-brand transition-colors" />
                 )}
               </div>
               <span className="text-[10px] font-semibold text-center leading-tight line-clamp-2 w-full
-                group-hover:text-[var(--color-brand)] transition-colors"
-                style={{ color: 'var(--color-text-secondary)' }}>
+                text-text-secondary group-hover:text-brand transition-colors">
                 {name}
               </span>
             </Link>
@@ -153,7 +150,7 @@ function MobileCategoryGrid({ categories, loading }: {
   );
 }
 
-function Store() {
+export default function StoreContent() {
   const searchParams = useSearchParams();
   const router       = useRouter();
   const categorySlug = searchParams.get('category') ?? undefined;
@@ -190,20 +187,13 @@ function Store() {
   const isEmpty = !loading && listings.length === 0;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-page)' }}>
+    <div className="min-h-screen bg-page">
       <div className="flex max-w-screen-xl mx-auto">
 
         {/* Desktop sidebar */}
-        <aside className="hidden lg:block w-56 xl:w-64 shrink-0 scrollbar-none z-20"
-          style={{
-            backgroundColor: 'var(--color-card)',
-            borderRight: '1px solid var(--color-border)',
-            position: 'sticky',
-            top: headerH,
-            height: `calc(100vh - ${headerH})`,
-            overflowY: 'auto',
-            alignSelf: 'flex-start',
-          }}>
+        <aside className="hidden lg:block w-56 xl:w-64 shrink-0 scrollbar-none z-20
+          bg-card border-r border-border sticky overflow-y-auto self-start"
+          style={{ top: headerH, height: `calc(100vh - ${headerH})` }}>
           <DesktopSidebar categories={categories} activeSlug={categorySlug} loading={catLoading} />
         </aside>
 
@@ -216,17 +206,12 @@ function Store() {
             )}
             {categorySlug && (
               <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-                <span className="text-xs font-black capitalize"
-                  style={{ color: 'var(--color-text-primary)' }}>
+                <span className="text-xs font-black capitalize text-text-primary">
                   {categorySlug.replace(/-/g, ' ')}
                 </span>
                 <button onClick={() => router.push('/store')}
-                  className="text-[10px] px-2 py-0.5 font-semibold transition"
-                  style={{
-                    borderRadius: 'var(--radius-full)',
-                    backgroundColor: '#F0EDE6',
-                    color: 'var(--color-text-muted)',
-                  }}>
+                  className="text-[10px] px-2 py-0.5 font-semibold transition rounded-full
+                    bg-surface-muted text-text-muted">
                   ✕ Clear
                 </button>
               </div>
@@ -236,13 +221,12 @@ function Store() {
           {/* Desktop: active category label */}
           {categorySlug && (
             <div className="hidden lg:flex items-center gap-2 px-6 pt-5 pb-0">
-              <span className="text-sm font-black capitalize"
-                style={{ color: 'var(--color-text-primary)' }}>
+              <span className="text-sm font-black capitalize text-text-primary">
                 {categorySlug.replace(/-/g, ' ')}
               </span>
               <button onClick={() => router.push('/store')}
-                className="text-[11px] px-2 py-0.5 font-semibold transition"
-                style={{ borderRadius: 'var(--radius-full)', backgroundColor: '#F0EDE6', color: 'var(--color-text-muted)' }}>
+                className="text-[11px] px-2 py-0.5 font-semibold transition rounded-full
+                  bg-surface-muted text-text-muted">
                 ✕ Clear
               </button>
             </div>
@@ -252,10 +236,9 @@ function Store() {
           <div className="px-4 lg:px-6 py-4">
             {error && (
               <div className="error-banner mb-4">
-                <p className="text-xs font-medium" style={{ color: 'var(--color-error)' }}>{error}</p>
+                <p className="text-xs font-medium text-error">{error}</p>
                 <button onClick={fetchData}
-                  className="flex items-center gap-1.5 text-xs font-bold transition-colors"
-                  style={{ color: 'var(--color-error)' }}>
+                  className="flex items-center gap-1.5 text-xs font-bold transition-colors text-error">
                   <RefreshCw size={12} /> Retry
                 </button>
               </div>
@@ -272,17 +255,14 @@ function Store() {
             ) : isEmpty ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="empty-icon-wrap mb-3">
-                  <Package size={24} style={{ color: 'var(--color-border)' }} />
+                  <Package size={24} className="text-border" />
                 </div>
-                <p className="text-sm font-bold mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                  No services found
-                </p>
-                <p className="text-xs mb-4" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-sm font-bold mb-1 text-text-secondary">No services found</p>
+                <p className="text-xs mb-4 text-text-muted">
                   {categorySlug || searchQuery ? 'Try a different category' : 'No services available yet'}
                 </p>
                 {(categorySlug || searchQuery) && (
-                  <button onClick={() => router.push('/store')}
-                    className="btn btn-primary btn-sm">
+                  <button onClick={() => router.push('/store')} className="btn btn-primary btn-sm">
                     Clear Filters
                   </button>
                 )}
@@ -303,18 +283,5 @@ function Store() {
         </main>
       </div>
     </div>
-  );
-}
-
-export default function StoreContent() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: 'var(--color-page)' }}>
-        <div className="spinner w-8 h-8" />
-      </div>
-    }>
-      <Store />
-    </Suspense>
   );
 }

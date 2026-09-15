@@ -1,23 +1,20 @@
-// app/(admin)/layout.tsx
-// ✅ Client Component — manages mobile sidebar state only
-// Auth/role protection handled by middleware.ts
-
 'use client';
 
-import { useState }      from 'react';
-import { Sidebar }       from '../../components/layout/Sidebar';
-import { AdminTopbar }   from '../../components/admin/AdminTopbar';
+import { useState } from 'react';
+import { Sidebar } from '../../components/layout/Sidebar';
+import { AdminTopbar } from '../../components/admin/AdminTopbar';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#EAF7F5]">
+    <div className="min-h-screen bg-page">
       <Sidebar
         mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)} onMobileOpen={function (): void {
-          throw new Error('Function not implemented.');
-        } }      />
+        onMobileOpen={() => setMobileOpen(true)}
+        onMobileClose={() => setMobileOpen(false)}
+        hideOwnToggle
+      />
       <div className="lg:ml-56 min-h-screen flex flex-col">
         <AdminTopbar onMobileMenuToggle={() => setMobileOpen(v => !v)} />
         <main className="flex-1 p-6 max-w-[1200px] w-full mx-auto">
