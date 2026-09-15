@@ -9,7 +9,7 @@ import Image from 'next/image';
 import {
   LayoutDashboard, Calendar, BarChart3,
   Users, LogOut, User, Settings, ShoppingBag,
-  X, Heart, Menu, Sparkles,
+  X, Heart, Menu, 
 } from 'lucide-react';
 
 type Role = 'customer' | 'vendor' | 'admin';
@@ -145,7 +145,7 @@ export function Sidebar({ mobileOpen, onMobileOpen, onMobileClose, hideOwnToggle
 
       {/* Promo slot — neutral ink card, no orange */}
       <div className="mt-4 rounded-2xl bg-ink p-4 relative overflow-hidden">
-        <Sparkles size={15} className="text-white/70 mb-2" />
+        {/* <Sparkles size={15} className="text-white/70 mb-2" /> */}
         <p className="text-white text-[12.5px] font-bold leading-snug mb-0.5">
           {role === 'vendor' ? 'Grow your listings' : 'Discover new vendors'}
         </p>
