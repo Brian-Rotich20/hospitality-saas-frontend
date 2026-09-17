@@ -1,8 +1,4 @@
 // app/(vendor)/vendor/dashboard/page.tsx
-// ✅ Server Component — NO 'use client'
-// Auth already enforced by middleware — no useEffect auth check needed
-// Data fetched server-side — no loading spinners, no useEffect
-// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
 
 import { Suspense }       from 'react';
 import { cookies }        from 'next/headers';
