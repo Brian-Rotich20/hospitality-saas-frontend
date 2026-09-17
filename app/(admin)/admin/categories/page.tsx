@@ -1,22 +1,20 @@
-import { cookies } from 'next/headers';
 import { CategoryManagerClient } from '../../../components/admin/CategoryManagerClient';
-import { getServerApiUrl } from '../../../lib/api/server';
+import { serverFetch } from '../../../lib/api/server';
 
-async function fetchCategories(token: string) {
-  try {
-    const res = await fetch(`${getServerApiUrl()}/categories/tree`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    });
-    if (!res.ok) return [];
-    return (await res.json()).data ?? [];
-  } catch { return []; }
+// Same defensive unwrap used elsewhere — handles both
+// { data: [...] } and { data: { data: [...], meta } } response shapes.
+function asArray(value: unknown): any[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray((value as any)?.data)) return (value as any).data;
+  return [];
 }
 
 export default async function AdminCategoriesPage() {
-  const cookieStore = await cookies();
-  const token       = cookieStore.get('access_token')?.value ?? '';
-  const categories  = await fetchCategories(token);
+  const { data, error } = await serverFetch<any>('/categories/tree');
+  if (error) {
+    console.error('[AdminCategoriesPage] /categories/tree failed:', error);
+  }
+  const categories = asArray(data);
 
   return <CategoryManagerClient initialCategories={categories} />;
 }

@@ -11,49 +11,38 @@ export function getServerApiUrl(): string {
       'Value: https://hospitality-saas-platform.onrender.com'
     );
   }
-  return url.replace(/\/+$/, '') + '/api'; // strip trailing slash
+  return url.replace(/\/+$/, '') + '/api'; 
 }
 
-/*-*
- * Server-side authenticated fetch wrapper.
- * Forwards the incoming request's cookies (better Auth session) to backend API.
-  * instead of a Bearer token — there is no client-visible token under Better Auth.
- */
 export async function serverFetch<T = any>(
-    path: string,
-    options: RequestInit = {}
-  ): Promise<{ data: T | null; error: string | null }> {
-    let base: string;
-    try {
-      base = getServerApiUrl();
-    } catch (err: any) {
-      console.error('[serverFetch]', err.message);
-      return { data: null, error: err.message };
-    }
-
-    const cookieStore = await cookies();
-    const  cookieHeader = cookieStore.toString();
-
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-
-    if (cookieHeader) {
-    headers.Cookie = cookieHeader;
+  path: string,
+  options: RequestInit = {}
+): Promise<{ data: T | null; error: string | null }> {
+  let base: string;
+  try {
+    base = getServerApiUrl();
+  } catch (err: any) {
+    console.error('[serverFetch]', err.message);
+    return { data: null, error: err.message };
   }
+
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
 
   const url = `${base}${path}`;
   console.log(`[serverFetch] ${options.method ?? 'GET'} ${url}`);
 
+  const hasCustomCaching = 'cache' in options || 'next' in options;
+
   try {
-    const res  = await fetch(url, {
+    const res = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': cookieHeader,
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
         ...options.headers,
       },
-      cache: 'no-store',
+      ...(hasCustomCaching ? {} : { cache: 'no-store' }),
     });
 
     const text = await res.text();
@@ -62,7 +51,7 @@ export async function serverFetch<T = any>(
       let msg = `${res.status} ${res.statusText}`;
       try {
         const json = JSON.parse(text);
-         console.error(`[serverFetch] error body:`, JSON.stringify(json, null, 2));
+        console.error(`[serverFetch] error body:`, JSON.stringify(json, null, 2));
         msg = json.error ?? json.message ?? msg;
       } catch { /* not JSON */ }
       console.error(`[serverFetch] ${url} → ${res.status}:`, msg);

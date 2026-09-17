@@ -9,7 +9,7 @@ import Image from 'next/image';
 import {
   LayoutDashboard, Calendar, BarChart3,
   Users, LogOut, User, Settings, ShoppingBag,
-  X, Heart, Menu, 
+  X, Heart, Menu, TrendingUp,
 } from 'lucide-react';
 
 type Role = 'customer' | 'vendor' | 'admin';
@@ -31,6 +31,7 @@ const NAV: Record<Role, { primary: NavItem[]; general: NavItem[] }> = {
     general: [
       { href: '/vendor/settings/account', label: 'Account',      Icon: User        },
       { href: '/vendor/settings/profile', label: 'Business',     Icon: Settings    },
+      { href: '/admin/help',               label: 'Help',        Icon: Users       },
       { href: '/store',                   label: 'Browse Store', Icon: ShoppingBag },
     ],
   },
@@ -41,9 +42,12 @@ const NAV: Record<Role, { primary: NavItem[]; general: NavItem[] }> = {
       { href: '/admin/bookings',   label: 'Bookings',   Icon: Calendar        },
       { href: '/admin/analytics',  label: 'Analytics',  Icon: BarChart3       },
       { href: '/admin/categories', label: 'Categories', Icon: Settings        },
+      { href: '/admin/revenue',     label: ' Revenue',  Icon: TrendingUp },
     ],
     general: [
-      { href: '/admin/settings/account', label: 'Account', Icon: User },
+      { href: '/admin/settings/', label: 'Settings', Icon: User },
+      { href: '/admin/help', label: 'Help', Icon: Users },
+      { href: '/store',            label: 'Browse Store', Icon: ShoppingBag },
     ],
   },
   customer: {
@@ -51,9 +55,11 @@ const NAV: Record<Role, { primary: NavItem[]; general: NavItem[] }> = {
       { href: '/customer/dashboard', label: 'Dashboard',   Icon: LayoutDashboard },
       { href: '/customer/bookings',  label: 'My Bookings', Icon: Calendar        },
       { href: '/customer/saved',     label: 'Saved',       Icon: Heart           },
+      
     ],
     general: [
       { href: '/customer/account/profile', label: 'Profile',      Icon: User        },
+        { href: '/admin/help', label: 'Help', Icon: Users },
       { href: '/store',                    label: 'Browse Store', Icon: ShoppingBag },
     ],
   },

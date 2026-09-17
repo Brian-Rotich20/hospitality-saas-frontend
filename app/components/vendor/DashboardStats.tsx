@@ -1,10 +1,13 @@
 // components/vendor/dashboard/DashboardStats.tsx
-// ✅ Server Component — no 'use client', fetches on the server
-// Colors: `brand` / `brand-hover` / `brand-tint` come from tailwind.config.ts
+// ✅ Server Component
+// Uses serverFetch() — the same cookie-forwarding Better Auth session used by
+// VendorListingsPage. There is no client-visible access_token under Better
+// Auth, so the previous `Authorization: Bearer ${token}` approach was
+// silently 401ing on every request (see server.ts's own comment on this).
 
 import { Calendar, Clock, Package, TrendingUp } from 'lucide-react';
 import { StatCard } from '../ui/StatCard';
-import { getServerApiUrl } from '../../lib/api/server';
+import { serverFetch } from '../../lib/api/server';
 
 interface Stats {
   totalBookings:    number;
@@ -13,47 +16,30 @@ interface Stats {
   completedRevenue: number;
 }
 
-// The API isn't consistent about response shape — some endpoints return
-// `{ data: [...] }`, others paginate as `{ data: { data: [...], meta } }`.
-// VendorBookingsPage already works around this on the client; this is the
-// same normalization so `.length` never silently becomes `undefined`.
-function unwrapList(json: any): any[] {
-  const data = json?.data;
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.data)) return data.data;
+// serverFetch already unwraps one level (`json.data ?? json`), but some
+// endpoints paginate a level deeper: { data: { data: [...], meta } }.
+// This normalizes both shapes so `.length`/`.filter` never blow up.
+function asArray(value: unknown): any[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray((value as any)?.data)) return (value as any).data;
   return [];
 }
 
-async function fetchStats(token: string): Promise<Stats> {
-  const API = getServerApiUrl();
-  const headers = { Authorization: `Bearer ${token}` };
-
-  const [bookingsRes, listingsRes] = await Promise.allSettled([
-    fetch(`${API}/bookings/vendor`, { headers, next: { revalidate: 60 } }),
-    fetch(`${API}/listings/me`,     { headers, next: { revalidate: 60 } }),
+async function fetchStats(): Promise<Stats> {
+  const [bookingsRes, listingsRes] = await Promise.all([
+    serverFetch<any>('/bookings/vendor'),
+    serverFetch<any>('/listings/me'),
   ]);
 
-  let bookings: any[] = [];
-  if (bookingsRes.status === 'fulfilled') {
-    if (bookingsRes.value.ok) {
-      bookings = unwrapList(await bookingsRes.value.json());
-    } else {
-      console.error('[DashboardStats] /bookings/vendor failed:', bookingsRes.value.status);
-    }
-  } else {
-    console.error('[DashboardStats] /bookings/vendor errored:', bookingsRes.reason);
+  if (bookingsRes.error) {
+    console.error('[DashboardStats] /bookings/vendor failed:', bookingsRes.error);
+  }
+  if (listingsRes.error) {
+    console.error('[DashboardStats] /listings/me failed:', listingsRes.error);
   }
 
-  let listings: any[] = [];
-  if (listingsRes.status === 'fulfilled') {
-    if (listingsRes.value.ok) {
-      listings = unwrapList(await listingsRes.value.json());
-    } else {
-      console.error('[DashboardStats] /listings/me failed:', listingsRes.value.status);
-    }
-  } else {
-    console.error('[DashboardStats] /listings/me errored:', listingsRes.reason);
-  }
+  const bookings = asArray(bookingsRes.data);
+  const listings = asArray(listingsRes.data);
 
   return {
     totalBookings:    bookings.length,
@@ -65,8 +51,8 @@ async function fetchStats(token: string): Promise<Stats> {
   };
 }
 
-export async function DashboardStats({ token }: { token: string }) {
-  const stats = await fetchStats(token);
+export async function DashboardStats() {
+  const stats = await fetchStats();
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">

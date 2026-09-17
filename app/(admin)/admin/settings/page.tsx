@@ -4,11 +4,11 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 
-import { useAuth } from '../../../../lib/auth/auth.context';
+import { useAuth } from '../../../lib/auth/auth.context';
 
-import { customerService, uploadService } from '../../../../lib/api/endpoints';
+import { customerService, uploadService } from '../../../lib/api/endpoints';
 
-import { LoadingSpinner } from '../../../../components/common/LoadingSpinner';
+import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
 
 import {
   Save,

@@ -1,11 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../../lib/auth/auth.context';
 import { listingsService } from '../../../lib/api/endpoints';
 import type { Category } from '../../../lib/types/listing';
 import { schema } from './schema';
@@ -19,7 +18,7 @@ import { PreviewStep } from './steps/PreviewStep';
 
 export function NewListingForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
-  
+
 
   const [step, setStep]           = useState<WizardStep>('category');
   const [furthest, setFurthest]   = useState<WizardStep>('category');
@@ -36,6 +35,24 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
 
   const categoryId    = watch('categoryId')    ?? '';
   const subCategoryId = watch('subCategoryId') ?? '';
+  const pricingType   = watch('pricingType');
+
+  // RHF keeps field values around after their <input> unmounts (shouldUnregister
+  // defaults to false) — so switching pricing types doesn't clear whatever was
+  // previously typed into price/minPrice/maxPrice. Without this, a stale value
+  // (e.g. typed under 'per_day', left behind after switching to 'contact')
+  // survives the `data.price ? ... : undefined` truthy check in submit() below
+  // whenever the leftover value is a non-empty string like "0", and gets sent
+  // as a real price on a listing that's supposed to have none.
+  useEffect(() => {
+    if (pricingType !== 'package') {
+      setValue('minPrice', undefined);
+      setValue('maxPrice', undefined);
+    }
+    if (pricingType === 'package' || pricingType === 'contact') {
+      setValue('price', undefined);
+    }
+  }, [pricingType, setValue]);
 
   const advance = (next: WizardStep) => {
     setStep(next);
@@ -98,6 +115,14 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
       const lng = data.lng;
       const cleanPhotos = photos.filter(p => typeof p === 'string' && p.trim().length > 0);
 
+      // Built explicitly off `pricingType` rather than "is this field
+      // truthy" — the useEffect above already clears stale values on
+      // change, but this is the layer that actually guarantees a 'contact'
+      // or 'package' listing can never carry a leftover price/min/max,
+      // regardless of what RHF happens to still be holding onto.
+      const isPackage = data.pricingType === 'package';
+      const isContact = data.pricingType === 'contact';
+
       const payload = {
         categoryId: data.subCategoryId || data.categoryId,
         title: data.title,
@@ -111,9 +136,9 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
           ...(lng && { longitude: Number(lng) }),
         },
         pricingType: data.pricingType,
-        price: data.price ? Number(data.price) : undefined,
-        minPrice: data.minPrice ? Number(data.minPrice) : undefined,
-        maxPrice: data.maxPrice ? Number(data.maxPrice) : undefined,
+        price:    (!isPackage && !isContact && data.price) ? Number(data.price) : undefined,
+        minPrice: (isPackage && data.minPrice) ? Number(data.minPrice) : undefined,
+        maxPrice: (isPackage && data.maxPrice) ? Number(data.maxPrice) : undefined,
         photos: cleanPhotos,
         coverPhoto: cleanPhotos[0],
       };

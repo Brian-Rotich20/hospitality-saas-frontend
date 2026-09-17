@@ -1,7 +1,6 @@
 // app/(admin)/admin/vendors/page.tsx
 export const dynamic = 'force-dynamic';
 
-import { cookies }                from 'next/headers';
 import { serverFetch }            from '../../../lib/api/server';
 import { VendorManagementClient } from '../../../components/admin/VendorManagementClient';
 
@@ -21,16 +20,11 @@ interface Vendor {
 }
 
 export default async function AdminVendorsPage() {
-  const token = (await cookies()).get('access_token')?.value ?? '';
+  const { data: vendors, error } = await serverFetch<Vendor[]>('/admin/vendors');
 
-  const [{ data: allVendors, error }, { data: pendingVendors }] = await Promise.all([
-    serverFetch<Vendor[]>('/admin/vendors'),
-    serverFetch<Vendor[]>('/admin/vendors/pending'),
-  ]);
-
-  const pendingMap = new Map((pendingVendors ?? []).map(v => [v.id, v]));
-  const allMap     = new Map((allVendors    ?? []).map(v => [v.id, v]));
-  const merged     = Array.from(new Map([...allMap, ...pendingMap]).values());
+  if (error) {
+    console.error('[AdminVendorsPage] /admin/vendors failed:', error);
+  }
 
   return (
     <div>
@@ -43,9 +37,7 @@ export default async function AdminVendorsPage() {
         </p>
       </div>
 
-
-
-      <VendorManagementClient initialVendors={merged} />
+      <VendorManagementClient initialVendors={vendors ?? []} />
     </div>
   );
 }
