@@ -9,28 +9,35 @@ type UserRole = 'customer' | 'vendor' | 'admin';
 
 export interface User { userId: string; email: string; fullName?: string; role: UserRole; vendorId?: string; emailVerified: boolean; }
 
-interface RegisterData { 
-  fullName: string; 
-  email: string; 
-  password: string; 
+interface RegisterData {
+  fullName: string;
+  email: string;
+  password: string;
   phone: string; }
 
-interface AuthContextType {
-  user: User | null; 
-  isLoading: boolean; 
-  isAuthenticated: boolean;
-  login: (email: string, password: string, redirectTo?: string | null) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>; logout: () => Promise<void>; refetchUser: () => Promise<void>;
+interface RegisterOptions {
+  // When true, skip the default toast + redirect. Used by flows (like vendor
+  // onboarding) that chain register() with further steps and want to show
+  // exactly one toast/redirect at the end of their own flow instead of two.
+  silent?: boolean;
 }
 
-const ROLE_REDIRECT: Record<UserRole, string> = { 
-  vendor: '/vendor/dashboard', 
-  admin: '/admin/dashboard', 
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string, redirectTo?: string | null) => Promise<void>;
+  register: (data: RegisterData, options?: RegisterOptions) => Promise<void>; logout: () => Promise<void>; refetchUser: () => Promise<void>;
+}
+
+const ROLE_REDIRECT: Record<UserRole, string> = {
+  vendor: '/vendor/dashboard',
+  admin: '/admin/dashboard',
   customer: '/store' };
-  
-const VERIFY_REDIRECT: Record<UserRole, string> = { 
-  vendor: '/vendor/verify-email', 
-  admin: '/auth/verify-email', 
+
+const VERIFY_REDIRECT: Record<UserRole, string> = {
+  vendor: '/vendor/verify-email',
+  admin: '/auth/verify-email',
   customer: '/auth/verify-email' };
 
 function getSafeRedirect(redirectTo: string | null | undefined) {
@@ -78,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally { setLoading(false); }
   }, [router]);
 
-  const register = useCallback(async (regData: RegisterData) => {
+  const register = useCallback(async (regData: RegisterData, options?: RegisterOptions) => {
     setLoading(true);
     try {
       const { data, error } = await authClient.signUp.email({
@@ -90,6 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!data?.user) throw new Error('Registration failed');
       const mapped = mapSessionUser(data.user);
       setUser(mapped);
+
+      if (options?.silent) return; // caller owns its own toast/redirect
+
       toast.success('Account created! Check your email for a verification code.');
       router.push(VERIFY_REDIRECT[mapped.role]);
     } finally { setLoading(false); }
