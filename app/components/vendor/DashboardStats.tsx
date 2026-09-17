@@ -1,10 +1,13 @@
 // components/vendor/dashboard/DashboardStats.tsx
-// ✅ Server Component — no 'use client', fetches on the server
-// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
+// ✅ Server Component
+// Uses serverFetch() — the same cookie-forwarding Better Auth session used by
+// VendorListingsPage. There is no client-visible access_token under Better
+// Auth, so the previous `Authorization: Bearer ${token}` approach was
+// silently 401ing on every request (see server.ts's own comment on this).
 
 import { Calendar, Clock, Package, TrendingUp } from 'lucide-react';
 import { StatCard } from '../ui/StatCard';
-import { getServerApiUrl } from '../../lib/api/server';
+import { serverFetch } from '../../lib/api/server';
 
 interface Stats {
   totalBookings:    number;
@@ -13,20 +16,30 @@ interface Stats {
   completedRevenue: number;
 }
 
-async function fetchStats(token: string): Promise<Stats> {
-  const API = getServerApiUrl();
-  const headers = { Authorization: `Bearer ${token}` };
+// serverFetch already unwraps one level (`json.data ?? json`), but some
+// endpoints paginate a level deeper: { data: { data: [...], meta } }.
+// This normalizes both shapes so `.length`/`.filter` never blow up.
+function asArray(value: unknown): any[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray((value as any)?.data)) return (value as any).data;
+  return [];
+}
 
-  const [bookingsRes, listingsRes] = await Promise.allSettled([
-    fetch(`${API}/bookings/vendor`, { headers, next: { revalidate: 60 } }),
-    fetch(`${API}/listings/me`,     { headers, next: { revalidate: 60 } }),
+async function fetchStats(): Promise<Stats> {
+  const [bookingsRes, listingsRes] = await Promise.all([
+    serverFetch<any>('/bookings/vendor'),
+    serverFetch<any>('/listings/me'),
   ]);
 
-  const bookings: any[] = bookingsRes.status === 'fulfilled' && bookingsRes.value.ok
-    ? ((await bookingsRes.value.json()).data ?? []) : [];
+  if (bookingsRes.error) {
+    console.error('[DashboardStats] /bookings/vendor failed:', bookingsRes.error);
+  }
+  if (listingsRes.error) {
+    console.error('[DashboardStats] /listings/me failed:', listingsRes.error);
+  }
 
-  const listings: any[] = listingsRes.status === 'fulfilled' && listingsRes.value.ok
-    ? ((await listingsRes.value.json()).data ?? []) : [];
+  const bookings = asArray(bookingsRes.data);
+  const listings = asArray(listingsRes.data);
 
   return {
     totalBookings:    bookings.length,
@@ -38,8 +51,8 @@ async function fetchStats(token: string): Promise<Stats> {
   };
 }
 
-export async function DashboardStats({ token }: { token: string }) {
-  const stats = await fetchStats(token);
+export async function DashboardStats() {
+  const stats = await fetchStats();
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">

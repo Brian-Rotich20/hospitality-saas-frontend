@@ -1,5 +1,5 @@
 // lib/api/endpoints.ts
-
+import { Customer, CustomerFilters} from '../types/customer';
 export const API_ENDPOINTS = {
 
   OTP: {
@@ -77,7 +77,9 @@ export const API_ENDPOINTS = {
     REVIEW:          (id: string) => `/admin/vendors/${id}/review`,
     SUSPEND:         (id: string) => `/admin/vendors/${id}/suspend`,
   },
-
+  ADMIN_CUSTOMERS: {
+    GET_ALL:         '/admin/customers',
+  },
   ADMIN_BOOKINGS: {
     GET_ALL:         '/admin/bookings',
   },
@@ -251,6 +253,9 @@ export const adminService = {
 
   getAllBookings:   (filters?: any) =>
     apiClient.get(API_ENDPOINTS.ADMIN_BOOKINGS.GET_ALL, { params: filters }),
+
+  getAllCustomers: (filters?: CustomerFilters) =>
+    apiClient.get<Customer[]>(API_ENDPOINTS.ADMIN_VENDORS.GET_ALL, { params: filters }),
 };
 
 // ── Upload ────────────────────────────────────────────────────────────────────

@@ -1,52 +1,46 @@
-// components/dashboard/StatCard.tsx
-// Shared by both the admin dashboard and the vendor dashboard so the two
-// never drift out of sync. No 'use client' needed — pure presentation,
-// works fine inside a Server Component tree.
-// Color system: primary green #085F19 · mint tint #EAF7F5 · page bg #F7F9FB
-
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 export interface StatCardProps {
-  label:   string;
-  value:   string | number;
-  note?:   string;
-  icon:    React.ElementType;
-  /** true = highlight this card (the "needs attention" card) */
+  label: string;
+  value: string | number;
+  note?: string;
+  icon: React.ElementType;
   urgent?: boolean;
-  actionHref?:  string;
+  actionHref?: string;
   actionLabel?: string;
 }
 
 export function StatCard({
-  label, value, note, icon: Icon, urgent, actionHref, actionLabel = 'Review now',
+  label, value, note, icon: Icon, urgent, actionHref, actionLabel = 'Review',
 }: StatCardProps) {
-  const accent = urgent ? 'bg-[#EAF7F5] text-[#085F19]' : 'bg-[#085F19]/5 text-[#085F19]';
-
   return (
-    <div
-      className={`bg-white rounded-[22px] p-4 border ${
-        urgent ? 'border-[#085F19]/20 ring-1 ring-[#EAF7F5]' : 'border-gray-100'
-      }`}
-    >
-      <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500 mb-3">
-        <span className={`inline-flex p-1.5 rounded-lg ${accent}`}>
-          <Icon size={14} />
+    <div className="relative bg-card rounded-2xl p-5 border border-border overflow-hidden">
+      {urgent && <span className="absolute top-0 left-0 right-0 h-[3px] bg-brand" />}
+
+      <div className="flex items-start justify-between mb-4">
+        <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-surface-muted text-text-secondary">
+          <Icon size={16} />
         </span>
-        {label}
+        {urgent && (
+          <span className="flex items-center gap-1 text-[10px] font-bold text-brand bg-accent-bg px-2 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand" />
+            Needs action
+          </span>
+        )}
       </div>
 
-      <div className="flex items-end justify-between">
-        <span className="text-2xl font-black text-gray-900 tracking-tight leading-none">{value}</span>
-        {note && <span className="text-[10px] text-gray-400 text-right">{note}</span>}
+      <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-1">{label}</p>
+      <div className="flex items-end justify-between gap-2">
+        <span className="text-[28px] font-black text-text-primary tracking-tight leading-none">{value}</span>
+        {note && <span className="text-[11px] text-text-muted whitespace-nowrap pb-0.5">{note}</span>}
       </div>
 
       {urgent && actionHref && (
-        <Link
-          href={actionHref}
-          className="mt-2 text-[10px] font-bold text-[#085F19] flex items-center gap-1 no-underline hover:opacity-70"
-        >
-          {actionLabel} <ArrowRight size={10} />
+        <Link href={actionHref}
+          className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-text-primary no-underline
+            hover:text-brand transition-colors">
+          {actionLabel} <ArrowUpRight size={12} />
         </Link>
       )}
     </div>

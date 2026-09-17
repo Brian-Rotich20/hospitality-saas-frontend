@@ -1,22 +1,21 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
+
 import "./globals.css";
 
 import type { Metadata } from "next";
 
-import { AuthProvider } from './lib/auth/auth.context'
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+import { AuthProvider } from "./lib/auth/auth.context";
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const satoshi = localFont({
+  src: "../public/fonts/Satoshi.ttf",
+  variable: "--font-satoshi",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "LinkMart",
-  description: "Discover and book verified venues, caterers and hospitality vendor across Kenya",
+  description:
+    "Discover and book verified venues, caterers and hospitality vendors across Kenya",
 };
 
 export default function RootLayout({
@@ -25,15 +24,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-      <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <AuthProvider>
-        {children}
-      </AuthProvider>
+    <html lang="en">
+      <body className={`${satoshi.variable} antialiased`}>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
-
   );
 }

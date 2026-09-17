@@ -4,7 +4,6 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { listingsService } from '../../lib/api/endpoints';
 import { resolveListingPrice } from '../../lib/types/listing';
 import type { Listing } from '../../lib/types/listing';
