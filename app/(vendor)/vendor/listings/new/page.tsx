@@ -2,30 +2,27 @@
 // ✅ Server Component — fetches categories server-side, passes to client wizard
 // Auth enforced by middleware — no useEffect auth checks
 
-import { cookies }        from 'next/headers';
 import { NewListingForm } from '../../../../components/listings/new-listing/NewListingForm';
 import Link               from 'next/link';
 import { ChevronLeft }    from 'lucide-react';
-import { getServerApiUrl } from '../../../../lib/api/server';
+import { serverFetch }    from '../../../../lib/api/server';
 
-async function fetchCategories(token: string) {
-  const API = getServerApiUrl();
-  try {
-    const res = await fetch(`${API}/categories`, {
-      headers: { Authorization: `Bearer ${token}` },
-      next: { revalidate: 3600 }, // categories rarely change
-    });
-    if (!res.ok) return [];
-    return (await res.json()).data ?? [];
-  } catch {
-    return [];
-  }
+function asArray(value: unknown): any[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray((value as any)?.data)) return (value as any).data;
+  return [];
 }
 
 export default async function NewListingPage() {
-  const cookieStore = await cookies();
-  const token       = cookieStore.get('access_token')?.value ?? '';
-  const categories  = await fetchCategories(token);
+  // Categories rarely change — opt back into a 1hr cache instead of
+  // serverFetch's no-store default (one of the few endpoints where this is safe).
+  const { data, error } = await serverFetch<any>('/categories', {
+    next: { revalidate: 3600 },
+  });
+  if (error) {
+    console.error('[NewListingPage] /categories failed:', error);
+  }
+  const categories = asArray(data);
 
   return (
     <div>

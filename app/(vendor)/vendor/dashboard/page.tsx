@@ -1,7 +1,8 @@
 // app/(vendor)/vendor/dashboard/page.tsx
+// Auth is handled per-request inside serverFetch() (forwards the Better Auth
+// session cookie) — no token needs to be read or passed down from here.
 
 import { Suspense }       from 'react';
-import { cookies }        from 'next/headers';
 import { ChevronDown }    from 'lucide-react';
 import { DashboardStats } from '../../../components/vendor/DashboardStats';
 import { RecentBookings } from '../../../components/vendor/RecentBookings';
@@ -46,11 +47,6 @@ function BookingsSkeleton() {
 }
 
 export default async function VendorDashboardPage() {
-  // access_token cookie: set by auth context after login (NOT httpOnly so client JS can set it)
-  // Used here for server-side data fetching only — expires in 15 min matching access token lifetime
-  const cookieStore = await cookies();
-  const token = cookieStore.get('access_token')?.value ?? '';
-
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
 
   return (
@@ -67,7 +63,7 @@ export default async function VendorDashboardPage() {
         </div>
         <div className="text-right shrink-0">
           <p className="text-[11px] text-gray-400 mb-1">{today}</p>
-          <button className="bg-white border border-gray-100 rounded-full px-3 py-1.5 text-[11px] font-bold flex items-center gap-1 hover:border-[#085F19] hover:text-[#085F19] transition-colors">
+          <button className="bg-white border border-gray-100 rounded-full px-3 py-1.5 text-[11px] font-bold flex items-center gap-1 hover:border-brand hover:text-brand transition-colors">
             Today <ChevronDown size={12} />
           </button>
         </div>
@@ -75,7 +71,7 @@ export default async function VendorDashboardPage() {
 
       {/* Stats — streamed from server */}
       <Suspense fallback={<StatsSkeleton />}>
-        <DashboardStats token={token} />
+        <DashboardStats />
       </Suspense>
 
       {/* Quick actions — client links only */}
@@ -83,7 +79,7 @@ export default async function VendorDashboardPage() {
 
       {/* Recent bookings — streamed from server */}
       <Suspense fallback={<BookingsSkeleton />}>
-        <RecentBookings token={token} />
+        <RecentBookings />
       </Suspense>
     </div>
   );
