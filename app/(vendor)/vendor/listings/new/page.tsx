@@ -1,6 +1,6 @@
 // app/(vendor)/vendor/listings/new/page.tsx
 // ✅ Server Component — fetches categories server-side, passes to client wizard
-// Auth enforced by middleware — no useEffect auth checks
+
 
 import { NewListingForm } from '../../../../components/listings/new-listing/NewListingForm';
 import Link               from 'next/link';
