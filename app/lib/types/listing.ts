@@ -25,9 +25,9 @@ export interface ListingVendor {
   id:              string;
   businessName:    string;
   slug:            string;
-  logo?:           string;
-  whatsappNumber?: string;
-  phoneNumber?:    string;
+  logo?:           string | null;
+  whatsappNumber?: string | null;
+  phoneNumber?:    string | null;
   verified:        boolean;
 }
 
@@ -38,20 +38,22 @@ export interface Listing {
   title:       string;
   slug:        string;
   description: string;
+
   location:    ListingLocation;
   pricingType: PricingType;
   price?:      string;
-  minPrice?:   string;
-  maxPrice?:   string;
+  minPrice:   string | null;
+  maxPrice:   string | null;
   currency:    string;
   photos:      string[];
-  coverPhoto?: string;
+  coverPhoto: string | null;
   status:      ListingStatus;
   views:       number;
   bookingsCount: number;
   createdAt:   string;
   updatedAt:   string;
   vendor?:     ListingVendor;
+  
   category?:   Category;
   rating?:       number;
   reviewCount?:  number;

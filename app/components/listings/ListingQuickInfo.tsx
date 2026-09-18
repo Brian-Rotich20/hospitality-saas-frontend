@@ -4,6 +4,10 @@
 import { MapPin, Tag, BadgeCheck, User, FileText, Wifi } from 'lucide-react';
 import type { Listing } from '../../lib/types/listing';
 
+interface ListingQuickInfoProps {
+  listing: Listing;
+}
+
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="py-5 border-b border-gray-100 last:border-0">
@@ -31,10 +35,17 @@ function InfoRow({ icon: Icon, value, sub }: {
   );
 }
 
-export function ListingInfo({ listing }: { listing: Listing }) {
+export function ListingInfo({ listing, 
+  }: ListingQuickInfoProps) 
+  {
   const location    = listing.location ?? {};
   const locationStr = [location.area, location.county].filter(Boolean).join(', ');
   const amenities   = (listing as any).amenities as string[] | undefined;
+  const vendor = listing.vendor;
+
+  if (!vendor) {
+    return null;
+  }
 
   return (
     <div className="space-y-0 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
