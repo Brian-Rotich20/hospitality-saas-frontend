@@ -352,7 +352,7 @@ body {
 
   /* ── Footer ──────────────────────────────────────────────── */
   .footer-root {
-    background-color: var(--color-brand);
+    background-color: var(--color-ink);
     color: rgba(255, 255, 255, 0.55);
   }
 
