@@ -17,15 +17,17 @@ import { PricingStep } from './steps/PricingStep';
 import { PreviewStep } from './steps/PreviewStep';
 
 export function NewListingForm({ categories }: { categories: Category[] }) {
-
   const router = useRouter();
+
+
   const [step, setStep]           = useState<WizardStep>('category');
   const [furthest, setFurthest]   = useState<WizardStep>('category');
   const [photos, setPhotos]       = useState<string[]>([]);
   const [saving, setSaving]       = useState(false);
   const saveAsRef = useRef<'draft' | 'active'>('draft');
 
-  const { register, watch, setValue, formState: { errors },
+  const {
+    register, watch, setValue, formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { pricingType: 'per_day', currency: 'KES' },
@@ -149,6 +151,13 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
       }
 
       toast.success(mode === 'active' ? 'Listing published!' : 'Draft saved');
+
+      // Without this, Next's client-side Router Cache can serve a stale
+      // snapshot of /vendor/listings from before this listing existed (or
+      // before its status changed to 'active') if that page was visited
+      // earlier in this session — the create/publish itself already
+      // succeeded on the backend by this point.
+      router.refresh();
       router.push('/vendor/listings');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create listing');
