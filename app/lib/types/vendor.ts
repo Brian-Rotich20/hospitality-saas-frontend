@@ -1,32 +1,34 @@
-// Vendor types for defining the structure of vendor-related data, such as vendor information, services offered, and contact details.
-export type VendorStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
+// lib/types/vendor.ts
+export type VendorStatus = 'approved' | 'suspended';
+export type PayoutMethod = 'mpesa' | 'bank';
 
 export interface Vendor {
   id: string;
   userId: string;
   businessName: string;
-  businessType: string;
-  description: string;
+  slug: string;
+  phoneNumber?: string;
+  logo?: string;
+  verified: boolean;
+  payoutMethod?: PayoutMethod;
+  mpesaNumber?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
+  bankName?: string;
   status: VendorStatus;
-  kycStatus: 'pending' | 'verified' | 'rejected';
-  documents: VendorDocument[];
-  payoutDetails?: PayoutDetails;
   createdAt: string;
   updatedAt: string;
+  // Only present on GET /vendors/me — computed, not stored
+  missing?: string[];
+  onboardedAt?: string | null;
 }
 
-export interface VendorDocument {
-  id: string;
-  type: string;
-  url: string;
-  verificationStatus: 'pending' | 'verified' | 'rejected';
-  uploadedAt: string;
+export interface UpdateVendorInput {
+  businessName?: string;
+  phoneNumber?: string;
+  logo?: string;
 }
 
-export interface PayoutDetails {
-  bankAccount: string;
-  accountHolder: string;
-  routingNumber?: string;
-  swiftCode?: string;
-  preferredPayoutDay: number;
-}
+export type PayoutDetailsInput =
+  | { payoutMethod: 'mpesa'; mpesaNumber: string }
+  | { payoutMethod: 'bank'; bankAccountName: string; bankAccountNumber: string; bankName: string };

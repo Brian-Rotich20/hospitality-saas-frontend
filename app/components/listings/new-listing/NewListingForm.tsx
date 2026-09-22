@@ -151,6 +151,13 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
       }
 
       toast.success(mode === 'active' ? 'Listing published!' : 'Draft saved');
+
+      // Without this, Next's client-side Router Cache can serve a stale
+      // snapshot of /vendor/listings from before this listing existed (or
+      // before its status changed to 'active') if that page was visited
+      // earlier in this session — the create/publish itself already
+      // succeeded on the backend by this point.
+      router.refresh();
       router.push('/vendor/listings');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create listing');

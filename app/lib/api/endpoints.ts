@@ -1,11 +1,7 @@
 // lib/api/endpoints.ts
-import { Customer, CustomerFilters} from '../types/customer';
-export const API_ENDPOINTS = {
+import { Customer, CustomerFilters } from '../types/customer';
 
-  OTP: {
-  VERIFY_EMAIL: '/otp/verify-email',
-  RESEND:       '/otp/resend-otp',
-  },
+export const API_ENDPOINTS = {
 
   LISTINGS: {
     GET_ALL:         '/listings',
@@ -19,27 +15,13 @@ export const API_ENDPOINTS = {
     MY_LISTINGS:     '/me',
   },
 
+  
   CATEGORIES: {
     GET_ALL:         '/categories',
     GET_TREE:        '/categories/tree',
     GET_BY_ID:       (id: string)   => `/categories/${id}`,
     GET_BY_SLUG:     (slug: string) => `/categories/slug/${slug}`,
     GET_CHILDREN:    (id: string)   => `/categories/${id}/subcategories`,
-  },
-
-  // ✅ New — products marketplace
-  PRODUCTS: {
-    GET_ALL:         '/products',
-    GET_FEATURED:    '/products/featured',
-    GET_BY_ID:       (id: string)   => `/products/${id}`,
-    GET_BY_SLUG:     (slug: string) => `/products/slug/${slug}`,
-    GET_BY_VENDOR:   (id: string)   => `/products/vendor/${id}`,
-    MY_PRODUCTS:     '/products/me',
-    CREATE:          '/products',
-    UPDATE:          (id: string)   => `/products/${id}`,
-    UPDATE_STATUS:   (id: string)   => `/products/${id}/status`,
-    UPDATE_INVENTORY:(id: string)   => `/products/${id}/inventory`,
-    DELETE:          (id: string)   => `/products/${id}`,
   },
 
   AVAILABILITY: {
@@ -58,30 +40,30 @@ export const API_ENDPOINTS = {
     ACCEPT:          (id: string) => `/bookings/${id}/accept`,
     DECLINE:         (id: string) => `/bookings/${id}/decline`,
     CANCEL:          (id: string) => `/bookings/${id}/cancel`,
-  }, 
-  
+  },
+
+  // ── Vendors — no application/OTP step; a vendor row is created instantly
+  // via BECOME, then the onboarding page lets them customize it (skippable).
   VENDORS: {
-    APPLY:           '/vendors/apply',
-    VERIFY_EMAIL:    '/vendors/verify-email',    // ← ADD
-    RESEND_OTP:      '/vendors/resend-otp',       // ← ADD
+    BECOME:          '/vendors/become',
     MY_PROFILE:      '/vendors/me',
     UPDATE_PROFILE:  '/vendors/me',
     PAYOUT_DETAILS:  '/vendors/me/payout-details',
-    DOCUMENTS:       '/vendors/me/documents',
     PUBLIC_PROFILE:  (id: string) => `/vendors/${id}`,
   },
+
   ADMIN_VENDORS: {
-    PENDING:         '/admin/vendors/pending',
-    GET_ALL:         '/admin/vendors',
-    GET_BY_ID:       (id: string) => `/admin/vendors/${id}`,
-    REVIEW:          (id: string) => `/admin/vendors/${id}/review`,
-    SUSPEND:         (id: string) => `/admin/vendors/${id}/suspend`,
+    GET_ALL:   '/admin/vendors',
+    GET_BY_ID: (id: string) => `/admin/vendors/${id}`,
+    SUSPEND:   (id: string) => `/admin/vendors/${id}/suspend`,
   },
+
   ADMIN_CUSTOMERS: {
-    GET_ALL:         '/admin/customers',
+    GET_ALL: '/admin/customers',
   },
+
   ADMIN_BOOKINGS: {
-    GET_ALL:         '/admin/bookings',
+    GET_ALL: '/admin/bookings',
   },
 
   UPLOAD: {
@@ -90,172 +72,109 @@ export const API_ENDPOINTS = {
     DOCUMENT:        '/upload/document',
     DELETE:          '/upload/file',
   },
+
   REVIEWS: {
     CREATE:           '/reviews',
     LIST_FOR_LISTING: (listingId: string) => `/reviews/listing/${listingId}`,
     ELIGIBILITY:      (listingId: string) => `/reviews/eligibility/${listingId}`,
     REPLY:            (reviewId: string)  => `/reviews/${reviewId}/reply`,
   },
-   CUSTOMER: {
-    PROFILE:       '/users/me',
-    UPDATE:        '/users/me',
-    STATS:         '/users/me/stats',
-    SAVED:         '/users/me/saved',
-    TOGGLE_SAVED:  (listingId: string) => `/users/me/saved/${listingId}`,
-    IS_SAVED:      (listingId: string) => `/users/me/saved/${listingId}`,
+
+  CUSTOMER: {
+    PROFILE:      '/users/me',
+    UPDATE:       '/users/me',
+    STATS:        '/users/me/stats',
+    SAVED:        '/users/me/saved',
+    TOGGLE_SAVED: (listingId: string) => `/users/me/saved/${listingId}`,
+    IS_SAVED:     (listingId: string) => `/users/me/saved/${listingId}`,
   },
- 
 };
 
 // ── Service methods ───────────────────────────────────────────────────────────
 import { apiClient } from './client';
-import type {
-  Listing, ListingLocation, Category,
-  ListingFilters,
-} from '../types/listing';
-
-export const otpService = {
-  verifyEmail: (otp: string) => apiClient.post(API_ENDPOINTS.OTP.VERIFY_EMAIL, { otp }),
-  resend:      ()            => apiClient.post(API_ENDPOINTS.OTP.RESEND, {}),
-};
+import type { Listing, Category, ListingFilters } from '../types/listing';
+import type { Vendor, UpdateVendorInput, PayoutDetailsInput } from '../types/vendor';
 
 // ── Categories ────────────────────────────────────────────────────────────────
 export const categoriesService = {
-  getAll:       () =>
-    apiClient.get<Category[]>(API_ENDPOINTS.CATEGORIES.GET_ALL),
-
-  getTree:      () =>
-    apiClient.get<Category[]>(API_ENDPOINTS.CATEGORIES.GET_TREE),
-
-  getBySlug:    (slug: string) =>
-    apiClient.get<Category>(API_ENDPOINTS.CATEGORIES.GET_BY_SLUG(slug)),
-
-  getChildren:  (id: string) =>
-    apiClient.get<Category[]>(API_ENDPOINTS.CATEGORIES.GET_CHILDREN(id)),
+  getAll:      () => apiClient.get<Category[]>(API_ENDPOINTS.CATEGORIES.GET_ALL),
+  getTree:     () => apiClient.get<Category[]>(API_ENDPOINTS.CATEGORIES.GET_TREE),
+  getBySlug:   (slug: string) => apiClient.get<Category>(API_ENDPOINTS.CATEGORIES.GET_BY_SLUG(slug)),
+  getChildren: (id: string)   => apiClient.get<Category[]>(API_ENDPOINTS.CATEGORIES.GET_CHILDREN(id)),
 };
 
 // ── Listings ──────────────────────────────────────────────────────────────────
 export const listingsService = {
-  getAll:       (filters?: ListingFilters) =>
-    apiClient.get<Listing[]>(API_ENDPOINTS.LISTINGS.GET_ALL, { params: filters }),
-
-  getFeatured:  () =>
-    apiClient.get<Listing[]>(API_ENDPOINTS.LISTINGS.GET_FEATURED),
-
-  getById:      (id: string) =>
-    apiClient.get<Listing>(API_ENDPOINTS.LISTINGS.GET_BY_ID(id)),
-
-  getBySlug:    (slug: string) =>
-    apiClient.get<Listing>(API_ENDPOINTS.LISTINGS.GET_BY_SLUG(slug)),
-
-  getMyListings:() =>
-    apiClient.get<Listing[]>(API_ENDPOINTS.LISTINGS.MY_LISTINGS),
-
-  create:       (data: any) =>
-    apiClient.post<Listing>(API_ENDPOINTS.LISTINGS.CREATE, data),
-
-  update:       (id: string, data: any) =>
-    apiClient.put<Listing>(API_ENDPOINTS.LISTINGS.UPDATE(id), data),
-
-  updateStatus: (id: string, status: 'active' | 'paused') =>
+  getAll:        (filters?: ListingFilters) => apiClient.get<Listing[]>(API_ENDPOINTS.LISTINGS.GET_ALL, { params: filters }),
+  getFeatured:   () => apiClient.get<Listing[]>(API_ENDPOINTS.LISTINGS.GET_FEATURED),
+  getById:       (id: string)   => apiClient.get<Listing>(API_ENDPOINTS.LISTINGS.GET_BY_ID(id)),
+  getBySlug:     (slug: string) => apiClient.get<Listing>(API_ENDPOINTS.LISTINGS.GET_BY_SLUG(slug)),
+  getMyListings: () => apiClient.get<Listing[]>(API_ENDPOINTS.LISTINGS.MY_LISTINGS),
+  create:        (data: any) => apiClient.post<Listing>(API_ENDPOINTS.LISTINGS.CREATE, data),
+  update:        (id: string, data: any) => apiClient.put<Listing>(API_ENDPOINTS.LISTINGS.UPDATE(id), data),
+  updateStatus:  (id: string, status: 'active' | 'paused') =>
     apiClient.patch<Listing>(API_ENDPOINTS.LISTINGS.UPDATE_STATUS(id), { status }),
-
-  delete:       (id: string) =>
-    apiClient.delete<{ message: string }>(API_ENDPOINTS.LISTINGS.DELETE(id)),
+  delete:        (id: string) => apiClient.delete<{ message: string }>(API_ENDPOINTS.LISTINGS.DELETE(id)),
 };
-
 
 // ── Bookings ──────────────────────────────────────────────────────────────────
 export const bookingsService = {
-  create:          (data: any) =>
-    apiClient.post(API_ENDPOINTS.BOOKINGS.CREATE, data),
-
-  getMyBookings:   (filters?: any) =>
-    apiClient.get(API_ENDPOINTS.BOOKINGS.MY_BOOKINGS, { params: filters }),
-
-  getVendorBookings:(filters?: any) =>
-    apiClient.get(API_ENDPOINTS.BOOKINGS.VENDOR_BOOKINGS, { params: filters }),
-
-  getPending:      () =>
-    apiClient.get(API_ENDPOINTS.BOOKINGS.PENDING),
-
-  getById:         (id: string) =>
-    apiClient.get(API_ENDPOINTS.BOOKINGS.GET_BY_ID(id)),
-
-  accept:          (id: string) =>
-    apiClient.patch(API_ENDPOINTS.BOOKINGS.ACCEPT(id), {}),
-
-  decline:         (id: string, reason: string) =>
-    apiClient.patch(API_ENDPOINTS.BOOKINGS.DECLINE(id), { reason }),
-
-  cancel:          (id: string, reason: string) =>
-    apiClient.patch(API_ENDPOINTS.BOOKINGS.CANCEL(id), { reason }),
+  create:            (data: any) => apiClient.post(API_ENDPOINTS.BOOKINGS.CREATE, data),
+  getMyBookings:     (filters?: any) => apiClient.get(API_ENDPOINTS.BOOKINGS.MY_BOOKINGS, { params: filters }),
+  getVendorBookings: (filters?: any) => apiClient.get(API_ENDPOINTS.BOOKINGS.VENDOR_BOOKINGS, { params: filters }),
+  getPending:        () => apiClient.get(API_ENDPOINTS.BOOKINGS.PENDING),
+  getById:           (id: string) => apiClient.get(API_ENDPOINTS.BOOKINGS.GET_BY_ID(id)),
+  accept:            (id: string) => apiClient.patch(API_ENDPOINTS.BOOKINGS.ACCEPT(id), {}),
+  decline:           (id: string, reason: string) => apiClient.patch(API_ENDPOINTS.BOOKINGS.DECLINE(id), { reason }),
+  cancel:            (id: string, reason: string) => apiClient.patch(API_ENDPOINTS.BOOKINGS.CANCEL(id), { reason }),
 };
 
 export const availabilityService = {
-  get: (listingId: string, startDate: string, endDate: string) =>
-    apiClient.get(API_ENDPOINTS.AVAILABILITY.GET(listingId), {
-      params: { startDate, endDate },
-    }),
- 
-  getCalendar: (listingId: string, startDate: string, endDate: string) =>
-    apiClient.get(API_ENDPOINTS.AVAILABILITY.GET_CALENDAR(listingId), {
-      params: { startDate, endDate },
-    }),
- 
-  blockDates: (listingId: string, dates: string[], reason?: string) =>
+  get:          (listingId: string, startDate: string, endDate: string) =>
+    apiClient.get(API_ENDPOINTS.AVAILABILITY.GET(listingId), { params: { startDate, endDate } }),
+  getCalendar:  (listingId: string, startDate: string, endDate: string) =>
+    apiClient.get(API_ENDPOINTS.AVAILABILITY.GET_CALENDAR(listingId), { params: { startDate, endDate } }),
+  blockDates:   (listingId: string, dates: string[], reason?: string) =>
     apiClient.post(API_ENDPOINTS.AVAILABILITY.BLOCK_DATES(listingId), { dates, reason }),
- 
   unblockDates: (listingId: string, dates: string[]) =>
     apiClient.post(API_ENDPOINTS.AVAILABILITY.UNBLOCK_DATES(listingId), { dates }),
 };
 
 // ── Vendors ───────────────────────────────────────────────────────────────────
 export const vendorsService = {
-  apply:           (data: any) =>
-    apiClient.post(API_ENDPOINTS.VENDORS.APPLY, data),
+  // Instant, idempotent — no body needed. Backend pre-fills businessName/phone
+  // from the user's own account.
+  become: () => apiClient.post<Vendor>(API_ENDPOINTS.VENDORS.BECOME, {}),
 
-  getProfile:      () =>
-    apiClient.get(API_ENDPOINTS.VENDORS.MY_PROFILE),
+  getProfile: () => apiClient.get<Vendor>(API_ENDPOINTS.VENDORS.MY_PROFILE),
 
-  updateProfile:   (data: any) =>
-    apiClient.put(API_ENDPOINTS.VENDORS.UPDATE_PROFILE, data),
+  updateProfile: (data: UpdateVendorInput) =>
+    apiClient.put<Vendor>(API_ENDPOINTS.VENDORS.UPDATE_PROFILE, data),
 
-  addPayoutDetails:(data: any) =>
-    apiClient.post(API_ENDPOINTS.VENDORS.PAYOUT_DETAILS, data),
+  addPayoutDetails: (data: PayoutDetailsInput) =>
+    apiClient.post<Vendor>(API_ENDPOINTS.VENDORS.PAYOUT_DETAILS, data),
 
-  getPublicProfile:(id: string) =>
-    apiClient.get(API_ENDPOINTS.VENDORS.PUBLIC_PROFILE(id)),
-  
-   verifyEmail: (otp: string) =>
-    apiClient.post(API_ENDPOINTS.VENDORS.VERIFY_EMAIL, { otp }),
- 
-  resendOTP: () =>
-    apiClient.post(API_ENDPOINTS.VENDORS.RESEND_OTP, {}),
+  getPublicProfile: (id: string) =>
+    apiClient.get<Vendor>(API_ENDPOINTS.VENDORS.PUBLIC_PROFILE(id)),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 export const adminService = {
-  getPendingVendors:() =>
-    apiClient.get(API_ENDPOINTS.ADMIN_VENDORS.PENDING),
+  getAllVendors: (filters?: any) =>
+    apiClient.get<Vendor[]>(API_ENDPOINTS.ADMIN_VENDORS.GET_ALL, { params: filters }),
 
-  getAllVendors:    (filters?: any) =>
-    apiClient.get(API_ENDPOINTS.ADMIN_VENDORS.GET_ALL, { params: filters }),
+  getVendorById: (id: string) =>
+    apiClient.get<Vendor>(API_ENDPOINTS.ADMIN_VENDORS.GET_BY_ID(id)),
 
-  getVendorById:   (id: string) =>
-    apiClient.get(API_ENDPOINTS.ADMIN_VENDORS.GET_BY_ID(id)),
+  // No reason param — the backend no longer stores a suspension reason.
+  suspendVendor: (id: string) =>
+    apiClient.put<Vendor>(API_ENDPOINTS.ADMIN_VENDORS.SUSPEND(id), {}),
 
-  reviewVendor:    (id: string, status: 'approved' | 'rejected', rejectionReason?: string) =>
-    apiClient.put(API_ENDPOINTS.ADMIN_VENDORS.REVIEW(id), { status, rejectionReason }),
-
-  suspendVendor:   (id: string, reason: string) =>
-    apiClient.put(API_ENDPOINTS.ADMIN_VENDORS.SUSPEND(id), { reason }),
-
-  getAllBookings:   (filters?: any) =>
+  getAllBookings: (filters?: any) =>
     apiClient.get(API_ENDPOINTS.ADMIN_BOOKINGS.GET_ALL, { params: filters }),
 
   getAllCustomers: (filters?: CustomerFilters) =>
-    apiClient.get<Customer[]>(API_ENDPOINTS.ADMIN_VENDORS.GET_ALL, { params: filters }),
+    apiClient.get<Customer[]>(API_ENDPOINTS.ADMIN_CUSTOMERS.GET_ALL, { params: filters }),
 };
 
 // ── Upload ────────────────────────────────────────────────────────────────────
@@ -264,13 +183,10 @@ export const uploadService = {
     apiClient.uploadFile<{ url: string; publicId?: string }>(
       API_ENDPOINTS.UPLOAD.SINGLE_IMAGE, file, { uploadType, optimize: 'true' }
     ),
-
   uploadImages: (files: File[]) =>
     apiClient.uploadMultipleFiles<{ urls: string[] }>(API_ENDPOINTS.UPLOAD.MULTIPLE_IMAGES, files),
-
   uploadDocument: (file: File) =>
     apiClient.uploadFile<{ url: string }>(API_ENDPOINTS.UPLOAD.DOCUMENT, file),
-
   deleteFile: (url: string) =>
     apiClient.post<{ message: string }>(API_ENDPOINTS.UPLOAD.DELETE, { url }),
 };
@@ -278,34 +194,20 @@ export const uploadService = {
 export const reviewsService = {
   create: (data: { bookingId: string; rating: number; title?: string; body: string }) =>
     apiClient.post(API_ENDPOINTS.REVIEWS.CREATE, data),
- 
   getForListing: (listingId: string, limit = 20, offset = 0) =>
     apiClient.get(API_ENDPOINTS.REVIEWS.LIST_FOR_LISTING(listingId), { params: { limit, offset } }),
- 
   getEligibility: (listingId: string) =>
     apiClient.get(API_ENDPOINTS.REVIEWS.ELIGIBILITY(listingId)),
- 
   addReply: (reviewId: string, reply: string) =>
     apiClient.post(API_ENDPOINTS.REVIEWS.REPLY(reviewId), { reply }),
 };
 
-
 export const customerService = {
-  getProfile:   () =>
-    apiClient.get(API_ENDPOINTS.CUSTOMER.PROFILE),
- 
+  getProfile:    () => apiClient.get(API_ENDPOINTS.CUSTOMER.PROFILE),
   updateProfile: (data: { fullName?: string; phone?: string; avatarUrl?: string }) =>
     apiClient.patch(API_ENDPOINTS.CUSTOMER.UPDATE, data),
- 
-  getStats:     () =>
-    apiClient.get(API_ENDPOINTS.CUSTOMER.STATS),
- 
-  getSaved:     () =>
-    apiClient.get(API_ENDPOINTS.CUSTOMER.SAVED),
- 
-  toggleSaved:  (listingId: string) =>
-    apiClient.post(API_ENDPOINTS.CUSTOMER.TOGGLE_SAVED(listingId), {}),
- 
-  isSaved:      (listingId: string) =>
-    apiClient.get(API_ENDPOINTS.CUSTOMER.IS_SAVED(listingId)),
+  getStats:      () => apiClient.get(API_ENDPOINTS.CUSTOMER.STATS),
+  getSaved:      () => apiClient.get(API_ENDPOINTS.CUSTOMER.SAVED),
+  toggleSaved:   (listingId: string) => apiClient.post(API_ENDPOINTS.CUSTOMER.TOGGLE_SAVED(listingId), {}),
+  isSaved:       (listingId: string) => apiClient.get(API_ENDPOINTS.CUSTOMER.IS_SAVED(listingId)),
 };

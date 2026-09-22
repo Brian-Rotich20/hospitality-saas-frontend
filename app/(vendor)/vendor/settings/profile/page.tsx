@@ -5,46 +5,24 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../lib/auth/auth.context';
 import { vendorsService } from '../../../../lib/api/endpoints';
 import { LoadingSpinner } from '../../../../components/common/LoadingSpinner';
+import type { Vendor, UpdateVendorInput, PayoutMethod, PayoutDetailsInput } from '../../../../lib/types/vendor';
 import { AlertCircle, CheckCircle, Building2, Phone, MapPin, FileText, Save } from 'lucide-react';
 
-interface VendorProfile {
-  id: string;
-  businessName: string;
-  businessType: string;
-  businessRegistration?: string;
-  taxPin?: string;
-  phoneNumber: string;
-  location: string;
-  description?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'suspended';
-  payoutMethod?: string;
-  mpesaNumber?: string;
-  bankName?: string;
-  bankAccountName?: string;
-  bankAccountNumber?: string;
+
+interface PayoutFormData {
+  payoutMethod: PayoutMethod;
+  mpesaNumber: string;
+  bankName: string;
+  bankAccountName: string;
+  bankAccountNumber: string;
 }
 
-const BUSINESS_TYPES = [
-  { value: 'event_venue', label: 'Event Venue' },
-  { value: 'catering', label: 'Catering Service' },
-  { value: 'accommodation', label: 'Accommodation' },
-  { value: 'photography', label: 'Photography' },
-  { value: 'entertainment', label: 'Entertainment' },
-  { value: 'other', label: 'Other' },
-];
-
-const STATUS_CONFIG = {
-  pending:   { label: 'Pending Review', bg: '#FEF3C7', color: '#92400E' },
-  approved:  { label: 'Approved',       bg: '#D1FAE5', color: '#065F46' },
-  rejected:  { label: 'Rejected',       bg: '#FEE2E2', color: '#991B1B' },
-  suspended: { label: 'Suspended',      bg: '#F3F4F6', color: '#6B7280' },
-};
 
 export default function VendorSettingsProfilePage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const router = useRouter();
 
-  const [profile, setProfile] = useState<VendorProfile | null>(null);
+  const [profile, setProfile] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,15 +31,11 @@ export default function VendorSettingsProfilePage() {
 
   const [formData, setFormData] = useState({
     businessName: '',
-    businessType: '',
     phoneNumber: '',
-    location: '',
-    description: '',
-    businessRegistration: '',
-    taxPin: '',
+    logo: '',
   });
 
-  const [payoutData, setPayoutData] = useState({
+  const [payoutData, setPayoutData] = useState<PayoutFormData>({
     payoutMethod: 'mpesa',
     mpesaNumber: '',
     bankName: '',
@@ -82,12 +56,8 @@ export default function VendorSettingsProfilePage() {
         setProfile(data);
         setFormData({
           businessName: data.businessName ?? '',
-          businessType: data.businessType ?? '',
           phoneNumber: data.phoneNumber ?? '',
-          location: data.location ?? '',
-          description: data.description ?? '',
-          businessRegistration: data.businessRegistration ?? '',
-          taxPin: data.taxPin ?? '',
+          logo: data.logo ?? '',
         });
         setPayoutData({
           payoutMethod: data.payoutMethod ?? 'mpesa',
@@ -123,7 +93,21 @@ export default function VendorSettingsProfilePage() {
     try {
       setSaving(true);
       setError(null);
-      await vendorsService.addPayoutDetails(payoutData);
+
+      const payoutPayload: PayoutDetailsInput =
+        payoutData.payoutMethod === 'mpesa'
+          ? {
+              payoutMethod: 'mpesa',
+              mpesaNumber: payoutData.mpesaNumber,
+            }
+          : {
+              payoutMethod: 'bank',
+              bankAccountName: payoutData.bankAccountName,
+              bankAccountNumber: payoutData.bankAccountNumber,
+              bankName: payoutData.bankName,
+            };
+
+      await vendorsService.addPayoutDetails(payoutPayload);
       setSuccess('Payout details saved successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -156,21 +140,6 @@ export default function VendorSettingsProfilePage() {
             Manage your vendor profile and payout preferences
           </p>
         </div>
-
-        {/* Status banner */}
-        {profile?.status && (
-          <div style={{
-            background: STATUS_CONFIG[profile.status].bg,
-            color: STATUS_CONFIG[profile.status].color,
-            padding: '10px 16px', borderRadius: 10, fontSize: 12,
-            fontWeight: 600, marginBottom: 20,
-            display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            <AlertCircle size={14} />
-            Account status: {STATUS_CONFIG[profile.status].label}
-            {profile.status === 'pending' && ' — Your application is under review'}
-          </div>
-        )}
 
         {/* Alerts */}
         {success && (
@@ -216,46 +185,16 @@ export default function VendorSettingsProfilePage() {
                   onChange={e => setFormData(p => ({ ...p, businessName: e.target.value }))}
                   placeholder="e.g. Nairobi Grand Venues" />
               </div>
-              <div>
-                <label style={labelStyle}>Business Type *</label>
-                <select style={inputStyle} value={formData.businessType}
-                  onChange={e => setFormData(p => ({ ...p, businessType: e.target.value }))}>
-                  <option value="">Select type</option>
-                  {BUSINESS_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
+             
               <div>
                 <label style={labelStyle}>Phone Number *</label>
                 <input style={inputStyle} value={formData.phoneNumber}
                   onChange={e => setFormData(p => ({ ...p, phoneNumber: e.target.value }))}
                   placeholder="+254 7XX XXX XXX" />
               </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={labelStyle}>Location *</label>
-                <input style={inputStyle} value={formData.location}
-                  onChange={e => setFormData(p => ({ ...p, location: e.target.value }))}
-                  placeholder="e.g. Westlands, Nairobi" />
-              </div>
-              <div>
-                <label style={labelStyle}>Business Registration No.</label>
-                <input style={inputStyle} value={formData.businessRegistration}
-                  onChange={e => setFormData(p => ({ ...p, businessRegistration: e.target.value }))}
-                  placeholder="Optional" />
-              </div>
-              <div>
-                <label style={labelStyle}>KRA PIN</label>
-                <input style={inputStyle} value={formData.taxPin}
-                  onChange={e => setFormData(p => ({ ...p, taxPin: e.target.value }))}
-                  placeholder="Optional" />
-              </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={labelStyle}>Business Description</label>
-                <textarea
-                  style={{ ...inputStyle, resize: 'none' as const }} rows={4}
-                  value={formData.description}
-                  onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}
-                  placeholder="Describe your business..." />
-              </div>
+              {/* 
+              We need one for uploading a logo, but for now we can just have a text input for the logo URL.
+              */}
             </div>
             <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end' }}>
               <button
@@ -280,7 +219,7 @@ export default function VendorSettingsProfilePage() {
             <div style={{ marginBottom: 20 }}>
               <label style={labelStyle}>Payout Method</label>
               <div style={{ display: 'flex', gap: 10 }}>
-                {['mpesa', 'bank'].map(method => (
+                {(['mpesa', 'bank'] as const).map(method => (
                   <button
                     key={method}
                     onClick={() => setPayoutData(p => ({ ...p, payoutMethod: method }))}

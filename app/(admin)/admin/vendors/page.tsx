@@ -3,24 +3,15 @@ export const dynamic = 'force-dynamic';
 
 import { serverFetch }            from '../../../lib/api/server';
 import { VendorManagementClient } from '../../../components/admin/VendorManagementClient';
+import type { Vendor }            from '../../../lib/types/vendor';
 
-// Mirror the Vendor type from VendorManagementClient (or import it if exported)
-interface Vendor {
-  id:           string;
-  businessName: string;
-  description?: string;
-  phoneNumber?: string;
-  county?:        string;
-  status:       'pending' | 'approved' | 'rejected' | 'suspended';
-  createdAt:    string;
-  user?: {
-    fullName?: string;
-    email?:    string;
-  };
+// GET /admin/vendors joins user account info alongside the base Vendor shape.
+interface AdminVendorRow extends Vendor {
+  user?: { fullName?: string; email?: string };
 }
 
 export default async function AdminVendorsPage() {
-  const { data: vendors, error } = await serverFetch<Vendor[]>('/admin/vendors');
+  const { data: vendors, error } = await serverFetch<AdminVendorRow[]>('/admin/vendors');
 
   if (error) {
     console.error('[AdminVendorsPage] /admin/vendors failed:', error);
@@ -33,7 +24,7 @@ export default async function AdminVendorsPage() {
           Vendor Management
         </h1>
         <p className="text-sm text-gray-500">
-          Review applications, approve or reject vendors.
+          Review vendors and suspend accounts if needed.
         </p>
       </div>
 

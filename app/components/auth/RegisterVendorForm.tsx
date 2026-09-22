@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,7 +15,6 @@ import Divider       from '../ui/Divider';
 import Spinner       from '../ui/Spinner';
 import { useAuth } from '../../lib/auth/auth.context';
 import { authClient } from '../../lib/auth/authClient';
-import { vendorsService } from '../../lib/api/endpoints';
 
 const schema = z.object({
   fullName: z.string().min(2, 'At least 2 characters'),
@@ -39,8 +37,7 @@ const inp = (err: boolean) =>
    focus:border-transparent transition ${err ? 'border-red-400' : 'border-gray-200'}`;
 
 export function RegisterVendorForm() {
-  const router = useRouter();
-  const { register: registerUser, refetchUser } = useAuth();
+  const { register: registerUser } = useAuth();
   const [loading,     setLoading]     = useState(false);
   const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -52,28 +49,15 @@ export function RegisterVendorForm() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      // Step 1: create a plain account. `silent: true` stops AuthContext from
-      // firing its own toast/redirect — this form owns both, once, at the end
-      // of the full flow below, once the role is actually 'vendor'.
+      // register() itself creates the account, creates the vendor record
+      // (asVendor: true), refreshes the session, toasts, and redirects to
+      // /vendor/onboarding — nothing left for this form to do.
       await registerUser({
         fullName: data.fullName,
         email:    data.email,
         password: data.password,
         phone:    data.phone,
-      }, { silent: true });
-
-      // Step 2: create the vendor record (promotes role='vendor' in the DB)
-      const vendorRes = await vendorsService.apply({ businessName: data.fullName });
-      if (!(vendorRes as any).success) {
-        throw new Error((vendorRes as any).error || 'Could not create your vendor application.');
-      }
-
-      // Step 3: refresh context so user.role reflects 'vendor' immediately
-      await refetchUser();
-
-      toast.success('Account created! Check your email for a verification code.');
-      router.push('/vendor/verify-email');
-
+      }, { asVendor: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
