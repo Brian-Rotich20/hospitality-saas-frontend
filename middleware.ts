@@ -52,19 +52,19 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── 2. /vendor/* ───────────────────────────────────────────────────────────
-  if (pathname.startsWith('/vendor')) {
-      if (!user) return redirectToLogin(request);
-      if (role !== 'vendor') return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
+  // if (pathname.startsWith('/vendor')) {
+  //     if (!user) return redirectToLogin(request);
+  //     if (role !== 'vendor') return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
 
-      const onboarded = user?.vendorOnboarded === true;
-      if (pathname === '/vendor/onboarding') {
-        if (onboarded) return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
-        return NextResponse.next();
-      }
-      if (!onboarded) return NextResponse.redirect(new URL('/vendor/onboarding', request.url));
+  //     const onboarded = user?.vendorOnboarded === true;
+  //     if (pathname === '/vendor/onboarding') {
+  //       if (onboarded) return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
+  //       return NextResponse.next();
+  //     }
+  //     if (!onboarded) return NextResponse.redirect(new URL('/vendor/onboarding', request.url));
 
-      return NextResponse.next();
-    }
+  //     return NextResponse.next();
+  //   }
   // ── 3. /customer/* ─────────────────────────────────────────────────────────
   if (pathname.startsWith('/customer')) {
     if (!user) return redirectToLogin(request);
