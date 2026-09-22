@@ -16,7 +16,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const priceSuffix: Record<string, string> = {
     per_hour: '/ hr', per_day: '/ day', per_person: '/ person', package: 'pkg', contact: '',
   };
-  const priceLabel: Record<string, string> = { package: 'From', contact: 'Contact' };
+  const priceLabel: Record<string, string> = { package: 'From', contact: 'Contact for price' };
 
   return (
     <Link href={`/store/${listing.id}`}
@@ -62,14 +62,8 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <p className="price-label">
               {priceLabel[listing.pricingType] ?? 'Price'}
             </p>
-            {/* price is number | null now — resolveListingPrice returns null
-                for 'contact' pricing AND for any other type missing its
-                price data (e.g. a 'package' listing with no minPrice set).
-                Both cases fall back to "On request" instead of crashing on
-                price.toLocaleString() or silently showing "KSh 0". */}
-            {listing.pricingType === 'contact' || price === null ? (
-              <p className="text-sm font-black text-brand">On request</p>
-            ) : (
+            
+            {listing.pricingType !== 'contact' && price !== null && (
               <p className="flex items-baseline gap-0.5 leading-none">
                 <span className="price-currency">KSh</span>
                 <span className="price-amount text-[15px]">

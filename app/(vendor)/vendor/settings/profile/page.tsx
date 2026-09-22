@@ -17,21 +17,6 @@ interface PayoutFormData {
   bankAccountNumber: string;
 }
 
-const BUSINESS_TYPES = [
-  { value: 'event_venue', label: 'Event Venue' },
-  { value: 'catering', label: 'Catering Service' },
-  { value: 'accommodation', label: 'Accommodation' },
-  { value: 'photography', label: 'Photography' },
-  { value: 'entertainment', label: 'Entertainment' },
-  { value: 'other', label: 'Other' },
-];
-
-const STATUS_CONFIG = {
-  pending:   { label: 'Pending Review', bg: '#FEF3C7', color: '#92400E' },
-  approved:  { label: 'Approved',       bg: '#D1FAE5', color: '#065F46' },
-  rejected:  { label: 'Rejected',       bg: '#FEE2E2', color: '#991B1B' },
-  suspended: { label: 'Suspended',      bg: '#F3F4F6', color: '#6B7280' },
-};
 
 export default function VendorSettingsProfilePage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
