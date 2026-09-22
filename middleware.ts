@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 type UserRole = 'customer' | 'vendor' | 'admin';
 
-interface SessionUser { role?: UserRole; emailVerified?: boolean; }
+interface SessionUser { role?: UserRole; emailVerified?: boolean; vendorOnboarded?: boolean; }
+
 interface SessionResponse { user?: SessionUser; }
 
 const API_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -15,11 +16,6 @@ const DASHBOARD_BY_ROLE: Record<UserRole, string> = {
   customer: '/store',
 };
 
-const VERIFY_EMAIL_BY_ROLE: Record<UserRole, string> = {
-  admin: '/auth/verify-email',
-  vendor: '/vendor/verify-email',
-  customer: '/auth/verify-email',
-};
 
 async function getSession(request: NextRequest): Promise<SessionUser | null> {
   const cookie = request.headers.get('cookie');
@@ -48,37 +44,35 @@ export async function middleware(request: NextRequest) {
   const role = user?.role;
   const isVerified = user?.emailVerified === true;
 
-  // ── 1. Verify-email pages — ALWAYS open ────────────────────────────────────
-  // User has a token but emailVerified=false — they must be able to reach these.
-  if (pathname === '/auth/verify-email' || pathname === '/vendor/verify-email') {
-    return NextResponse.next();
-  }
-
-  // ── 2. /admin/* ────────────────────────────────────────────────────────────
+  // ── 1. /admin/* ────────────────────────────────────────────────────────────
   if (pathname.startsWith('/admin')) {
-    if (!user) return redirectToLogin(request);
-    if (!isVerified) return NextResponse.redirect(new URL(VERIFY_EMAIL_BY_ROLE[role ?? 'customer'], request.url));
+    if (!user) return redirectToLogin(request);    
     if (role !== 'admin') return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
     return NextResponse.next();
   }
 
-  // ── 3. /vendor/* ───────────────────────────────────────────────────────────
+  // ── 2. /vendor/* ───────────────────────────────────────────────────────────
   if (pathname.startsWith('/vendor')) {
-    if (!user) return redirectToLogin(request);
-    if (!isVerified) return NextResponse.redirect(new URL(VERIFY_EMAIL_BY_ROLE[role ?? 'customer'], request.url));
-    if (role !== 'vendor') return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
-    return NextResponse.next();
-  }
+      if (!user) return redirectToLogin(request);
+      if (role !== 'vendor') return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
 
-  // ── 4. /customer/* ─────────────────────────────────────────────────────────
+      const onboarded = user?.vendorOnboarded === true;
+      if (pathname === '/vendor/onboarding') {
+        if (onboarded) return NextResponse.redirect(new URL('/vendor/dashboard', request.url));
+        return NextResponse.next();
+      }
+      if (!onboarded) return NextResponse.redirect(new URL('/vendor/onboarding', request.url));
+
+      return NextResponse.next();
+    }
+  // ── 3. /customer/* ─────────────────────────────────────────────────────────
   if (pathname.startsWith('/customer')) {
     if (!user) return redirectToLogin(request);
-    if (!isVerified) return NextResponse.redirect(new URL(VERIFY_EMAIL_BY_ROLE[role ?? 'customer'], request.url));
     if (role !== 'customer') return NextResponse.redirect(new URL(DASHBOARD_BY_ROLE[role ?? 'customer'], request.url));
     return NextResponse.next();
   }
 
-  // ── 5. Auth pages — length if already logged in + verified ──────────
+  // ── 4. Auth pages — length if already logged in + verified ──────────
   if (
     pathname === '/auth/login' ||
     pathname === '/auth/register' ||

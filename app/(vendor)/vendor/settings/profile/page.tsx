@@ -5,7 +5,17 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../lib/auth/auth.context';
 import { vendorsService } from '../../../../lib/api/endpoints';
 import { LoadingSpinner } from '../../../../components/common/LoadingSpinner';
+import type { PayoutDetailsInput } from '../../../../lib/types/vendor';
 import { AlertCircle, CheckCircle, Building2, Phone, MapPin, FileText, Save } from 'lucide-react';
+
+
+type PayoutFormData = {
+  payoutMethod: 'mpesa' | 'bank';
+  mpesaNumber: string;
+  bankName: string;
+  bankAccountName: string;
+  bankAccountNumber: string;
+};
 
 interface VendorProfile {
   id: string;
@@ -16,7 +26,7 @@ interface VendorProfile {
   phoneNumber: string;
   location: string;
   description?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'suspended';
+  status:  'approved'  | 'suspended';
   payoutMethod?: string;
   mpesaNumber?: string;
   bankName?: string;
@@ -61,7 +71,7 @@ export default function VendorSettingsProfilePage() {
     taxPin: '',
   });
 
-  const [payoutData, setPayoutData] = useState({
+  const [payoutData, setPayoutData] = useState<PayoutFormData>({
     payoutMethod: 'mpesa',
     mpesaNumber: '',
     bankName: '',
@@ -123,7 +133,21 @@ export default function VendorSettingsProfilePage() {
     try {
       setSaving(true);
       setError(null);
-      await vendorsService.addPayoutDetails(payoutData);
+
+      const payoutPayload =
+      payoutData.payoutMethod === 'mpesa'
+        ? {
+            payoutMethod: 'mpesa' as const,
+            mpesaNumber: payoutData.mpesaNumber,
+          }
+        : {
+            payoutMethod: 'bank' as const,
+            bankAccountName: payoutData.bankAccountName,
+            bankAccountNumber: payoutData.bankAccountNumber,
+            bankName: payoutData.bankName,
+          };
+
+      await vendorsService.addPayoutDetails(payoutPayload);
       setSuccess('Payout details saved successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -156,21 +180,6 @@ export default function VendorSettingsProfilePage() {
             Manage your vendor profile and payout preferences
           </p>
         </div>
-
-        {/* Status banner */}
-        {profile?.status && (
-          <div style={{
-            background: STATUS_CONFIG[profile.status].bg,
-            color: STATUS_CONFIG[profile.status].color,
-            padding: '10px 16px', borderRadius: 10, fontSize: 12,
-            fontWeight: 600, marginBottom: 20,
-            display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            <AlertCircle size={14} />
-            Account status: {STATUS_CONFIG[profile.status].label}
-            {profile.status === 'pending' && ' — Your application is under review'}
-          </div>
-        )}
 
         {/* Alerts */}
         {success && (
@@ -280,7 +289,7 @@ export default function VendorSettingsProfilePage() {
             <div style={{ marginBottom: 20 }}>
               <label style={labelStyle}>Payout Method</label>
               <div style={{ display: 'flex', gap: 10 }}>
-                {['mpesa', 'bank'].map(method => (
+                {(['mpesa', 'bank'] as const).map(method => (
                   <button
                     key={method}
                     onClick={() => setPayoutData(p => ({ ...p, payoutMethod: method }))}
