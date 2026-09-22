@@ -1,122 +1,62 @@
 // components/admin/VendorManagementClient.tsx
-// ✅ Client Component — tabs, search, approve/reject actions
+// ✅ Client Component — tabs, search, suspend action
+// Vendor lifecycle is now just approved → suspended. There is no pending/
+// rejected state and no application/OTP step — vendors are created instantly
+// via POST /vendors/become. There is currently no unsuspend/reactivate
+// endpoint, so suspension is one-way from this screen.
 'use client';
 
 import { useState, useMemo }  from 'react';
 import { useRouter }          from 'next/navigation';
 import { adminService }       from '../../lib/api/endpoints';
-import {
-  Search, CheckCircle, XCircle, Eye, Building2,
-  Clock, AlertCircle, Ban, RefreshCw,
-} from 'lucide-react';
+import type { Vendor, VendorStatus } from '../../lib/types/vendor';
+import { Search, Building2, Ban } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-type VendorStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
-
-interface Vendor {
-  id:              string;
-  businessName:    string;
-  description?:    string;
-  phoneNumber?:    string;
-  county?:           string;
-  area?:             string;
-  status:          VendorStatus;
-  createdAt:       string;
-  user?: {
-    fullName?: string;
-    email?:    string;
-  };
+// GET /admin/vendors joins user account info alongside the base Vendor
+// shape — this is admin-list-specific, not part of the canonical Vendor
+// type, so it's extended locally here rather than added to lib/types/vendor.ts.
+interface AdminVendorRow extends Vendor {
+  user?: { fullName?: string; email?: string };
 }
 
 const STATUS: Record<VendorStatus, { badge: string; dot: string; label: string }> = {
-  pending:   { badge: 'bg-amber-50 text-amber-700',   dot: 'bg-amber-400',   label: 'Pending'   },
-  approved:  { badge: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500', label: 'Approved' },
-  rejected:  { badge: 'bg-red-50 text-red-700',       dot: 'bg-red-500',     label: 'Rejected'  },
-  suspended: { badge: 'bg-gray-100 text-gray-600',    dot: 'bg-gray-400',    label: 'Suspended' },
+  approved:  { badge: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500', label: 'Approved'  },
+  suspended: { badge: 'bg-gray-100 text-gray-600',      dot: 'bg-gray-400',    label: 'Suspended' },
 };
 
 const TABS: { key: string; label: string }[] = [
   { key: 'all',       label: 'All'       },
-  { key: 'pending',   label: 'Pending'   },
   { key: 'approved',  label: 'Approved'  },
-  { key: 'rejected',  label: 'Rejected'  },
   { key: 'suspended', label: 'Suspended' },
 ];
 
-// ── Rejection modal ───────────────────────────────────────────────────────────
-function RejectModal({
-  vendor, onConfirm, onCancel, loading,
-}: {
-  vendor:    Vendor;
-  onConfirm: (reason: string) => void;
-  onCancel:  () => void;
-  loading:   boolean;
-}) {
-  const [reason, setReason] = useState('');
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <h3 className="text-base font-black text-gray-900 mb-1">Reject Vendor Application</h3>
-        <p className="text-xs text-gray-500 mb-4">
-          Rejecting <strong>{vendor.businessName}</strong>. Provide a reason so the vendor understands why.
-        </p>
-        <textarea
-          value={reason}
-          onChange={e => setReason(e.target.value)}
-          placeholder="e.g. Insufficient business documentation provided..."
-          rows={3}
-          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl resize-none
-            focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent mb-4"
-        />
-        <div className="flex gap-2">
-          <button onClick={onCancel} disabled={loading}
-            className="flex-1 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-600
-              hover:border-gray-400 transition disabled:opacity-50">
-            Cancel
-          </button>
-          <button onClick={() => onConfirm(reason)} disabled={loading || !reason.trim()}
-            className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold
-              hover:bg-red-600 transition disabled:opacity-50">
-            {loading ? 'Rejecting...' : 'Reject Vendor'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Suspend modal ─────────────────────────────────────────────────────────────
+// No reason field — adminService.suspendVendor() takes no reason argument
+// since the backend no longer stores one. This is a plain confirmation now.
 function SuspendModal({
   vendor, onConfirm, onCancel, loading,
 }: {
-  vendor:    Vendor;
-  onConfirm: (reason: string) => void;
+  vendor:    AdminVendorRow;
+  onConfirm: () => void;
   onCancel:  () => void;
   loading:   boolean;
 }) {
-  const [reason, setReason] = useState('');
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-base font-black text-gray-900 mb-1">Suspend Vendor</h3>
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-gray-500 mb-5">
           Suspending <strong>{vendor.businessName}</strong> will hide all their listings.
+          There's currently no way to reverse this from here.
         </p>
-        <textarea
-          value={reason}
-          onChange={e => setReason(e.target.value)}
-          placeholder="e.g. Multiple complaints received from customers..."
-          rows={3}
-          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl resize-none
-            focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent mb-4"
-        />
         <div className="flex gap-2">
           <button onClick={onCancel} disabled={loading}
             className="flex-1 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-600
               hover:border-gray-400 transition disabled:opacity-50">
             Cancel
           </button>
-          <button onClick={() => onConfirm(reason)} disabled={loading || !reason.trim()}
+          <button onClick={onConfirm} disabled={loading}
             className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl text-xs font-bold
               hover:bg-amber-600 transition disabled:opacity-50">
             {loading ? 'Suspending...' : 'Suspend Vendor'}
@@ -128,14 +68,13 @@ function SuspendModal({
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function VendorManagementClient({ initialVendors }: { initialVendors: Vendor[] }) {
+export function VendorManagementClient({ initialVendors }: { initialVendors: AdminVendorRow[] }) {
   const router                    = useRouter();
-  const [vendors,   setVendors]   = useState<Vendor[]>(initialVendors);
+  const [vendors,   setVendors]   = useState<AdminVendorRow[]>(initialVendors);
   const [tab,       setTab]       = useState('all');
   const [search,    setSearch]    = useState('');
   const [actionId,  setActionId]  = useState<string | null>(null);
-  const [rejectTarget, setRejectTarget] = useState<Vendor | null>(null);
-  const [suspendTarget, setSuspendTarget] = useState<Vendor | null>(null);
+  const [suspendTarget, setSuspendTarget] = useState<AdminVendorRow | null>(null);
 
   const filtered = useMemo(() => vendors.filter(v => {
     const matchTab    = tab === 'all' || v.status === tab;
@@ -148,53 +87,19 @@ export function VendorManagementClient({ initialVendors }: { initialVendors: Ven
 
   const counts = useMemo(() => ({
     all:       vendors.length,
-    pending:   vendors.filter(v => v.status === 'pending').length,
     approved:  vendors.filter(v => v.status === 'approved').length,
-    rejected:  vendors.filter(v => v.status === 'rejected').length,
     suspended: vendors.filter(v => v.status === 'suspended').length,
   }), [vendors]);
 
-  const updateVendor = (id: string, updates: Partial<Vendor>) =>
+  const updateVendor = (id: string, updates: Partial<AdminVendorRow>) =>
     setVendors(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
 
-  // ── Approve ───────────────────────────────────────────────────────────────
-  const handleApprove = async (vendor: Vendor) => {
-    try {
-      setActionId(vendor.id);
-      await adminService.reviewVendor(vendor.id, 'approved');
-      updateVendor(vendor.id, { status: 'approved' });
-      toast.success(`${vendor.businessName} approved`);
-      router.refresh(); // refresh server data
-    } catch {
-      toast.error('Failed to approve vendor');
-    } finally {
-      setActionId(null);
-    }
-  };
-
-  // ── Reject ────────────────────────────────────────────────────────────────
-  const handleReject = async (reason: string) => {
-    if (!rejectTarget) return;
-    try {
-      setActionId(rejectTarget.id);
-      await adminService.reviewVendor(rejectTarget.id, 'rejected', reason);
-      updateVendor(rejectTarget.id, { status: 'rejected' });
-      toast.success(`${rejectTarget.businessName} rejected`);
-      router.refresh();
-    } catch {
-      toast.error('Failed to reject vendor');
-    } finally {
-      setActionId(null);
-      setRejectTarget(null);
-    }
-  };
-
   // ── Suspend ───────────────────────────────────────────────────────────────
-  const handleSuspend = async (reason: string) => {
+  const handleSuspend = async () => {
     if (!suspendTarget) return;
     try {
       setActionId(suspendTarget.id);
-      await adminService.suspendVendor(suspendTarget.id, reason);
+      await adminService.suspendVendor(suspendTarget.id);
       updateVendor(suspendTarget.id, { status: 'suspended' });
       toast.success(`${suspendTarget.businessName} suspended`);
       router.refresh();
@@ -206,32 +111,8 @@ export function VendorManagementClient({ initialVendors }: { initialVendors: Ven
     }
   };
 
-  // ── Re-approve suspended/rejected ─────────────────────────────────────────
-  const handleReactivate = async (vendor: Vendor) => {
-    try {
-      setActionId(vendor.id);
-      await adminService.reviewVendor(vendor.id, 'approved');
-      updateVendor(vendor.id, { status: 'approved' });
-      toast.success(`${vendor.businessName} reactivated`);
-      router.refresh();
-    } catch {
-      toast.error('Failed to reactivate vendor');
-    } finally {
-      setActionId(null);
-    }
-  };
-
   return (
     <>
-      {/* Modals */}
-      {rejectTarget && (
-        <RejectModal
-          vendor={rejectTarget}
-          onConfirm={handleReject}
-          onCancel={() => setRejectTarget(null)}
-          loading={actionId === rejectTarget.id}
-        />
-      )}
       {suspendTarget && (
         <SuspendModal
           vendor={suspendTarget}
@@ -265,20 +146,6 @@ export function VendorManagementClient({ initialVendors }: { initialVendors: Ven
             outline-none focus:border-[#2D3B45] transition placeholder-gray-400" />
       </div>
 
-      {/* Pending alert */}
-      {tab === 'all' && counts.pending > 0 && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
-          <AlertCircle size={14} className="text-amber-500 shrink-0" />
-          <p className="text-xs text-amber-700 font-semibold flex-1">
-            {counts.pending} vendor{counts.pending > 1 ? 's' : ''} waiting for approval
-          </p>
-          <button onClick={() => setTab('pending')}
-            className="text-xs font-bold text-amber-600 hover:text-amber-800 transition">
-            View pending →
-          </button>
-        </div>
-      )}
-
       {/* Empty state */}
       {filtered.length === 0 ? (
         <div className="bg-white border border-gray-100 rounded-2xl p-16 text-center">
@@ -291,7 +158,7 @@ export function VendorManagementClient({ initialVendors }: { initialVendors: Ven
       ) : (
         <div className="flex flex-col gap-3">
           {filtered.map(vendor => {
-            const cfg     = STATUS[vendor.status] ?? STATUS.pending;
+            const cfg     = STATUS[vendor.status] ?? STATUS.approved;
             const loading = actionId === vendor.id;
 
             return (
@@ -299,11 +166,14 @@ export function VendorManagementClient({ initialVendors }: { initialVendors: Ven
                 className="bg-white border border-gray-100 rounded-2xl p-5">
                 <div className="flex items-start gap-4 flex-wrap">
 
-                  {/* Avatar */}
-                  <div className="w-10 h-10 rounded-xl bg-[#2D3B45] flex items-center justify-center shrink-0">
-                    <span className="text-[#F5C842] text-sm font-black">
-                      {vendor.businessName.charAt(0).toUpperCase()}
-                    </span>
+                  {/* Avatar — uses vendor.logo when present, matches the type now having it */}
+                  <div className="w-10 h-10 rounded-xl bg-[#2D3B45] flex items-center justify-center shrink-0 overflow-hidden">
+                    {vendor.logo
+                      ? <img src={vendor.logo} alt={vendor.businessName} className="w-full h-full object-cover" />
+                      : <span className="text-[#F5C842] text-sm font-black">
+                          {vendor.businessName.charAt(0).toUpperCase()}
+                        </span>
+                    }
                   </div>
 
                   {/* Info */}
@@ -314,44 +184,24 @@ export function VendorManagementClient({ initialVendors }: { initialVendors: Ven
                         <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                         {cfg.label}
                       </span>
+                      {vendor.verified && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                          Verified
+                        </span>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-3 text-[11px] text-gray-400 mb-2">
+                    <div className="flex flex-wrap gap-3 text-[11px] text-gray-400">
                       {vendor.user?.fullName && <span>{vendor.user.fullName}</span>}
                       {vendor.user?.email    && <span>{vendor.user.email}</span>}
                       {vendor.phoneNumber    && <span>{vendor.phoneNumber}</span>}
-                      {vendor.county           && <span>{vendor.county}</span>}
-                      {vendor.area             && <span>{vendor.area}</span>}
-                      <span>Applied {new Date(vendor.createdAt).toLocaleDateString('en-KE', {
+                      <span>Joined {new Date(vendor.createdAt).toLocaleDateString('en-KE', {
                         day: 'numeric', month: 'short', year: 'numeric'
                       })}</span>
                     </div>
-                    {vendor.description && (
-                      <p className="text-xs text-gray-500 line-clamp-2">{vendor.description}</p>
-                    )}
                   </div>
 
-                  {/* Actions */}
+                  {/* Actions — suspend only, nothing to approve/reject anymore */}
                   <div className="flex gap-2 flex-wrap shrink-0">
-                    {vendor.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleApprove(vendor)}
-                          disabled={loading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white
-                            text-xs font-bold rounded-xl hover:bg-emerald-600 transition disabled:opacity-50">
-                          <CheckCircle size={13} />
-                          {loading ? 'Approving...' : 'Approve'}
-                        </button>
-                        <button
-                          onClick={() => setRejectTarget(vendor)}
-                          disabled={loading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white
-                            text-xs font-bold rounded-xl hover:bg-red-600 transition disabled:opacity-50">
-                          <XCircle size={13} />
-                          Reject
-                        </button>
-                      </>
-                    )}
                     {vendor.status === 'approved' && (
                       <button
                         onClick={() => setSuspendTarget(vendor)}
@@ -361,17 +211,6 @@ export function VendorManagementClient({ initialVendors }: { initialVendors: Ven
                           hover:bg-amber-100 transition disabled:opacity-50">
                         <Ban size={13} />
                         Suspend
-                      </button>
-                    )}
-                    {(vendor.status === 'rejected' || vendor.status === 'suspended') && (
-                      <button
-                        onClick={() => handleReactivate(vendor)}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 border border-emerald-200
-                          bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl
-                          hover:bg-emerald-100 transition disabled:opacity-50">
-                        <RefreshCw size={13} />
-                        {loading ? 'Reactivating...' : 'Reactivate'}
                       </button>
                     )}
                   </div>
