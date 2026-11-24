@@ -16,8 +16,8 @@ const PRICING_SUFFIX: Record<string, string> = {
 };
 
 interface Vendor {
-  whatsappNumber?: string;
-  phoneNumber?:    string;
+  whatsappNumber?: string | null;
+  phoneNumber?:    string | null;
   businessName?:   string;
 }
 
@@ -166,7 +166,7 @@ export function BookingCard({
       {/* ── Bottom note ──────────────────────────────────────────── */}
       <div className="px-5 pb-4">
         <p className="text-[10px] text-center text-gray-400 leading-relaxed">
-          You won't be charged until the vendor confirms your booking
+          Payment is arranged directly with the vendor. LinkMart never charges you for bookings.
         </p>
       </div>
     </div>

@@ -260,7 +260,7 @@ export default function VendorBookingsPage() {
   const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await bookingsService.getVendorBookings(50);
+      const response = await bookingsService.getVendorBookings({ limit: 50 });
       // Handle both { data: [...] } and { data: { data: [...] } }
       const data = response.data;
       const list = Array.isArray(data) ? data : (data as any)?.data ?? [];

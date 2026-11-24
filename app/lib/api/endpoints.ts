@@ -12,7 +12,7 @@ export const API_ENDPOINTS = {
     UPDATE:          (id: string)   => `/listings/${id}`,
     DELETE:          (id: string)   => `/listings/${id}`,
     UPDATE_STATUS:   (id: string)   => `/listings/${id}/status`,
-    MY_LISTINGS:     '/me',
+    MY_LISTINGS:     '/listings/me',
   },
 
   
@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
     VENDOR_BOOKINGS: '/bookings/vendor',
     PENDING:         '/bookings/vendor/pending',
     GET_BY_ID:       (id: string) => `/bookings/${id}`,
+    EVENTS:          (id: string) => `/bookings/${id}/events`,
     ACCEPT:          (id: string) => `/bookings/${id}/accept`,
     DECLINE:         (id: string) => `/bookings/${id}/decline`,
     CANCEL:          (id: string) => `/bookings/${id}/cancel`,
@@ -56,6 +57,7 @@ export const API_ENDPOINTS = {
     GET_ALL:   '/admin/vendors',
     GET_BY_ID: (id: string) => `/admin/vendors/${id}`,
     SUSPEND:   (id: string) => `/admin/vendors/${id}/suspend`,
+    REINSTATE: (id: string) => `/admin/vendors/${id}/reinstate`,
   },
 
   ADMIN_CUSTOMERS: {
@@ -69,7 +71,6 @@ export const API_ENDPOINTS = {
   UPLOAD: {
     SINGLE_IMAGE:    '/upload/image',
     MULTIPLE_IMAGES: '/upload/images',
-    DOCUMENT:        '/upload/document',
     DELETE:          '/upload/file',
   },
 
@@ -94,6 +95,7 @@ export const API_ENDPOINTS = {
 import { apiClient } from './client';
 import type { Listing, Category, ListingFilters } from '../types/listing';
 import type { Vendor, UpdateVendorInput, PayoutDetailsInput } from '../types/vendor';
+import type { Booking, BookingEvent, BookingListFilters, BookingSummary, CreateBookingRequest } from '../types/booking';
 
 // ── Categories ────────────────────────────────────────────────────────────────
 export const categoriesService = {
@@ -119,14 +121,16 @@ export const listingsService = {
 
 // ── Bookings ──────────────────────────────────────────────────────────────────
 export const bookingsService = {
-  create:            (data: any) => apiClient.post(API_ENDPOINTS.BOOKINGS.CREATE, data),
-  getMyBookings:     (filters?: any) => apiClient.get(API_ENDPOINTS.BOOKINGS.MY_BOOKINGS, { params: filters }),
-  getVendorBookings: (filters?: any) => apiClient.get(API_ENDPOINTS.BOOKINGS.VENDOR_BOOKINGS, { params: filters }),
-  getPending:        () => apiClient.get(API_ENDPOINTS.BOOKINGS.PENDING),
-  getById:           (id: string) => apiClient.get(API_ENDPOINTS.BOOKINGS.GET_BY_ID(id)),
-  accept:            (id: string) => apiClient.patch(API_ENDPOINTS.BOOKINGS.ACCEPT(id), {}),
-  decline:           (id: string, reason: string) => apiClient.patch(API_ENDPOINTS.BOOKINGS.DECLINE(id), { reason }),
-  cancel:            (id: string, reason: string) => apiClient.patch(API_ENDPOINTS.BOOKINGS.CANCEL(id), { reason }),
+  create:            (data: CreateBookingRequest) => apiClient.post<Booking>(API_ENDPOINTS.BOOKINGS.CREATE, data),
+  getMyBookings:     (filters?: BookingListFilters) => apiClient.get<BookingSummary[]>(API_ENDPOINTS.BOOKINGS.MY_BOOKINGS, { params: filters }),
+  getVendorBookings: (filters?: BookingListFilters) => apiClient.get<BookingSummary[]>(API_ENDPOINTS.BOOKINGS.VENDOR_BOOKINGS, { params: filters }),
+  getPending:        () => apiClient.get<BookingSummary[]>(API_ENDPOINTS.BOOKINGS.PENDING),
+  getById:           (id: string) => apiClient.get<Booking>(API_ENDPOINTS.BOOKINGS.GET_BY_ID(id)),
+  getEvents:         (id: string) => apiClient.get<BookingEvent[]>(API_ENDPOINTS.BOOKINGS.EVENTS(id)),
+  // The backend uses PUT for every booking transition.
+  accept:            (id: string) => apiClient.put<Booking>(API_ENDPOINTS.BOOKINGS.ACCEPT(id), {}),
+  decline:           (id: string, reason: string) => apiClient.put<Booking>(API_ENDPOINTS.BOOKINGS.DECLINE(id), { reason }),
+  cancel:            (id: string, reason: string) => apiClient.put<Booking>(API_ENDPOINTS.BOOKINGS.CANCEL(id), { reason }),
 };
 
 export const availabilityService = {
@@ -166,11 +170,14 @@ export const adminService = {
   getVendorById: (id: string) =>
     apiClient.get<Vendor>(API_ENDPOINTS.ADMIN_VENDORS.GET_BY_ID(id)),
 
-  // No reason param — the backend no longer stores a suspension reason.
-  suspendVendor: (id: string) =>
-    apiClient.put<Vendor>(API_ENDPOINTS.ADMIN_VENDORS.SUSPEND(id), {}),
+  // The reason is optional (5–500 chars when given) and recorded in the audit log.
+  suspendVendor: (id: string, reason?: string) =>
+    apiClient.put<Vendor>(API_ENDPOINTS.ADMIN_VENDORS.SUSPEND(id), reason ? { reason } : {}),
 
-  getAllBookings: (filters?: any) =>
+  reinstateVendor: (id: string, reason?: string) =>
+    apiClient.put<Vendor>(API_ENDPOINTS.ADMIN_VENDORS.REINSTATE(id), reason ? { reason } : {}),
+
+  getAllBookings: (filters?: BookingListFilters) =>
     apiClient.get(API_ENDPOINTS.ADMIN_BOOKINGS.GET_ALL, { params: filters }),
 
   getAllCustomers: (filters?: CustomerFilters) =>
@@ -178,17 +185,32 @@ export const adminService = {
 };
 
 // ── Upload ────────────────────────────────────────────────────────────────────
+export type UploadType = 'listing_photo' | 'vendor_logo' | 'profile_photo';
+export interface UploadedImage { id: string; url: string; publicId: string; bytes: number; mimeType: string; width: number; height: number }
+
 export const uploadService = {
-  uploadImage: (file: File, uploadType: string = 'listing_photo') =>
-    apiClient.uploadFile<{ url: string; publicId?: string }>(
-      API_ENDPOINTS.UPLOAD.SINGLE_IMAGE, file, { uploadType, optimize: 'true' }
-    ),
-  uploadImages: (files: File[]) =>
-    apiClient.uploadMultipleFiles<{ urls: string[] }>(API_ENDPOINTS.UPLOAD.MULTIPLE_IMAGES, files),
-  uploadDocument: (file: File) =>
-    apiClient.uploadFile<{ url: string }>(API_ENDPOINTS.UPLOAD.DOCUMENT, file),
-  deleteFile: (url: string) =>
-    apiClient.post<{ message: string }>(API_ENDPOINTS.UPLOAD.DELETE, { url }),
+  // uploadType is sent before the file (required by the backend).
+  uploadImage: (file: File, uploadType: UploadType = 'listing_photo') =>
+    apiClient.upload<UploadedImage>(API_ENDPOINTS.UPLOAD.SINGLE_IMAGE, file, { uploadType }),
+  uploadImages: (files: File[], uploadType: UploadType = 'listing_photo') =>
+    apiClient.upload<UploadedImage[]>(API_ENDPOINTS.UPLOAD.MULTIPLE_IMAGES, files, { uploadType }),
+  /** Owner (or admin) only. Takes the `publicId` returned by the upload. */
+  deleteFile: (publicId: string) =>
+    apiClient.delete<null>(API_ENDPOINTS.UPLOAD.DELETE, { data: { publicId } }),
+};
+
+// ── Email verification (6-digit code emailed at sign-up) ──────────────────────
+export const otpService = {
+  verify: (otp: string) => apiClient.post<{ user: unknown }>('/otp/verify-email', { otp }),
+  resend: () => apiClient.post<null>('/otp/resend-otp', {}),
+};
+
+// ── Password reset (Better Auth endpoints; responses are not the LinkMart envelope) ──
+export const passwordService = {
+  /** Always resolves with the same body, whether or not the account exists. */
+  requestReset: (email: string) => apiClient.post('/auth/request-password-reset', { email }),
+  /** Rejects with code INVALID_TOKEN when the token is unknown, used or expired. */
+  reset: (token: string, newPassword: string) => apiClient.post('/auth/reset-password', { token, newPassword }),
 };
 
 export const reviewsService = {

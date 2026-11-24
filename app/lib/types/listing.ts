@@ -41,9 +41,10 @@ export interface Listing {
 
   location:    ListingLocation;
   pricingType: PricingType;
-  price?:      string;
-  minPrice:   string | null;
-  maxPrice:   string | null;
+  /** Display prices: exact decimal strings from the API (e.g. "50000.00"), or null. */
+  price:       string | null;
+  minPrice:    string | null;
+  maxPrice:    string | null;
   currency:    string;
   photos:      string[];
   coverPhoto: string | null;
@@ -55,9 +56,9 @@ export interface Listing {
   vendor?:     ListingVendor;
   
   category?:   Category;
-  rating?:       number;
-  reviewCount?:  number;
-  review_count?: number; 
+  /** Average rating (number, one decimal) or null until the first review. */
+  rating:        number | null;
+  reviewCount:   number;
   _lat?:       number | undefined
   _lng?:       number | undefined
 }
@@ -75,7 +76,9 @@ export interface ListingFilters {
   offset?:       number;
 }
 
-export function resolveListingPrice(listing: Listing): number {
+/** Numeric display price from the API's decimal strings; 0 when none is set or unparsable. */
+export function resolveListingPrice(listing: Pick<Listing, 'price' | 'minPrice'>): number {
   const p = listing.price ?? listing.minPrice;
-  return p ? parseFloat(p) : 0;
+  const n = p ? Number(p) : 0;
+  return Number.isFinite(n) ? n : 0;
 }

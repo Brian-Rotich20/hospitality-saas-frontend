@@ -73,7 +73,7 @@ export default function CustomerDashboardPage() {
         <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-0.5">
           {greeting()}, {name} 👋
         </h1>
-        <p className="text-sm text-gray-500">Here's a summary of your activity.</p>
+        <p className="text-sm text-gray-500">Here&apos;s a summary of your activity.</p>
       </div>
 
       {/* Stat cards */}

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiClient } from '../../lib/api/client';
+import { uploadService } from '../../lib/api/endpoints';
 
 // Color system: 60% neutral (white/gray) · 30% navy #2D3B45 · 10% lime #D9F062 accent
 // Red is kept as-is for destructive actions (delete) — a semantic convention, not part of the brand accent pair.
@@ -90,18 +91,15 @@ function CategoryModal({ mode, initial, parentId, parentName, allCategories, onC
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const res = await apiClient.uploadFile<{ url: string }>(
-        '/upload/image', file
-      );
-      const url = (res as any).data?.url ?? (res as any).url;
+      // The backend has no category-image upload type yet; `profile_photo` is the type every
+      // signed-in role (including admins) may upload. See the frontend integration report.
+      const res = await uploadService.uploadImage(file, 'profile_photo');
+      const url = res.data?.url;
       if (!url) throw new Error('No URL returned');
       setImageUrl(url);
       toast.success('Image uploaded');
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Upload failed');
+    } catch (err: unknown) {
+      toast.error(err instanceof Object && 'message' in err ? String(err.message) : 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -449,7 +447,7 @@ function DeleteModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6">
-        <h3 className="text-sm font-black text-gray-900 mb-1">Delete "{category.name}"?</h3>
+        <h3 className="text-sm font-black text-gray-900 mb-1">Delete &quot;{category.name}&quot;?</h3>
         {hasChildren ? (
           <p className="text-xs text-red-600 mb-5">
             This category has {category.children!.length} subcategories.

@@ -1,5 +1,6 @@
 // middleware.ts  (Next.js root — same level as app/)
 import { NextRequest, NextResponse } from 'next/server';
+import { backendOrigin, clientIpFrom } from './app/lib/api/backend';
 
 type UserRole = 'customer' | 'vendor' | 'admin';
 
@@ -7,8 +8,7 @@ interface SessionUser { role?: UserRole; emailVerified?: boolean; vendorOnboarde
 
 interface SessionResponse { user?: SessionUser; }
 
-const API_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-const AUTH_ORIGIN = API_URL.replace(/\/api\/?$/, '');
+const AUTH_ORIGIN = backendOrigin(process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
 
 const DASHBOARD_BY_ROLE: Record<UserRole, string> = {
   admin: '/admin/dashboard',
@@ -21,8 +21,9 @@ async function getSession(request: NextRequest): Promise<SessionUser | null> {
   const cookie = request.headers.get('cookie');
   if (!cookie) return null;
   try {
+    const clientIp = clientIpFrom((name) => request.headers.get(name));
     const response = await fetch(AUTH_ORIGIN + '/api/auth/get-session', {
-      headers: { cookie }, cache: 'no-store',
+      headers: { cookie, ...(clientIp ? { 'x-forwarded-for': clientIp } : {}) }, cache: 'no-store',
     });
     if (!response.ok) return null;
     return ((await response.json()) as SessionResponse | null)?.user ?? null;

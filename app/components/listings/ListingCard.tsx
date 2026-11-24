@@ -11,7 +11,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const county      = listing.location?.county;
   const price       = resolveListingPrice(listing);
   const rating      = listing.rating;
-  const reviewCount = listing.reviewCount ?? listing.review_count ?? 0;
+  const reviewCount = listing.reviewCount ?? 0;
 
   const priceSuffix: Record<string, string> = {
     per_hour: '/ hr', per_day: '/ day', per_person: '/ person', package: 'pkg', contact: '',
