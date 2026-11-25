@@ -2,14 +2,16 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../../lib/auth/auth.context';
-import { useRouter } from 'next/navigation';
 import { bookingsService } from '../../../lib/api/endpoints';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { Calendar, TrendingUp, CheckCircle2, XCircle, BarChart3, Eye, Zap, AlertCircle } from 'lucide-react';
+import type { BookingSummary } from '../../../lib/types/booking';
+import { Calendar, CheckCircle2, XCircle, BarChart3, Clock, Zap, AlertCircle, Hourglass } from 'lucide-react';
 
+// Booking counts only: LinkMart does not process or know booking payments, so there is no revenue figure.
 interface Analytics {
-  total: number; completed: number; cancelled: number; pending: number;
-  revenue: number; conversionRate: number; responseRate: number;
+  total: number; requested: number; accepted: number; completed: number;
+  declined: number; expired: number; cancelled: number;
+  acceptanceRate: number | null; responseRate: number | null;
 }
 
 type Timeframe = 'week' | 'month' | 'year';
@@ -33,25 +35,19 @@ function MetricCard({ label, value, sub, color, icon: Icon, border }: {
 }
 
 export default function VendorAnalyticsPage() {
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
-  const router  = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [data,     setData]     = useState<Analytics | null>(null);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
   const [period,   setPeriod]   = useState<Timeframe>('month');
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) { router.push('/auth/login'); return; }
-    if (!authLoading && user?.role !== 'vendor') { router.push('/dashboard'); }
-  }, [authLoading, isAuthenticated, user, router]);
-
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true); setError(null);
-      const res      = await bookingsService.getVendorBookings({ limit: 100 });
-      const bookings: any[] = Array.isArray(res.data) ? res.data : (res.data as any)?.data ?? [];
+      const res = await bookingsService.getVendorBookings({ limit: 100 });
+      const bookings: BookingSummary[] = Array.isArray(res.data) ? res.data : [];
 
-      // Filter by timeframe
+      // Filter by when the request was received
       const now  = new Date();
       const from = new Date();
       if (period === 'week')  from.setDate(now.getDate() - 7);
@@ -59,19 +55,17 @@ export default function VendorAnalyticsPage() {
       if (period === 'year')  from.setFullYear(now.getFullYear() - 1);
 
       const inRange = bookings.filter(b => new Date(b.createdAt) >= from);
-      const completed  = inRange.filter(b => b.status === 'completed');
-      const cancelled  = inRange.filter(b => b.status === 'cancelled');
-      const pending    = inRange.filter(b => b.status === 'pending');
-      const revenue    = completed.reduce((s: number, b: any) => s + (b.totalAmount ?? 0), 0);
+      const n = (s: BookingSummary['status']) => inRange.filter(b => b.status === s).length;
+      const requested = n('requested'), accepted = n('accepted'), completed = n('completed');
+      const declined = n('declined'), expired = n('expired'), cancelled = n('cancelled');
+      // Requests the vendor decided (accepted, later completed, or declined) vs those left to expire.
+      const answered = accepted + completed + declined;
+      const decidable = answered + expired;
 
       setData({
-        total:          inRange.length,
-        completed:      completed.length,
-        cancelled:      cancelled.length,
-        pending:        pending.length,
-        revenue,
-        conversionRate: inRange.length > 0 ? (completed.length / inRange.length) * 100 : 0,
-        responseRate:   inRange.length > 0 ? ((inRange.length - pending.length) / inRange.length) * 100 : 100,
+        total: inRange.length, requested, accepted, completed, declined, expired, cancelled,
+        acceptanceRate: answered > 0 ? ((accepted + completed) / answered) * 100 : null,
+        responseRate:   decidable > 0 ? (answered / decidable) * 100 : null,
       });
     } catch { setError('Failed to load analytics'); }
     finally  { setLoading(false); }
@@ -88,7 +82,7 @@ export default function VendorAnalyticsPage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Analytics</h1>
-          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Track your performance metrics</p>
+          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Booking requests and how you responded (latest 100 bookings)</p>
         </div>
         {/* Timeframe pills */}
         <div style={{ display: 'flex', gap: 6, background: '#F3F4F6', padding: 4, borderRadius: 10 }}>
@@ -115,17 +109,18 @@ export default function VendorAnalyticsPage() {
         <>
           {/* Primary metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }} className="analytics-grid">
-            <MetricCard label="Total Bookings"  value={data.total}                           color="#6366F1" icon={Calendar}       />
-            <MetricCard label="Revenue"         value={`KSh ${(data.revenue/1000).toFixed(0)}K`} color="#10B981" icon={TrendingUp} sub="From completed bookings" />
-            <MetricCard label="Conversion"      value={`${data.conversionRate.toFixed(0)}%`} color="#F59E0B" icon={Zap}           sub="Completed vs total"      />
-            <MetricCard label="Response Rate"   value={`${data.responseRate.toFixed(0)}%`}   color="#8B5CF6" icon={BarChart3}     sub="Non-pending ratio"        />
+            <MetricCard label="Requests"        value={data.total}    color="#6366F1" icon={Calendar} sub="Received in this period" />
+            <MetricCard label="Awaiting reply"  value={data.requested} color="#F59E0B" icon={Clock}   sub="Respond within 24 hours" />
+            <MetricCard label="Acceptance"      value={data.acceptanceRate === null ? '–' : `${data.acceptanceRate.toFixed(0)}%`} color="#10B981" icon={Zap}       sub="Accepted vs declined" />
+            <MetricCard label="Response Rate"   value={data.responseRate === null ? '–' : `${data.responseRate.toFixed(0)}%`}   color="#8B5CF6" icon={BarChart3} sub="Answered before expiry" />
           </div>
 
           {/* Secondary row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }} className="analytics-grid2">
-            <MetricCard label="Completed"  value={data.completed}  color="#10B981" icon={CheckCircle2} />
-            <MetricCard label="Cancelled"  value={data.cancelled}  color="#EF4444" icon={XCircle}      />
-            <MetricCard label="Pending"    value={data.pending}    color="#F59E0B" icon={Calendar}     />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }} className="analytics-grid2">
+            <MetricCard label="Accepted"   value={data.accepted}   color="#10B981" icon={CheckCircle2} />
+            <MetricCard label="Completed"  value={data.completed}  color="#8B5CF6" icon={CheckCircle2} />
+            <MetricCard label="Expired"    value={data.expired}    color="#9CA3AF" icon={Hourglass}    />
+            <MetricCard label="Declined / cancelled" value={data.declined + data.cancelled} color="#EF4444" icon={XCircle} />
           </div>
 
           {/* Booking breakdown bar */}
@@ -134,18 +129,22 @@ export default function VendorAnalyticsPage() {
               <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 14px' }}>Booking Breakdown</p>
               <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', gap: 2, marginBottom: 14 }}>
                 {[
-                  { count: data.completed, color: '#10B981' },
-                  { count: data.pending,   color: '#F59E0B' },
-                  { count: data.cancelled, color: '#EF4444' },
+                  { count: data.requested, color: '#F59E0B' },
+                  { count: data.accepted,  color: '#10B981' },
+                  { count: data.completed, color: '#8B5CF6' },
+                  { count: data.expired,   color: '#9CA3AF' },
+                  { count: data.declined + data.cancelled, color: '#EF4444' },
                 ].map((seg, i) => (
                   <div key={i} style={{ flex: seg.count, background: seg.color, minWidth: seg.count > 0 ? 4 : 0 }} />
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: 20 }}>
+              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
                 {[
-                  { label: 'Completed', count: data.completed, color: '#10B981' },
-                  { label: 'Pending',   count: data.pending,   color: '#F59E0B' },
-                  { label: 'Cancelled', count: data.cancelled, color: '#EF4444' },
+                  { label: 'Awaiting reply', count: data.requested, color: '#F59E0B' },
+                  { label: 'Accepted',  count: data.accepted,  color: '#10B981' },
+                  { label: 'Completed', count: data.completed, color: '#8B5CF6' },
+                  { label: 'Expired',   count: data.expired,   color: '#9CA3AF' },
+                  { label: 'Declined / cancelled', count: data.declined + data.cancelled, color: '#EF4444' },
                 ].map(seg => (
                   <div key={seg.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, display: 'inline-block' }} />
@@ -161,7 +160,7 @@ export default function VendorAnalyticsPage() {
             <p style={{ fontSize: 11, fontWeight: 700, color: '#065F46', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 12px' }}>💡 Tips to Improve</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                'Respond to booking requests within 24 hours to boost response rate',
+                'Respond to booking requests within 24 hours; unanswered requests expire',
                 'Add high-quality photos to increase listing views and conversion',
                 'Ask customers to leave reviews after completed bookings',
                 'Keep pricing competitive — check similar listings in your area',
@@ -179,7 +178,7 @@ export default function VendorAnalyticsPage() {
       <style>{`
         @media (max-width: 768px) {
           .analytics-grid  { grid-template-columns: repeat(2, 1fr) !important; }
-          .analytics-grid2 { grid-template-columns: repeat(3, 1fr) !important; }
+          .analytics-grid2 { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 480px) {
           .analytics-grid  { grid-template-columns: 1fr !important; }

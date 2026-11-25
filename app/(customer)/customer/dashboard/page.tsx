@@ -5,11 +5,16 @@ import Link   from 'next/link';
 import { useAuth }        from '../.././../lib/auth/auth.context';
 import { customerService, bookingsService } from '../../../lib/api/endpoints';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import {
-  Calendar, Heart, ShoppingBag, TrendingUp,
-  Clock, CheckCircle, XCircle, ChevronRight,
-  MapPin, AlertCircle,
-} from 'lucide-react';
+import type { BookingSummary } from '../../../lib/types/booking';
+import { formatDateRange } from '../../../lib/bookings/booking-ui';
+import { BookingStatusBadge } from '../../../components/bookings/BookingStatusBadge';
+import { Calendar, Heart, ShoppingBag, Clock, CheckCircle, ChevronRight, AlertCircle } from 'lucide-react';
+
+/** GET /users/me/stats: booking counts per status (no money fields). */
+interface CustomerStats {
+  total: number; requested: number; accepted: number; completed: number;
+  declined: number; expired: number; cancelled: number; savedCount: number;
+}
 
 function greeting() {
   const h = new Date().getHours();
@@ -18,29 +23,23 @@ function greeting() {
   return 'Good evening';
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
-  pending:   { label: 'Pending',   color: 'bg-amber-50 text-amber-700',   dot: 'bg-amber-400'   },
-  confirmed: { label: 'Confirmed', color: 'bg-blue-50 text-blue-700',     dot: 'bg-blue-500'    },
-  completed: { label: 'Completed', color: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
-  cancelled: { label: 'Cancelled', color: 'bg-gray-100 text-gray-500',    dot: 'bg-gray-400'    },
-  declined:  { label: 'Declined',  color: 'bg-red-50 text-red-500',       dot: 'bg-red-400'     },
-};
-
 export default function CustomerDashboardPage() {
   const { user } = useAuth();
-  const [stats,    setStats]    = useState<any>(null);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [stats,    setStats]    = useState<CustomerStats | null>(null);
+  const [bookings, setBookings] = useState<BookingSummary[]>([]);
   const [loading,  setLoading]  = useState(true);
+  const [failed,   setFailed]   = useState(false);
 
   useEffect(() => {
-    Promise.all([
+    // Independent requests: one failing should not blank the other.
+    void Promise.allSettled([
       customerService.getStats(),
       bookingsService.getMyBookings({ limit: 5 }),
     ]).then(([statsRes, bookingsRes]) => {
-      setStats((statsRes as any).data);
-      const bd = (bookingsRes as any).data;
-      setBookings(Array.isArray(bd) ? bd.slice(0, 5) : []);
-    }).catch(() => {}).finally(() => setLoading(false));
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data as CustomerStats);
+      if (bookingsRes.status === 'fulfilled' && Array.isArray(bookingsRes.value.data)) setBookings(bookingsRes.value.data);
+      setFailed(statsRes.status === 'rejected' || bookingsRes.status === 'rejected');
+    }).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <LoadingSpinner fullPage />;
@@ -53,11 +52,11 @@ export default function CustomerDashboardPage() {
       Icon: Calendar, accent: 'bg-blue-50 text-blue-600',
     },
     {
-      label: 'Pending',  value: stats?.pending ?? 0,
+      label: 'Awaiting reply', value: stats?.requested ?? 0,
       Icon: Clock,       accent: 'bg-amber-50 text-amber-600',
     },
     {
-      label: 'Completed', value: stats?.completed ?? 0,
+      label: 'Accepted', value: stats?.accepted ?? 0,
       Icon: CheckCircle,  accent: 'bg-emerald-50 text-emerald-600',
     },
     {
@@ -91,18 +90,10 @@ export default function CustomerDashboardPage() {
         ))}
       </div>
 
-      {/* Total spent */}
-      {stats?.spent > 0 && (
-        <div className="bg-[#2D3B45] rounded-2xl p-5 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">
-              Total Spent
-            </p>
-            <p className="text-2xl font-black text-white">
-              KSh {stats.spent.toLocaleString()}
-            </p>
-          </div>
-          <TrendingUp size={32} className="text-[#F5C842] opacity-80" />
+      {failed && (
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 flex items-center gap-2" role="alert">
+          <AlertCircle size={14} className="text-amber-500" aria-hidden />
+          <p className="text-xs text-amber-800">Some of your activity could not be loaded. Refresh the page to try again.</p>
         </div>
       )}
 
@@ -114,7 +105,7 @@ export default function CustomerDashboardPage() {
         <div className="flex flex-wrap gap-2">
           {[
             { label: 'Browse Services', href: '/store',    primary: true  },
-            { label: 'My Bookings',     href: '/bookings', primary: false },
+            { label: 'My Bookings',     href: '/customer/bookings', primary: false },
             { label: 'Saved Listings',  href: '/saved',    primary: false },
           ].map(({ label, href, primary }) => (
             <Link key={label} href={href}
@@ -134,7 +125,7 @@ export default function CustomerDashboardPage() {
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
             Recent Bookings
           </p>
-          <Link href="/bookings"
+          <Link href="/customer/bookings"
             className="text-[11px] font-bold text-[#2D3B45] hover:underline no-underline
               flex items-center gap-1">
             View all <ChevronRight size={11} />
@@ -146,7 +137,7 @@ export default function CustomerDashboardPage() {
             <ShoppingBag size={24} className="text-gray-200 mx-auto mb-2" />
             <p className="text-sm font-bold text-gray-600 mb-1">No bookings yet</p>
             <p className="text-xs text-gray-400 mb-4">
-              Explore services and make your first booking.
+              Explore services and send your first booking request.
             </p>
             <Link href="/store"
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2D3B45] text-white
@@ -157,11 +148,8 @@ export default function CustomerDashboardPage() {
         ) : (
           <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
             {bookings.map((b, i) => {
-              const sc = STATUS_CONFIG[b.status] ?? STATUS_CONFIG.pending;
-              const location = b.listing?.location;
-              const locationStr = [location?.area, location?.county].filter(Boolean).join(', ');
               return (
-                <Link key={b.id} href={`/bookings/${b.id}`}
+                <Link key={b.id} href={`/customer/bookings/${b.id}`}
                   className={`flex items-center gap-3 px-4 py-3.5 no-underline
                     hover:bg-gray-50 transition-colors
                     ${i < bookings.length - 1 ? 'border-b border-gray-50' : ''}`}>
@@ -179,19 +167,13 @@ export default function CustomerDashboardPage() {
                     <p className="text-xs font-bold text-gray-900 truncate">
                       {b.listing?.title ?? 'Listing'}
                     </p>
-                    {locationStr && (
-                      <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
-                        <MapPin size={9} /> {locationStr}
-                      </p>
-                    )}
+                    <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
+                      <Calendar size={9} aria-hidden /> {formatDateRange(b.startDate, b.endDate)}
+                    </p>
                   </div>
 
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className={`inline-flex items-center gap-1 text-[9px] font-bold
-                      px-2 py-0.5 rounded-full ${sc.color}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                      {sc.label}
-                    </span>
+                    <BookingStatusBadge status={b.status} />
                     <span className="text-[10px] text-gray-400">
                       {new Date(b.createdAt).toLocaleDateString('en-KE', {
                         day: 'numeric', month: 'short',

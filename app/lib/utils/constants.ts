@@ -9,9 +9,10 @@ export const USER_ROLES = {
 } as const;
 
 export const BOOKING_STATUS = {
-  PENDING: 'pending',
+  REQUESTED: 'requested',
   ACCEPTED: 'accepted',
   DECLINED: 'declined',
+  EXPIRED: 'expired',
   CANCELLED: 'cancelled',
   COMPLETED: 'completed',
 } as const;

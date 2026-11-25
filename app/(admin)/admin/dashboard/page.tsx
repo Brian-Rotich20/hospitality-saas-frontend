@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { serverFetch } from '../../../lib/api/server';
 import Link            from 'next/link';
 import { StatCard }    from '../../../components/ui/StatCard';
-import { Users, Calendar, TrendingUp, UserRound } from 'lucide-react';
+import { Users, Calendar, Clock, UserRound } from 'lucide-react';
 
 export default async function AdminDashboardPage() {
   // NOTE: adjust '/admin/customers' if your actual endpoint for the customer
@@ -22,8 +22,8 @@ export default async function AdminDashboardPage() {
     totalVendors:   v.length,
     totalCustomers: c.length,
     totalBookings:  b.length,
-    revenue:        b.filter((x: any) => x.status === 'completed')
-                     .reduce((s: number, x: any) => s + (x.totalAmount ?? 0), 0),
+    // Bookings carry no money; count the requests still waiting for a vendor reply instead.
+    openRequests:   b.filter((x: { status?: string }) => x.status === 'requested').length,
   };
 
   return (
@@ -39,7 +39,7 @@ export default async function AdminDashboardPage() {
         <StatCard label="Total Vendors" value={stats.totalVendors} icon={Users} />
         <StatCard label="Total Customers" value={stats.totalCustomers} icon={UserRound} />
         <StatCard label="Total Bookings" value={stats.totalBookings} icon={Calendar} />
-        <StatCard label="Revenue (KSh)" value={`${Math.round(stats.revenue / 1000)}K`} icon={TrendingUp} />
+        <StatCard label="Open requests" value={stats.openRequests} icon={Clock} />
       </div>
 
       <div className="mb-8">
