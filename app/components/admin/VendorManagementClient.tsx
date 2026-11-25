@@ -48,7 +48,7 @@ function SuspendModal({
         <h3 className="text-base font-black text-gray-900 mb-1">Suspend Vendor</h3>
         <p className="text-xs text-gray-500 mb-5">
           Suspending <strong>{vendor.businessName}</strong> will hide all their listings.
-          There's currently no way to reverse this from here.
+          There&apos;s currently no way to reverse this from here.
         </p>
         <div className="flex gap-2">
           <button onClick={onCancel} disabled={loading}

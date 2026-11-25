@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { vendorsService, uploadService } from '../../../lib/api/endpoints';
 import type { Vendor } from '../../../lib/types/vendor';
+import type { ApiError } from '../../../lib/api/client';
+import { verifyEmailPath } from '../../../lib/auth/auth.context';
 import { useSearchParams } from 'next/navigation';
 
 export default function VendorOnboardingPage() {
@@ -33,11 +35,20 @@ export default function VendorOnboardingPage() {
       }
 
       if (intent === 'vendor') {
-        const { data } = await vendorsService.become();
-        if (data) {
-          setVendor(data);
-          setBusinessName(data.businessName);
-          setLogoPreview(data.logo ?? null);
+        try {
+          const { data } = await vendorsService.become();
+          if (data) {
+            setVendor(data);
+            setBusinessName(data.businessName);
+            setLogoPreview(data.logo ?? null);
+          }
+        } catch (err) {
+          // Vendor onboarding requires a verified email: verify first, then come back here.
+          if ((err as ApiError).code === 'EMAIL_NOT_VERIFIED') {
+            router.replace(verifyEmailPath({ asVendor: true }));
+            return;
+          }
+          throw err;
         }
       } else {
         toast.error('You need a vendor account to see this page');
@@ -104,7 +115,7 @@ export default function VendorOnboardingPage() {
     <div className="max-w-md mx-auto px-4 py-12">
       <h1 className="text-2xl font-semibold mb-2">Set up your shop</h1>
       <p className="text-gray-500 mb-8">
-        We've started your shop as <span className="font-medium">{vendor?.businessName}</span>.
+        We&apos;ve started your shop as <span className="font-medium">{vendor?.businessName}</span>.
         Customize it now, or skip and do this later in Settings.
       </p>
 

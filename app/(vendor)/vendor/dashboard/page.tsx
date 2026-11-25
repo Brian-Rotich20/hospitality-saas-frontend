@@ -58,7 +58,7 @@ export default async function VendorDashboardPage() {
             {greeting()} 👋
           </h1>
           <p className="text-[12px] text-gray-400">
-            Here's what's happening with your business today.
+            Here&apos;s what&apos;s happening with your business today.
           </p>
         </div>
         <div className="text-right shrink-0">

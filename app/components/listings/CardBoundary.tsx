@@ -30,7 +30,7 @@ export class CardBoundary extends React.Component<React.PropsWithChildren, State
       return (
         <div className="card flex flex-col items-center justify-center gap-2 p-6 text-center min-h-[200px]">
           <ImageOff size={20} className="text-gray-300" />
-          <p className="text-[11px] text-gray-400">This listing couldn't be displayed</p>
+          <p className="text-[11px] text-gray-400">This listing couldn&apos;t be displayed</p>
         </div>
       );
     }

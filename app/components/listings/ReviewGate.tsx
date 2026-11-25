@@ -68,7 +68,7 @@ export function ReviewGate({ listingId }: Props) {
     return (
       <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
         <CheckCircle size={14} className="text-emerald-500 shrink-0" />
-        <p className="text-xs font-semibold text-emerald-700">You've already reviewed this listing. Thank you!</p>
+        <p className="text-xs font-semibold text-emerald-700">You&apos;ve already reviewed this listing. Thank you!</p>
       </div>
     );
   }

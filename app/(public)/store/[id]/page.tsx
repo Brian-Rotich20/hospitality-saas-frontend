@@ -7,24 +7,19 @@ import { ArrowLeft, Shield, ChevronRight, Tag, Eye, Star } from 'lucide-react';
 import { ListingGallery }    from '../../../components/listings/ListingGallery';
 import { ListingInfo }       from '../../../components/listings/ListingQuickInfo';
 import { BookingCard }       from '../../../components/listings/BookingCard';
-import { resolveListingPrice } from '../../../lib/types/listing';
+import { cache }             from 'react';
+import { resolveListingPrice, type Listing } from '../../../lib/types/listing';
 import { ReviewSection } from '../../../components/listings/ReviewSection';
-import { getServerApiUrl } from '../../../lib/api/server';
+import { serverFetch } from '../../../lib/api/server';
 
 
 export const dynamic = 'force-dynamic';
 
-async function fetchListing(id: string) {
-  const API = getServerApiUrl();
-  try {
-    const res = await fetch(`${API}/listings/${id}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.data ?? null;
-  } catch {
-    return null;
-  }
-}
+// React.cache: the page and generateMetadata share one request (also avoids counting two views).
+const fetchListing = cache(async (id: string) => {
+  const { data } = await serverFetch<Listing & { capacity?: number; instantBooking?: boolean }>(`/listings/${encodeURIComponent(id)}`);
+  return data;
+});
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -39,7 +34,7 @@ export default async function ListingDetailPage({ params }: Props) {
   const price      = resolveListingPrice(listing);
   const photos     = listing.photos ?? [];
   const location   = listing.location ?? {};
-  const categoryName = (listing.category as any)?.name ?? listing.category ?? null;
+  const categoryName = listing.category?.name ?? null;
   const rating     = listing.rating;
   const reviewCount = listing.reviewCount ?? 0;
   const views      = listing.views ?? 0;
@@ -137,10 +132,11 @@ export default async function ListingDetailPage({ params }: Props) {
             <Shield size={14} style={{ color: 'var(--color-text-muted)', flexShrink: 0, marginTop: 2 }} />
             <div>
               <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                Secure & trusted
+                How booking works
               </p>
               <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                Payments protected via M-Pesa Daraja. Vendor verified by LinkMart.
+                Send a request; the vendor has 24 hours to respond. Once accepted, you arrange payment
+                directly with the vendor. LinkMart does not take booking payments.
               </p>
             </div>
           </div>

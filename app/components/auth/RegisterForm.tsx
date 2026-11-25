@@ -73,7 +73,7 @@ export function RegisterForm() {
 
         <div className="bg-white rounded-2xl p-6 shadow-xl">
           <h2 className="text-base font-bold text-gray-900 mb-0.5">Create account</h2>
-          <p className="text-xs text-gray-400 mb-5">Join as a customer — it's free</p>
+          <p className="text-xs text-gray-400 mb-5">Join as a customer — it&apos;s free</p>
 
           <button
             type="button"

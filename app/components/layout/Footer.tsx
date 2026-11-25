@@ -25,7 +25,7 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Kenya's premier hospitality marketplace connecting vendors and customers.
+              Kenya&apos;s premier hospitality marketplace connecting vendors and customers.
             </p>
             <div className="flex gap-4">
               {[

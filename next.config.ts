@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 // Browser API calls stay on this origin and are proxied by the rewrite below.
 // This avoids CORS and preserves frontend session cookies.
+// BACKEND_URL is the backend origin; a trailing `/api` (older documented form) is tolerated
+// and stripped so requests never go to `/api/api/...`.
 const backendUrl = (
   process.env.BACKEND_URL ||
-  'https://hospitality-saas-platform.onrender.com/api'
-).replace(/\/+$/, '');
+  'https://hospitality-saas-platform.onrender.com'
+).trim().replace(/\/+$/, '').replace(/\/api$/, '');
 
 const nextConfig = {
   reactStrictMode: true,

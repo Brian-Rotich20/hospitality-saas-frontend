@@ -4,7 +4,6 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { authClient } from './authClient';
-import { vendorsService } from '../api/endpoints';
 
 type UserRole = 'customer' | 'vendor' | 'admin';
 
@@ -21,9 +20,19 @@ interface RegisterOptions {
   // When true, skip the default toast + redirect. Used by flows that chain
   // register() with further steps and want exactly one toast/redirect.
   silent?: boolean;
-  // When true, create the vendor record right after signup and send the
-  // user to onboarding instead of their normal landing page.
+  // When true, the user becomes a vendor right after verifying their email
+  // (the backend refuses vendor onboarding before verification).
   asVendor?: boolean;
+}
+
+/** Where to verify the emailed code; `intent=vendor` continues into vendor onboarding. */
+export function verifyEmailPath(opts: { asVendor?: boolean; redirectTo?: string | null } = {}) {
+  const q = new URLSearchParams();
+  if (opts.asVendor) q.set('intent', 'vendor');
+  const safe = getSafeRedirect(opts.redirectTo);
+  if (safe) q.set('redirect', safe);
+  const s = q.toString();
+  return `/auth/verify-email${s ? `?${s}` : ''}`;
 }
 
 interface AuthContextType {
@@ -42,14 +51,21 @@ const ROLE_REDIRECT: Record<UserRole, string> = {
   customer: '/store',
 };
 
-function getSafeRedirect(redirectTo: string | null | undefined) {
+export function getSafeRedirect(redirectTo: string | null | undefined) {
   return redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null;
 }
 
-function mapSessionUser(sessionUser: any): User {
+/** Fields of the Better Auth session user that LinkMart uses (role/vendorId are additional fields). */
+interface SessionUser { id: string; email: string; name?: string | null; role?: string | null; vendorId?: string | null; emailVerified?: boolean | null }
+
+function isRole(v: unknown): v is UserRole {
+  return v === 'customer' || v === 'vendor' || v === 'admin';
+}
+
+function mapSessionUser(sessionUser: SessionUser): User {
   return {
     userId: sessionUser.id, email: sessionUser.email, fullName: sessionUser.name ?? undefined,
-    role: sessionUser.role ?? 'customer', vendorId: sessionUser.vendorId ?? undefined,
+    role: isRole(sessionUser.role) ? sessionUser.role : 'customer', vendorId: sessionUser.vendorId ?? undefined,
     emailVerified: !!sessionUser.emailVerified,
   };
 }
@@ -78,6 +94,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!data?.user) throw new Error('Login failed');
       const mapped = mapSessionUser(data.user);
       setUser(mapped);
+      if (!mapped.emailVerified) {
+        // Booking, saving, reviews and vendor onboarding all require a verified email.
+        toast('Please verify your email to continue');
+        router.push(verifyEmailPath({ redirectTo }));
+        return;
+      }
       toast.success('Signed in successfully');
       router.push(getSafeRedirect(redirectTo) ?? ROLE_REDIRECT[mapped.role] ?? '/store');
     } finally { setLoading(false); }
@@ -94,22 +116,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw new Error(error.message || 'Registration failed');
       if (!data?.user) throw new Error('Registration failed');
 
-      let mapped = mapSessionUser(data.user);
-
-      if (options?.asVendor) {
-        await vendorsService.become();
-        await fetchSession();
-        mapped = { ...mapped, role: 'vendor' };
-      }
-
+      const mapped = mapSessionUser(data.user);
       setUser(mapped);
 
       if (options?.silent) return; // caller owns its own toast/redirect
 
+      if (!mapped.emailVerified) {
+        // A 6-digit code was emailed. Vendor onboarding happens after verification.
+        toast.success('Account created. Check your email for a 6-digit code.');
+        router.push(verifyEmailPath({ asVendor: options?.asVendor }));
+        return;
+      }
       toast.success('Account created!');
-      router.push(options?.asVendor ? '/vendor/onboarding' : (ROLE_REDIRECT[mapped.role] ?? '/store'));
+      router.push(options?.asVendor ? '/vendor/onboarding?intent=vendor' : (ROLE_REDIRECT[mapped.role] ?? '/store'));
     } finally { setLoading(false); }
-  }, [router, fetchSession]);
+  }, [router]);
 
   const logout = useCallback(async () => {
     try { await authClient.signOut(); }

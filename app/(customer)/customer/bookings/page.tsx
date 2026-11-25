@@ -17,7 +17,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string 
   declined:  { label: 'Declined',  color: 'bg-red-50 text-red-500 border border-red-200',         dot: 'bg-red-400'     },
 };
 
-const FILTERS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'] as const;
+const FILTERS = ['all', 'requested', 'accepted', 'completed', 'cancelled'] as const;
 type Filter = typeof FILTERS[number];
 
 export default function CustomerBookingsPage() {

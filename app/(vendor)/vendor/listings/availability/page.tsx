@@ -148,7 +148,7 @@ const handleBlockDates = async () => {
         {/* Info Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
           <p className="text-blue-900">
-            <strong>{listing.title}</strong> - Block dates when you're not
+            <strong>{listing.title}</strong> - Block dates when you&apos;re not
             available to accept bookings
           </p>
         </div>

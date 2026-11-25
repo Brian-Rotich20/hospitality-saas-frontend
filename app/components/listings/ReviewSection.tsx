@@ -4,7 +4,7 @@
 
 import { Star, MessageSquare } from 'lucide-react';
 import { ReviewGate }          from './ReviewGate';
-import { getServerApiUrl }     from '../../lib/api/server';
+import { serverFetch }         from '../../lib/api/server';
 
 interface Review {
   id:              string;
@@ -22,7 +22,8 @@ interface Review {
 
 interface Stats {
   total:   number;
-  average: number;
+  /** Number with one decimal, or null when there are no reviews (backend contract). */
+  average: number | null;
   five:    number;
   four:    number;
   three:   number;
@@ -30,16 +31,11 @@ interface Stats {
   one:     number;
 }
 
+const EMPTY: { reviews: Review[]; stats: Stats } = { reviews: [], stats: { total: 0, average: null, five: 0, four: 0, three: 0, two: 0, one: 0 } };
+
 async function fetchReviews(listingId: string): Promise<{ reviews: Review[]; stats: Stats }> {
-  const API = getServerApiUrl();
-  try {
-    const res = await fetch(`${API}/reviews/listing/${listingId}?limit=20`, { cache: 'no-store' });
-    if (!res.ok) return { reviews: [], stats: { total: 0, average: 0, five: 0, four: 0, three: 0, two: 0, one: 0 } };
-    const json = await res.json();
-    return json.data ?? { reviews: [], stats: { total: 0, average: 0, five: 0, four: 0, three: 0, two: 0, one: 0 } };
-  } catch {
-    return { reviews: [], stats: { total: 0, average: 0, five: 0, four: 0, three: 0, two: 0, one: 0 } };
-  }
+  const { data } = await serverFetch<{ reviews: Review[]; stats: Stats }>(`/reviews/listing/${encodeURIComponent(listingId)}?limit=20`);
+  return data ?? EMPTY;
 }
 
 function StarRow({ rating }: { rating: number }) {
@@ -127,10 +123,10 @@ export async function ReviewSection({ listingId }: { listingId: string }) {
             Reviews
           </p>
         </div>
-        {stats.total > 0 && (
+        {stats.total > 0 && stats.average !== null && (
           <div className="flex items-center gap-1.5">
             <StarRow rating={stats.average} />
-            <span className="text-xs font-bold text-gray-700">{stats.average}</span>
+            <span className="text-xs font-bold text-gray-700">{stats.average.toFixed(1)}</span>
             <span className="text-xs text-gray-400">({stats.total})</span>
           </div>
         )}

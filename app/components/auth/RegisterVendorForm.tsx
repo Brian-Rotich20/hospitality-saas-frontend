@@ -49,9 +49,8 @@ export function RegisterVendorForm() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      // register() itself creates the account, creates the vendor record
-      // (asVendor: true), refreshes the session, toasts, and redirects to
-      // /vendor/onboarding — nothing left for this form to do.
+      // register() creates the account and sends the user to verify their email;
+      // the vendor account is created right after verification (asVendor: true).
       await registerUser({
         fullName: data.fullName,
         email:    data.email,
