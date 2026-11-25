@@ -13,7 +13,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (isLoading) return;
-    if (!isAuthenticated)          { router.push('/auth/login'); return; }
+    if (!isAuthenticated)          { router.push(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
     if (user?.role !== 'customer') { router.push('/store');      return; }
   }, [isAuthenticated, isLoading, user, router]);
 

@@ -19,7 +19,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (isLoading) return;
-    if (!isAuthenticated) { router.push('/auth/login'); return; }
+    if (!isAuthenticated) { router.push(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
     if (user?.role !== 'vendor' && !isMidOnboarding) {
       router.push('/store');
       return;

@@ -113,7 +113,7 @@ export async function ReviewSection({ listingId }: { listingId: string }) {
   const { reviews, stats } = await fetchReviews(listingId);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+    <div id="reviews" className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden scroll-mt-20">
 
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
