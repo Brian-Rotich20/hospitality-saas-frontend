@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 // React.cache: the page and generateMetadata share one request (also avoids counting two views).
 const fetchListing = cache(async (id: string) => {
-  const { data } = await serverFetch<Listing & { capacity?: number; instantBooking?: boolean }>(`/listings/${encodeURIComponent(id)}`);
+  const { data } = await serverFetch<Listing>(`/listings/${encodeURIComponent(id)}`);
   return data;
 });
 
@@ -96,14 +96,6 @@ export default async function ListingDetailPage({ params }: Props) {
               </span>
             </>
           )}
-          {listing.instantBooking && (
-            <>
-              <span className="text-gray-200">·</span>
-              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                ⚡ Instant booking
-              </span>
-            </>
-          )}
         </div>
 
       {/* ── Main content grid ────────────────────────────────────── */}
@@ -122,9 +114,7 @@ export default async function ListingDetailPage({ params }: Props) {
             price={price}
             pricingType={listing.pricingType}
             currency={listing.currency ?? 'KES'}
-            capacity={listing.capacity}
             location={location}
-            instantBooking={listing.instantBooking}
             vendor={listing.vendor}
           />
 
