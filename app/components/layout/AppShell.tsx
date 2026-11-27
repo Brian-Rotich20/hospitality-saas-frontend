@@ -11,6 +11,7 @@ import { Sidebar } from './Sidebar';
 import { useAuth } from '../../lib/auth/auth.context';
 import { useProfile } from '../../lib/hooks/useProfile';
 import { useUnreadCount } from '../../lib/messaging/unread';
+import { VendorStatusBanner } from '../vendor/VendorStatusBanner';
 
 const ACCOUNT_HREF = { vendor: '/vendor/settings/account', customer: '/customer/account/profile', admin: '/admin/settings' } as const;
 
@@ -54,12 +55,14 @@ function AppTopbar({ onMenu }: { onMenu: () => void }) {
 
 export function AppShell({ children, width = 1100 }: { children: React.ReactNode; width?: number }) {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
   return (
     <div className="min-h-screen bg-page">
       <Sidebar mobileOpen={open} onMobileClose={() => setOpen(false)} />
       <div className="lg:ml-[220px] min-h-screen flex flex-col">
         <AppTopbar onMenu={() => setOpen(true)} />
         <main className="flex-1 p-4 md:p-6 w-full mx-auto" style={{ maxWidth: width }}>
+          {user?.role === 'vendor' && <VendorStatusBanner />}
           {children}
         </main>
       </div>

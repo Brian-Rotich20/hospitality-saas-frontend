@@ -29,8 +29,12 @@ export const STATUS_LABEL: Record<OverviewStatus, string> = {
 
 export type Tone = 'ok' | 'warn' | 'bad' | 'neutral';
 
-/** No price is configured yet: billing is held and there is nothing to pay. */
+/**
+ * No price is configured: billing is held and there is nothing to pay. An invoice that was
+ * already issued stays payable even if the plan is later deactivated.
+ */
 export function billingHeld(o: SubscriptionOverview): boolean {
+  if (o.openInvoice) return false;
   return o.subscription?.billingHoldReason === 'no_active_plan' || o.currentPlan === null;
 }
 
