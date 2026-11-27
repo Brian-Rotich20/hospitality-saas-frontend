@@ -73,7 +73,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── 4. Auth pages — length if already logged in + verified ──────────
+  // ── 4. /messages/* (customers and vendors; admins read from moderation) ────
+  if (pathname === '/messages' || pathname.startsWith('/messages/')) {
+    if (!user) return redirectToLogin(request);
+    return NextResponse.next();
+  }
+
+  // ── 5. Auth pages — length if already logged in + verified ──────────
   if (
     pathname === '/auth/login' ||
     pathname === '/auth/register' ||
@@ -98,5 +104,7 @@ export const config = {
     '/auth/register-vendor',
     '/auth/verify-email',
     '/vendor/verify-email',
+    '/messages',
+    '/messages/:path*',
   ],
 };

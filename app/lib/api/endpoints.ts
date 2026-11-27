@@ -96,6 +96,11 @@ import { apiClient } from './client';
 import type { Listing, Category, ListingFilters } from '../types/listing';
 import type { Vendor, UpdateVendorInput, PayoutDetailsInput } from '../types/vendor';
 import type { Booking, BookingEvent, BookingListFilters, BookingSummary, CreateBookingRequest } from '../types/booking';
+import type { ConversationRef, ConversationSummary, MessagePage, MessageReport } from '../types/messaging';
+import type {
+  AdminPaymentRow, AdminSubscriptionRow, AdminVendorBilling, Invoice, PaymentAttempt, PaymentHistoryRow,
+  PaymentMethods, Plan, RevenueRow, SubscriptionOverview,
+} from '../types/subscription';
 
 // ── Categories ────────────────────────────────────────────────────────────────
 export const categoriesService = {
@@ -222,6 +227,60 @@ export const reviewsService = {
     apiClient.get(API_ENDPOINTS.REVIEWS.ELIGIBILITY(listingId)),
   addReply: (reviewId: string, reply: string) =>
     apiClient.post(API_ENDPOINTS.REVIEWS.REPLY(reviewId), { reply }),
+};
+
+// ── Messaging (polling; no websockets) ───────────────────────────────────────
+export const messagingService = {
+  list:        () => apiClient.get<ConversationSummary[]>('/conversations'),
+  byBooking:   (bookingId: string) => apiClient.get<ConversationRef>(`/conversations/by-booking/${bookingId}`),
+  messages:    (conversationId: string, after?: string) =>
+    apiClient.get<MessagePage>(`/conversations/${conversationId}/messages`, { params: after ? { after, limit: 200 } : { limit: 200 } }),
+  send:        (conversationId: string, body: string) =>
+    apiClient.post<{ id: string; body: string; createdAt: string; mine: true }>(`/conversations/${conversationId}/messages`, { body }),
+  report:      (messageId: string, reason: string) => apiClient.post(`/messages/${messageId}/report`, { reason }),
+};
+
+// ── Vendor subscription (the only payments LinkMart processes) ───────────────
+export const subscriptionService = {
+  paymentMethods: () => apiClient.get<PaymentMethods>('/subscriptions/payment-methods'),
+  overview:       () => apiClient.get<SubscriptionOverview>('/subscriptions/me'),
+  invoices:       (limit = 24, offset = 0) => apiClient.get<Invoice[]>('/subscriptions/me/invoices', { params: { limit, offset } }),
+  payments:       (limit = 24, offset = 0) => apiClient.get<PaymentHistoryRow[]>('/subscriptions/me/payments', { params: { limit, offset } }),
+  /** One Idempotency-Key per user action; reuse it when retrying the same action. */
+  pay: (input: { provider: 'paystack' } | { provider: 'mpesa'; phone: string }, idempotencyKey: string) =>
+    apiClient.post<PaymentAttempt>('/subscriptions/me/payments', input, { headers: { 'Idempotency-Key': idempotencyKey } }),
+  payment:        (id: string) => apiClient.get<PaymentAttempt>(`/subscriptions/me/payments/${id}`),
+  cancel:         () => apiClient.post('/subscriptions/me/cancel', {}),
+  resume:         () => apiClient.post('/subscriptions/me/resume', {}),
+  setAutoRenew:   (enabled: boolean) => apiClient.patch<{ autoRenewOptIn: boolean }>('/subscriptions/me/auto-renew', { enabled }),
+};
+
+// ── Admin: billing, payments, moderation, operations ─────────────────────────
+export const adminBillingService = {
+  subscriptions:  (params: { status?: string; limit?: number; offset?: number } = {}) =>
+    apiClient.get<AdminSubscriptionRow[]>('/admin/subscriptions', { params }),
+  vendorBilling:  (vendorId: string) => apiClient.get<AdminVendorBilling>(`/admin/subscriptions/vendors/${vendorId}`),
+  plans:          () => apiClient.get<Plan[]>('/admin/subscriptions/plans'),
+  createPlan:     (input: { code: string; name: string; amountMinor: number; currency: 'KES'; activate: boolean }) =>
+    apiClient.post<Plan>('/admin/subscriptions/plans', input),
+  setPlanActive:  (id: string, active: boolean) => apiClient.patch<Plan>(`/admin/subscriptions/plans/${id}`, { active }),
+  unenrolled:     () => apiClient.get<{ id: string; businessName: string; status: string; createdAt: string }[]>('/admin/subscriptions/unenrolled'),
+  enrol:          (vendorId: string) => apiClient.post(`/admin/subscriptions/unenrolled/${vendorId}/enrol`, {}),
+  revenue:        (from: string, to: string) => apiClient.get<RevenueRow[]>('/admin/subscriptions/revenue', { params: { from, to } }),
+  payments:       (params: { status?: string; provider?: string; vendorId?: string; needsReview?: boolean; limit?: number; offset?: number } = {}) =>
+    apiClient.get<AdminPaymentRow[]>('/admin/payments', { params }),
+  payment:        (id: string) => apiClient.get<Record<string, unknown>>(`/admin/payments/${id}`),
+  review:         (id: string, note: string) => apiClient.post(`/admin/payments/${id}/review`, { note }),
+  reverify:       (id: string) => apiClient.post(`/admin/payments/${id}/reverify`, {}),
+};
+
+export const adminModerationService = {
+  reports:  () => apiClient.get<MessageReport[]>('/admin/messages/reports'),
+  moderate: (messageId: string, action: 'hide' | 'dismiss') => apiClient.post(`/admin/messages/${messageId}/moderate`, { action }),
+};
+
+export const adminOperationsService = {
+  health: () => apiClient.get<Record<string, unknown>>('/admin/operations/health'),
 };
 
 export const customerService = {

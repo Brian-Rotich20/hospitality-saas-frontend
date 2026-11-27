@@ -6,12 +6,13 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/auth.context';
 import Image from 'next/image';
 import {
-  Heart, CalendarCheck, Bell, Menu, X,
+  Heart, CalendarCheck, Menu, X,
   LayoutList, MessageSquare, LayoutDashboard,
 } from 'lucide-react';
 import { SearchBar } from './SearchBar';
 import { UserMenu } from './UserMenu';
 import { MobileDrawer } from './MobileDrawer';
+import { useUnreadCount } from '../../lib/messaging/unread';
 
 const CUSTOMER_NAV = [
   { href: '/customer/saved',    Icon: Heart,          label: 'Saved'    },
@@ -54,6 +55,7 @@ export function NavBar() {
 
   const role     = isAuthenticated ? (user?.role ?? 'customer') : null;
   const navLinks = role === 'vendor' ? VENDOR_NAV : role === 'customer' ? CUSTOMER_NAV : [];
+  const unread = useUnreadCount(role === 'vendor' || role === 'customer');
 
   return (
     <header
@@ -95,22 +97,13 @@ export function NavBar() {
               </nav>
             )}
 
-            <Link href="/messages" aria-label="Messages"
+            <Link href="/messages" aria-label={unread > 0 ? `Messages, ${unread} unread` : 'Messages'}
               className="relative w-9 h-9 rounded-full border border-border hidden sm:flex
                 items-center justify-center text-text-muted hover:text-brand
                 hover:border-brand transition-colors no-underline">
               <MessageSquare size={17} strokeWidth={1.8} />
+              {unread > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent border border-card" aria-hidden />}
             </Link>
-
-            <Link href="/notifications" aria-label="Notifications"
-              className="relative w-9 h-9 rounded-full border border-border hidden sm:flex
-                items-center justify-center text-text-muted hover:text-brand
-                hover:border-brand transition-colors no-underline ml-1">
-              <Bell size={17} strokeWidth={1.8} />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-accent
-                rounded-full border border-card" />
-            </Link>
-
             <div className="ml-2"><UserMenu /></div>
           </div>
 

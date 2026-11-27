@@ -10,7 +10,7 @@ import {
   AlertCircle, ArrowLeft, Calendar, CheckCircle, Clock, Mail, MapPin,
   MessageSquare, Phone, RefreshCw, Store, Users, XCircle,
 } from 'lucide-react';
-import { bookingsService } from '../../lib/api/endpoints';
+import { bookingsService, messagingService } from '../../lib/api/endpoints';
 import type { ApiError } from '../../lib/api/client';
 import type { Booking, BookingEvent } from '../../lib/types/booking';
 import {
@@ -59,6 +59,7 @@ export function BookingDetails({ id, viewer }: { id: string; viewer: Viewer }) {
   const [busy, setBusy] = useState<'accept' | 'decline' | 'cancel' | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
   const inFlight = useRef(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   const load = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
@@ -79,6 +80,17 @@ export function BookingDetails({ id, viewer }: { id: string; viewer: Viewer }) {
   }, [id]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // A conversation exists once the vendor has accepted (GET /conversations/by-booking: 404 before).
+  const status = booking?.status;
+  useEffect(() => {
+    if (status !== 'accepted' && status !== 'completed' && status !== 'cancelled') { setConversationId(null); return; }
+    let cancelled = false;
+    messagingService.byBooking(id)
+      .then((res) => { if (!cancelled) setConversationId(res.data.id); })
+      .catch(() => { if (!cancelled) setConversationId(null); });
+    return () => { cancelled = true; };
+  }, [id, status]);
 
   /** Runs one transition at a time; refreshes on conflicts so the page shows the real state. */
   const run = async (kind: 'accept' | 'decline' | 'cancel', call: () => Promise<{ data: Booking }>, success: string) => {
@@ -176,8 +188,14 @@ export function BookingDetails({ id, viewer }: { id: string; viewer: Viewer }) {
       )}
 
       {/* Actions */}
-      {(canRespond || canCancel || viewer === 'customer') && (
+      {(canRespond || canCancel || viewer === 'customer' || conversationId) && (
         <div className="flex flex-wrap gap-2">
+          {conversationId && (
+            <Link href={`/messages/${conversationId}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3B45] text-white text-xs font-bold no-underline hover:bg-[#3a4d5a]">
+              <MessageSquare size={13} aria-hidden /> Message the {viewer === 'vendor' ? 'customer' : 'vendor'}
+            </Link>
+          )}
           {canRespond && (
             <>
               <button
