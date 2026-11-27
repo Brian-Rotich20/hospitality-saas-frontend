@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { errorMessage } from '../../../lib/api/client';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -169,7 +170,7 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
       router.refresh();
       router.push('/vendor/listings');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create listing');
+      toast.error(errorMessage(err, 'Failed to create listing'));
     } finally {
       setSaving(false);
     }

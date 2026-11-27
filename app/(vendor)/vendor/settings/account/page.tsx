@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { errorMessage } from '../../../../lib/api/client';
 import { useAuth } from '../../../../lib/auth/auth.context';
 import { customerService, uploadService } from '../../../../lib/api/endpoints';
 import { LoadingSpinner } from '../../../../components/common/LoadingSpinner';
@@ -100,7 +101,7 @@ export default function VendorAccountPage() {
       toast.success('Profile updated successfully!', { id: toastId });
     } catch (err) {
       setUploadingAvatar(false);
-      toast.error(err instanceof Error ? err.message : 'Failed to update profile', { id: toastId });
+      toast.error(errorMessage(err, 'Failed to update profile'), { id: toastId });
     } finally {
       setSaving(false);
       setUploadingAvatar(false);

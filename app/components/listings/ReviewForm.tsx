@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { errorMessage } from '../../lib/api/client';
 import { Star, Send, Loader2 } from 'lucide-react';
 import { reviewsService } from '../../lib/api/endpoints';
 import toast from 'react-hot-toast';
@@ -30,7 +31,7 @@ export function ReviewForm({ listingId, bookingId, onSuccess }: Props) {
       toast.success('Review submitted — thank you!');
       onSuccess();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to submit review');
+      toast.error(errorMessage(err, 'Failed to submit review'));
     } finally {
       setSubmitting(false);
     }
