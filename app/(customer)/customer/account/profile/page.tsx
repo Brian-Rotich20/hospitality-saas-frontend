@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { errorMessage } from '../../../../lib/api/client';
 import { useAuth }         from '../../../../lib/auth/auth.context';
 import { customerService, uploadService } from '../../../../lib/api/endpoints';
 import { LoadingSpinner }  from '../../../../components/common/LoadingSpinner';
@@ -48,7 +49,7 @@ export default function ProfilePage() {
     setAvatarUrl(newUrl);
     toast.success('Profile photo updated');
   } catch (err) {
-    toast.error(err instanceof Error ? err.message : 'Failed to upload photo');
+    toast.error(errorMessage(err, 'Failed to upload photo'));
   } finally {
     setUploadingAvatar(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -62,7 +63,7 @@ export default function ProfilePage() {
       await customerService.updateProfile({ fullName, phone });
       toast.success('Profile updated!');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update');
+      toast.error(errorMessage(err, 'Failed to update'));
     } finally {
       setSaving(false);
     }

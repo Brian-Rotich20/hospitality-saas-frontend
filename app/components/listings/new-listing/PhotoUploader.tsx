@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { errorMessage } from '../../../lib/api/client';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -13,7 +14,7 @@ import {
   AlertCircle, GripVertical, Loader2, Upload, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { ACCEPT, MAX_MB, MAX_PHOTOS } from './constants';
+import { ACCEPT, MAX_PHOTOS } from './constants';
 import type { Photo } from './types';
 import { uploadService } from '../../../lib/api/endpoints';
 
@@ -121,18 +122,22 @@ export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
       setPhotos(prev => prev.map(p => (p.id === id ? { ...p, url, uploading: false } : p)));
     } catch (err) {
       setPhotos(prev => prev.map(p => (p.id === id
-        ? { ...p, uploading: false, error: err instanceof Error ? err.message : 'Upload failed' }
+        ? { ...p, uploading: false, error: errorMessage(err, 'Upload failed') }
         : p)));
-      toast.error(err instanceof Error ? err.message : 'Upload failed');
+      toast.error(errorMessage(err, 'Upload failed'));
     }
   }, []);
 
   const processFiles = useCallback((files: File[]) => {
-    const valid = files.filter(f => ACCEPT.includes(f.type) && f.size <= MAX_MB * 1024 * 1024);
-    if (!valid.length) {
-      toast.error(`Only JPG/PNG/WebP up to ${MAX_MB}MB accepted`);
-      return;
+    // Any image the browser can read is accepted: large photos are resized and other
+    // formats re-encoded before upload (uploadService → prepareImage). Only non-images
+    // are skipped, and the user is told which ones.
+    const valid = files.filter(f => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name));
+    const skipped = files.filter(f => !valid.includes(f));
+    if (skipped.length) {
+      toast.error(skipped.length === 1 ? `“${skipped[0]!.name}” isn’t an image.` : `${skipped.length} files aren’t images and were skipped.`);
     }
+    if (!valid.length) return;
     const slots = Math.min(valid.length, remaining);
     if (!slots) {
       toast.error(`Maximum ${MAX_PHOTOS} photos allowed`);
@@ -188,6 +193,7 @@ export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
           <input
             ref={inputRef} type="file" multiple accept={ACCEPT.join(',')}
             className="sr-only"
+            onClick={e => e.stopPropagation()}
             onChange={e => { processFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }}
           />
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 transition-colors
@@ -195,7 +201,7 @@ export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
             <Upload size={18} />
           </div>
           <p className="text-sm font-bold text-gray-700">{dragging ? 'Drop here' : 'Drag photos or click to upload'}</p>
-          <p className="text-[11px] text-gray-400 mt-1">JPG · PNG · WebP · max {MAX_MB}MB each</p>
+          <p className="text-[11px] text-gray-400 mt-1">JPG, PNG or WebP. Large photos are resized automatically.</p>
         </div>
       )}
 

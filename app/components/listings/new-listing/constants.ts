@@ -1,5 +1,4 @@
 export const MAX_PHOTOS = 10;
-export const MAX_MB     = 5;
 export const ACCEPT     = ['image/jpeg', 'image/png', 'image/webp'];
 
 export const TITLE_MAX       = 255;

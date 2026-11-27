@@ -93,6 +93,8 @@ export const API_ENDPOINTS = {
 
 // ── Service methods ───────────────────────────────────────────────────────────
 import { apiClient } from './client';
+import { prepareImage } from '../uploads/prepare-image';
+import { toUploadError } from '../uploads/errors';
 import type { Listing, Category, ListingFilters } from '../types/listing';
 import type { Vendor, UpdateVendorInput, PayoutDetailsInput } from '../types/vendor';
 import type { Booking, BookingEvent, BookingListFilters, BookingSummary, CreateBookingRequest } from '../types/booking';
@@ -193,12 +195,22 @@ export const adminService = {
 export type UploadType = 'listing_photo' | 'vendor_logo' | 'profile_photo';
 export interface UploadedImage { id: string; url: string; publicId: string; bytes: number; mimeType: string; width: number; height: number }
 
+/** Rejects with an ApiError whose message tells the user what to do. */
+async function withUploadErrors<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    throw toUploadError(err);
+  }
+}
+
 export const uploadService = {
-  // uploadType is sent before the file (required by the backend).
-  uploadImage: (file: File, uploadType: UploadType = 'listing_photo') =>
-    apiClient.upload<UploadedImage>(API_ENDPOINTS.UPLOAD.SINGLE_IMAGE, file, { uploadType }),
-  uploadImages: (files: File[], uploadType: UploadType = 'listing_photo') =>
-    apiClient.upload<UploadedImage[]>(API_ENDPOINTS.UPLOAD.MULTIPLE_IMAGES, files, { uploadType }),
+  // Photos are resized/re-encoded in the browser when needed (see prepareImage), then sent
+  // with uploadType before the file (required by the backend).
+  uploadImage: (file: File, uploadType: UploadType = 'listing_photo') => withUploadErrors(async () =>
+    apiClient.upload<UploadedImage>(API_ENDPOINTS.UPLOAD.SINGLE_IMAGE, await prepareImage(file), { uploadType })),
+  uploadImages: (files: File[], uploadType: UploadType = 'listing_photo') => withUploadErrors(async () =>
+    apiClient.upload<UploadedImage[]>(API_ENDPOINTS.UPLOAD.MULTIPLE_IMAGES, await Promise.all(files.map(prepareImage)), { uploadType })),
   /** Owner (or admin) only. Takes the `publicId` returned by the upload. */
   deleteFile: (publicId: string) =>
     apiClient.delete<null>(API_ENDPOINTS.UPLOAD.DELETE, { data: { publicId } }),

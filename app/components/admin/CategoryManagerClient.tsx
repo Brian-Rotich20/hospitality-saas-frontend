@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { errorMessage } from '../../lib/api/client';
 import {
   Plus, Pencil, Trash2, ChevronRight, ChevronDown,
   Loader2, X, Check, FolderOpen, Folder, Tag,
@@ -99,7 +100,7 @@ function CategoryModal({ mode, initial, parentId, parentName, allCategories, onC
       setImageUrl(url);
       toast.success('Image uploaded');
     } catch (err: unknown) {
-      toast.error(err instanceof Object && 'message' in err ? String(err.message) : 'Upload failed');
+      toast.error(errorMessage(err, 'Upload failed'));
     } finally {
       setUploading(false);
     }

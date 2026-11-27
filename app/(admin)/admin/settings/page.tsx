@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 
+import { errorMessage } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/auth.context';
 
 import { customerService, uploadService } from '../../../lib/api/endpoints';
@@ -195,9 +196,7 @@ export default function VendorAccountPage() {
       setUploadingAvatar(false);
 
       toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to update profile',
+        errorMessage(err, 'Failed to update profile'),
         {
           id: toastId,
         }

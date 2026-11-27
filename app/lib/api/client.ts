@@ -118,3 +118,12 @@ class ApiClient {
 
 export const apiClient = new ApiClient();
 export default apiClient;
+
+/** Message to show for any thrown value: ApiError objects (from apiClient), Errors, or a fallback. */
+export function errorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (err instanceof Error && err.message) return err.message;
+  if (err && typeof err === 'object' && 'message' in err && typeof (err as { message: unknown }).message === 'string') {
+    return (err as { message: string }).message || fallback;
+  }
+  return fallback;
+}
