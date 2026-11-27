@@ -145,7 +145,7 @@ export default function ListingAvailabilityPage() {
         <div className="flex justify-center gap-2">
           {!loadError.notFound && (
             <button onClick={() => void load()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3B45] text-white text-xs font-bold hover:bg-[#3a4d5a]">
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-ink text-white text-xs font-bold hover:bg-ink-hover">
               <RefreshCw size={13} aria-hidden /> Retry
             </button>
           )}
@@ -222,7 +222,7 @@ export default function ListingAvailabilityPage() {
                       placeholder="e.g. Private event"
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100" />
                     <button type="button" onClick={block} disabled={working}
-                      className="mt-3 w-full py-2.5 rounded-xl bg-[#2D3B45] text-white text-xs font-bold hover:bg-[#3a4d5a] disabled:opacity-60 disabled:cursor-not-allowed">
+                      className="mt-3 w-full py-2.5 rounded-xl bg-ink text-white text-xs font-bold hover:bg-ink-hover disabled:opacity-60 disabled:cursor-not-allowed">
                       {busy === 'block' ? 'Blocking…' : `Block ${plural(selOpen.length, 'day')}`}
                     </button>
                   </div>

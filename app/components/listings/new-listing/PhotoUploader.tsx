@@ -43,7 +43,7 @@ function SortableTile({
     >
       {photo.uploading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-          <Loader2 size={18} className="text-[#2D3B45] animate-spin" />
+          <Loader2 size={18} className="text-ink animate-spin" />
         </div>
       )}
       {photo.error && (
@@ -57,8 +57,8 @@ function SortableTile({
       )}
 
       {index === 0 && photo.url && !photo.error && (
-        <span className="absolute top-1 left-1 text-[9px] font-black bg-[#F5C842]
-          text-[#2D3B45] px-1.5 py-0.5 rounded z-20">
+        <span className="absolute top-1 left-1 text-[9px] font-black bg-accent-bg
+          text-ink px-1.5 py-0.5 rounded z-20">
           COVER
         </span>
       )}
@@ -183,7 +183,7 @@ export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
           onDrop={e => { e.preventDefault(); setDragging(false); processFiles(Array.from(e.dataTransfer.files)); }}
           className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer
             transition-colors select-none
-            ${dragging ? 'border-[#2D3B45] bg-[#2D3B45]/5' : 'border-gray-200 hover:border-[#2D3B45] hover:bg-gray-50'}`}
+            ${dragging ? 'border-ink bg-ink/5' : 'border-gray-200 hover:border-ink hover:bg-gray-50'}`}
         >
           <input
             ref={inputRef} type="file" multiple accept={ACCEPT.join(',')}
@@ -191,7 +191,7 @@ export function PhotoUploader({ value, onChange }: PhotoUploaderProps) {
             onChange={e => { processFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }}
           />
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 transition-colors
-            ${dragging ? 'bg-[#2D3B45] text-white' : 'bg-gray-100 text-gray-400'}`}>
+            ${dragging ? 'bg-ink text-white' : 'bg-gray-100 text-gray-400'}`}>
             <Upload size={18} />
           </div>
           <p className="text-sm font-bold text-gray-700">{dragging ? 'Drop here' : 'Drag photos or click to upload'}</p>

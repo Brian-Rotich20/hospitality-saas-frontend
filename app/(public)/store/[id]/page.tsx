@@ -40,7 +40,7 @@ export default async function ListingDetailPage({ params }: Props) {
   const views      = listing.views ?? 0;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-page">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-10">
 
         {/* ── Breadcrumb ──────────────────────────────────────────── */}
@@ -65,7 +65,7 @@ export default async function ListingDetailPage({ params }: Props) {
 
         {/* ── Gallery ─────────────────────────────────────────────── */}
         <div className="mb-5">
-          <ListingGallery photos={photos} title={listing.title} />
+          <ListingGallery photos={photos} title={listing.title} listingId={listing.id} />
         </div>
 
         {/* ── Stats strip — views, rating, reviews ────────────────── */}
@@ -75,7 +75,7 @@ export default async function ListingDetailPage({ params }: Props) {
               <div className="flex items-center gap-0.5">
                 {[1,2,3,4,5].map(i => (
                   <Star key={i} size={12}
-                    className={i <= Math.round(rating) ? 'text-[#F5C842] fill-[#F5C842]' : 'text-gray-200 fill-gray-200'} />
+                    className={i <= Math.round(rating) ? 'text-accent-bg fill-accent-bg' : 'text-gray-200 fill-gray-200'} />
                 ))}
               </div>
               <span className="text-xs font-bold text-gray-700">{rating.toFixed(1)}</span>
@@ -133,17 +133,6 @@ export default async function ListingDetailPage({ params }: Props) {
         </div>
       </div>
 
-        {/* ── Similar listings placeholder ─────────────────────────── */}
-        <div className="mt-10 pt-6 border-t border-gray-100">
-          <div className="flex items-center gap-2.5 mb-1">
-            <h2 className="text-sm font-bold text-gray-800">Similar Listings</h2>
-            <span className="text-[10px] font-bold text-gray-400 border border-gray-200
-              px-2 py-0.5 rounded-full uppercase tracking-wide">
-              Coming soon
-            </span>
-          </div>
-          <p className="text-xs text-gray-400">More venues and services will appear here.</p>
-        </div>
       </div>
     </div>
   );

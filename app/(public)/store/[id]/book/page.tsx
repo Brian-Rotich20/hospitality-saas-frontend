@@ -62,7 +62,7 @@ export default async function BookListingPage({ params }: Props) {
               <p className="text-xs text-gray-500 flex items-center gap-1.5"><Store size={12} aria-hidden /> {listing.vendor.businessName}</p>
             )}
             {loc && <p className="text-xs text-gray-500 flex items-center gap-1.5"><MapPin size={12} aria-hidden /> {loc}</p>}
-            <p className="text-xs font-bold text-[#2D3B45]">{priceText}</p>
+            <p className="text-xs font-bold text-ink">{priceText}</p>
             <p className="text-[11px] text-gray-400 leading-relaxed pt-1 border-t border-gray-50">
               Prices are set by the vendor and shown for guidance. You agree the final price and pay the vendor directly.
               LinkMart does not take booking payments.

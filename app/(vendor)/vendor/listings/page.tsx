@@ -26,7 +26,7 @@ export default async function VendorListingsPage() {
           <ExportLeadsButton />
 
           <Link href="/vendor/listings/new"
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-[#2D3B45] text-white text-xs font-bold
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-ink text-white text-xs font-bold
               rounded-xl hover:bg-brand-hover transition no-underline">
             <Plus size={14} /> New Listing
           </Link>

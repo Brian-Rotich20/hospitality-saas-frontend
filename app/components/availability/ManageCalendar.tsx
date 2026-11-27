@@ -76,9 +76,9 @@ export function ManageCalendar({ days, today, lastDay, view, onViewChange, start
           const edge = d === start || d === end;
           const label = `${formatCalendarDate(d, 'EEEE d MMMM yyyy')}, ${outside ? 'not editable' : STATE_LABEL[state]}`;
           const tone = edge
-            ? 'bg-[#2D3B45] text-white'
+            ? 'bg-ink text-white'
             : inRange
-              ? state === 'booked' ? 'bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-[#2D3B45]' : 'bg-[#2D3B45]/15 text-[#2D3B45]'
+              ? state === 'booked' ? 'bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-ink' : 'bg-ink/15 text-ink'
               : outside ? 'text-gray-300'
               : state === 'blocked' ? 'bg-gray-200 text-gray-500 line-through decoration-gray-400 hover:bg-gray-300'
               : state === 'booked' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -87,7 +87,7 @@ export function ManageCalendar({ days, today, lastDay, view, onViewChange, start
             <button key={d} type="button" disabled={outside || disabled} onClick={() => onPick(d)}
               aria-label={label} aria-pressed={inRange}
               className={`h-10 sm:h-11 rounded-lg text-xs font-semibold tabular-nums transition-colors disabled:cursor-not-allowed
-                focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#2D3B45] ${tone}
+                focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink ${tone}
                 ${d === today && !edge ? 'ring-1 ring-gray-300' : ''}`}>
               {Number(d.slice(8))}
             </button>
@@ -99,7 +99,7 @@ export function ManageCalendar({ days, today, lastDay, view, onViewChange, start
         <li className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border border-gray-200 bg-white" aria-hidden /> Available</li>
         <li className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-200" aria-hidden /> Blocked by you</li>
         <li className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-50 border border-emerald-200" aria-hidden /> Booked</li>
-        <li className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#2D3B45]" aria-hidden /> Selected</li>
+        <li className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-ink" aria-hidden /> Selected</li>
       </ul>
     </div>
   );

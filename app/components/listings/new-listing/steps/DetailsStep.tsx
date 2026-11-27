@@ -85,8 +85,8 @@ export function DetailsStep({
           <ArrowLeft size={14} /> Back
         </button>
         <button type="button" onClick={onNext}
-          className="flex-1 py-2.5 bg-[#2D3B45] text-white rounded-xl text-sm font-black
-            hover:bg-[#3a4d5a] transition flex items-center justify-center gap-2">
+          className="flex-1 py-2.5 bg-ink text-white rounded-xl text-sm font-black
+            hover:bg-ink-hover transition flex items-center justify-center gap-2">
           Continue <ChevronRight size={15} />
         </button>
       </div>

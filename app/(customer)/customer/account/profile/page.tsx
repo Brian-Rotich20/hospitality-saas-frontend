@@ -81,12 +81,12 @@ export default function ProfilePage() {
       {/* Avatar card */}
       <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
         <div className="relative shrink-0">
-          <div className="w-14 h-14 rounded-full bg-[#2D3B45] flex items-center justify-center overflow-hidden">
+          <div className="w-14 h-14 rounded-full bg-ink flex items-center justify-center overflow-hidden">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-[#F5C842] text-xl font-black">
+              <span className="text-accent-bg text-xl font-black">
                 {(fullName || user?.email || 'U').charAt(0).toUpperCase()}
               </span>
             )}
@@ -94,13 +94,14 @@ export default function ProfilePage() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingAvatar}
-            className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#F5C842] rounded-full
+            aria-label="Change profile photo"
+            className="absolute -bottom-1 -right-1 w-6 h-6 bg-accent-bg rounded-full
               flex items-center justify-center border-2 border-white
               hover:brightness-95 transition disabled:opacity-50"
           >
             {uploadingAvatar
-              ? <Loader2 size={11} className="text-[#2D3B45] animate-spin" />
-              : <Camera size={11} className="text-[#2D3B45]" />}
+              ? <Loader2 size={11} className="text-ink animate-spin" />
+              : <Camera size={11} className="text-ink" />}
           </button>
           <input
             ref={fileInputRef}
@@ -135,7 +136,7 @@ export default function ProfilePage() {
             <input value={fullName} onChange={e => setFullName(e.target.value)}
               placeholder="Your full name"
               className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-gray-200 bg-white
-                text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2D3B45]
+                text-gray-900 focus:outline-none focus:ring-2 focus:ring-ink
                 focus:border-transparent transition" />
           </div>
         </div>
@@ -162,15 +163,15 @@ export default function ProfilePage() {
             <input value={phone} onChange={e => setPhone(e.target.value)}
               placeholder="+254 7XX XXX XXX"
               className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-gray-200 bg-white
-                text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2D3B45]
+                text-gray-900 focus:outline-none focus:ring-2 focus:ring-ink
                 focus:border-transparent transition" />
           </div>
         </div>
 
         <button type="submit" disabled={saving}
           className="w-full flex items-center justify-center gap-2 py-3
-            bg-[#2D3B45] text-white text-sm font-black rounded-xl
-            hover:bg-[#3a4d5a] transition disabled:opacity-50">
+            bg-ink text-white text-sm font-black rounded-xl
+            hover:bg-ink-hover transition disabled:opacity-50">
           {saving
             ? <><Loader2 size={14} className="animate-spin" /> Saving…</>
             : <><Save size={13} /> Save Changes</>}

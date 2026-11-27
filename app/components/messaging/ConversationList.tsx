@@ -92,7 +92,7 @@ export function ConversationList({ items, error, onRetry, activeId, index }: Pro
           A conversation opens when {user?.role === 'vendor' ? 'you accept a booking request' : 'a vendor accepts your booking request'}.
         </p>
         <Link href={user?.role === 'vendor' ? '/vendor/bookings' : '/customer/bookings'}
-          className="text-xs font-bold text-[#2D3B45] underline underline-offset-2">
+          className="text-xs font-bold text-ink underline underline-offset-2">
           Go to bookings
         </Link>
       </div>

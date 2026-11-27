@@ -45,25 +45,25 @@ function BookingRow({ booking, onAccept, onDecline, busy }: {
 
   return (
     <div style={{
-      background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12,
+      background: '#fff', border: '1px solid var(--color-border)', borderRadius: 12,
       padding: '16px 20px', display: 'flex', flexWrap: 'wrap',
       justifyContent: 'space-between', gap: 14, alignItems: 'center',
     }}>
       <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', minWidth: 0, flex: '1 1 320px' }}>
-        <div style={{ width: 52, height: 52, borderRadius: 8, flexShrink: 0, background: '#F3F4F6', overflow: 'hidden' }}>
+        <div style={{ width: 52, height: 52, borderRadius: 8, flexShrink: 0, background: 'var(--color-surface-muted)', overflow: 'hidden' }}>
           {booking.listing?.coverPhoto ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={booking.listing.coverPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Calendar size={20} color="#9CA3AF" />
+              <Calendar size={20} color="var(--color-text-muted)" />
             </div>
           )}
         </div>
 
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-            <Link href={`/vendor/bookings/${booking.id}`} style={{ fontSize: 13, fontWeight: 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 260, whiteSpace: 'nowrap', textDecoration: 'none' }}>
+            <Link href={`/vendor/bookings/${booking.id}`} style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 260, whiteSpace: 'nowrap', textDecoration: 'none' }}>
               {booking.listing?.title ?? 'Listing'}
             </Link>
             <span style={{
@@ -76,13 +76,13 @@ function BookingRow({ booking, onAccept, onDecline, busy }: {
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-            <span style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <User size={11} /> {booking.customer?.fullName || 'Customer'}
             </span>
-            <span style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <Calendar size={11} /> {fmt(booking.startDate)}{booking.endDate !== booking.startDate ? ` → ${fmt(booking.endDate)}` : ''}
             </span>
-            <span style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <Users size={11} /> {booking.guests.toLocaleString()} guest{booking.guests === 1 ? '' : 's'}
             </span>
             {deadline ? (
@@ -90,7 +90,7 @@ function BookingRow({ booking, onAccept, onDecline, busy }: {
                 <Clock size={11} /> Respond {deadline}
               </span>
             ) : (
-              <span style={{ fontSize: 11, color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 11, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Clock size={11} /> Received {new Date(booking.createdAt).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })}
               </span>
             )}
@@ -100,7 +100,7 @@ function BookingRow({ booking, onAccept, onDecline, busy }: {
 
       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
         <Link href={`/vendor/bookings/${booking.id}`}
-          style={{ padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#374151', background: '#fff', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
+          style={{ padding: '8px 12px', border: '1px solid var(--color-border-strong)', borderRadius: 8, fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', background: 'var(--color-card)', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
           <Eye size={11} /> View
         </Link>
 
@@ -110,8 +110,8 @@ function BookingRow({ booking, onAccept, onDecline, busy }: {
               onClick={() => onAccept(booking.id)}
               disabled={busy}
               style={{
-                padding: '6px 12px', border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 700, color: '#fff',
-                background: busy ? '#6EE7B7' : '#10B981', cursor: busy ? 'wait' : 'pointer',
+                padding: '8px 14px', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff',
+                background: 'var(--color-ink)', opacity: busy ? 0.6 : 1, cursor: busy ? 'wait' : 'pointer',
                 display: 'flex', alignItems: 'center', gap: 4,
               }}
             >
@@ -121,8 +121,8 @@ function BookingRow({ booking, onAccept, onDecline, busy }: {
               onClick={() => onDecline(booking.id)}
               disabled={busy}
               style={{
-                padding: '6px 12px', border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 700, color: '#fff',
-                background: busy ? '#FCA5A5' : '#EF4444', cursor: busy ? 'wait' : 'pointer',
+                padding: '8px 14px', border: '1px solid var(--color-border-strong)', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                color: 'var(--color-error)', background: 'var(--color-card)', opacity: busy ? 0.6 : 1, cursor: busy ? 'wait' : 'pointer',
                 display: 'flex', alignItems: 'center', gap: 4,
               }}
             >
@@ -201,7 +201,7 @@ export default function VendorBookingsPage() {
   }, {} as Record<Tab, number>);
 
   return (
-    <div style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+    <div style={{ fontFamily: 'inherit' }}>
       {declineTarget && (
         <ReasonDialog
           title="Decline this request"
@@ -216,30 +216,16 @@ export default function VendorBookingsPage() {
 
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 6px', letterSpacing: '-0.015em' }}>
             Bookings
           </h1>
-          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>
+          <p style={{ fontSize: 15, color: 'var(--color-text-secondary)', margin: 0 }}>
             Respond to requests within 24 hours. Payment is arranged directly between you and the customer.
           </p>
         </div>
 
-        <div className="vb-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
-          {[
-            { label: 'Total',     value: counts.all,       color: '#111827' },
-            { label: 'Requests',  value: counts.requested, color: '#F59E0B' },
-            { label: 'Accepted',  value: counts.accepted,  color: '#10B981' },
-            { label: 'Completed', value: counts.completed, color: '#8B5CF6' },
-          ].map(s => (
-            <div key={s.label} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '14px 16px' }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{loading ? '–' : s.value}</div>
-              <div style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-
         <div style={{ position: 'relative', marginBottom: 16 }}>
-          <Search size={14} aria-hidden style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+          <Search size={14} aria-hidden style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -247,13 +233,13 @@ export default function VendorBookingsPage() {
             aria-label="Search bookings"
             style={{
               width: '100%', paddingLeft: 36, paddingRight: 14, paddingTop: 9, paddingBottom: 9,
-              border: '1px solid #E5E7EB', borderRadius: 9, fontSize: 13, outline: 'none',
+              border: '1px solid var(--color-border)', borderRadius: 9, fontSize: 13, outline: 'none',
               background: '#fff', boxSizing: 'border-box',
             }}
           />
         </div>
 
-        <div role="tablist" aria-label="Filter by status" style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid #E5E7EB', overflowX: 'auto' }}>
+        <div role="tablist" aria-label="Filter by status" style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--color-border)', overflowX: 'auto' }}>
           {TABS.map(tab => (
             <button
               key={tab.key}
@@ -263,7 +249,7 @@ export default function VendorBookingsPage() {
               style={{
                 padding: '8px 14px', border: 'none', background: 'none',
                 fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-                color: activeTab === tab.key ? '#111827' : '#9CA3AF',
+                color: activeTab === tab.key ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
                 borderBottom: activeTab === tab.key ? '2px solid #111827' : '2px solid transparent',
                 marginBottom: -1, display: 'flex', alignItems: 'center', gap: 6,
               }}
@@ -271,8 +257,8 @@ export default function VendorBookingsPage() {
               {tab.label}
               {counts[tab.key] > 0 && (
                 <span style={{
-                  fontSize: 10, fontWeight: 700, background: activeTab === tab.key ? '#111827' : '#F3F4F6',
-                  color: activeTab === tab.key ? '#fff' : '#9CA3AF', padding: '1px 6px', borderRadius: 20,
+                  fontSize: 10, fontWeight: 700, background: activeTab === tab.key ? 'var(--color-text-primary)' : 'var(--color-surface-muted)',
+                  color: activeTab === tab.key ? '#fff' : 'var(--color-text-muted)', padding: '1px 6px', borderRadius: 20,
                 }}>
                   {counts[tab.key]}
                 </span>
@@ -295,12 +281,12 @@ export default function VendorBookingsPage() {
             <LoadingSpinner text="Loading bookings..." />
           </div>
         ) : !error && filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB' }}>
-            <Calendar size={36} color="#E5E7EB" style={{ marginBottom: 12, display: 'inline-block' }} />
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#374151', margin: '0 0 4px' }}>
+          <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', borderRadius: 12, border: '1px solid var(--color-border)' }}>
+            <Calendar size={36} color="var(--color-border)" style={{ marginBottom: 12, display: 'inline-block' }} />
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-secondary)', margin: '0 0 4px' }}>
               {bookings.length === 0 ? 'No bookings yet' : 'No bookings found'}
             </p>
-            <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0 }}>
+            <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0 }}>
               {bookings.length === 0
                 ? 'Requests from customers will appear here. Publish a listing to start receiving them.'
                 : activeTab === 'requested' ? 'No requests waiting for a reply.' : 'Try a different filter or search.'}
@@ -318,7 +304,7 @@ export default function VendorBookingsPage() {
               />
             ))}
             {bookings.length >= LIMIT && (
-              <p style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center', margin: '6px 0 0' }}>
+              <p style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center', margin: '6px 0 0' }}>
                 Showing your {LIMIT} most recent bookings.
               </p>
             )}
@@ -326,9 +312,6 @@ export default function VendorBookingsPage() {
         )}
       </div>
 
-      <style>{`
-        @media (max-width: 640px) { .vb-stats { grid-template-columns: repeat(2, 1fr) !important; } }
-      `}</style>
     </div>
   );
 }

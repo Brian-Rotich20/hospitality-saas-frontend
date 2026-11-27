@@ -52,6 +52,20 @@
   --shadow-md: 0 4px 12px -2px rgba(31,31,31,0.08), 0 2px 4px -2px rgba(31,31,31,0.05);
   --shadow-lg: 0 16px 32px -8px rgba(31,31,31,0.16), 0 4px 8px -4px rgba(31,31,31,0.06);
 
+  /* ── Tailwind gray scale remapped onto the warm neutrals, so older screens that use
+     gray-* classes share the palette. gray-400 is dark enough (5.0:1 on card, 4.6:1 on page) for the
+     small secondary text it is used for across the app. ── */
+  --color-gray-50:  #F8F8F6;
+  --color-gray-100: #F1F1EE;
+  --color-gray-200: #E3E3DE;
+  --color-gray-300: #CFCFC8;
+  --color-gray-400: #707069;
+  --color-gray-500: #63635D;
+  --color-gray-600: #4D4D4A;
+  --color-gray-700: #3A3A37;
+  --color-gray-800: #282826;
+  --color-gray-900: #1F1F1F;
+
   /* ── Radius ── */
   --radius-sm:   6px;
   --radius-md:   8px;
@@ -273,8 +287,9 @@ input, textarea, select { caret-color: var(--color-brand); }
   }
   .price-amount {
     font-size: 22px;
-    font-weight: 800;
-    color: var(--color-brand);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
     line-height: 1;
   }
   .price-suffix {
@@ -575,3 +590,5 @@ input, textarea, select { caret-color: var(--color-brand); }
     margin-bottom: 4px;
   }
 }
+/* First letter upper-case without changing the rest (category slugs become headings). */
+.capitalize-first::first-letter { text-transform: uppercase; }

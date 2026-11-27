@@ -3,7 +3,7 @@ import Link  from 'next/link';
 import Image from 'next/image';
 import { MapPin, Package, Star } from 'lucide-react';
 import type { Listing } from '../../lib/types/listing';
-import { resolveListingPrice } from '../../lib/types/listing';;
+import { resolveListingPrice } from '../../lib/types/listing';
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const imageUrl    = listing.photos?.[0] ?? listing.coverPhoto;
@@ -52,16 +52,16 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
         {(area || county) && (
           <span className="flex items-center gap-1 text-[11px] truncate text-text-muted">
-            <MapPin size={10} className="text-border shrink-0" />
+            <MapPin size={10} className="text-text-muted shrink-0" aria-hidden />
             {[area, county].filter(Boolean).join(', ')}
           </span>
         )}
 
         <div className="pt-2 mt-1 flex items-end justify-between border-t border-border">
           <div>
-            <p className="price-label">
-              {priceLabel[listing.pricingType] ?? 'Price'}
-            </p>
+            {priceLabel[listing.pricingType] && (
+              <p className="price-label">{priceLabel[listing.pricingType]}</p>
+            )}
             
             {listing.pricingType !== 'contact' && price !== null && (
               <p className="flex items-baseline gap-0.5 leading-none">

@@ -42,7 +42,7 @@ function EditBadge({ onClick, label }: { onClick: () => void; label: string }) {
       type="button"
       onClick={onClick}
       className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400
-        hover:text-[#2D3B45] transition-colors"
+        hover:text-ink transition-colors"
     >
       <Pencil size={10} /> Edit {label}
     </button>
@@ -80,7 +80,7 @@ export function PreviewStep({
           )}
           {category && (
             <span className="absolute top-2 left-2 text-[10px] font-black bg-white/90
-              text-[#2D3B45] px-2 py-1 rounded-lg">
+              text-ink px-2 py-1 rounded-lg">
               {subCategory?.name ?? category.name}
             </span>
           )}
@@ -95,7 +95,7 @@ export function PreviewStep({
             <span>{area && county ? `${area}, ${county}` : 'Location not set'}</span>
           </div>
           <div className="pt-2 flex items-center justify-between">
-            <span className="text-sm font-black text-[#2D3B45]">{priceLabel}</span>
+            <span className="text-sm font-black text-ink">{priceLabel}</span>
             <span className="text-[10px] font-bold text-gray-400 uppercase">
               {PRICING_OPTIONS.find(p => p.value === pricingType)?.label}
             </span>
@@ -126,8 +126,8 @@ export function PreviewStep({
           type="button"
           disabled={saving}
           onClick={onSaveDraft}
-          className="flex-1 py-2.5 border-2 border-[#2D3B45] text-[#2D3B45] rounded-xl
-            text-sm font-black hover:bg-[#2D3B45]/5 transition disabled:opacity-50"
+          className="flex-1 py-2.5 border-2 border-ink text-ink rounded-xl
+            text-sm font-black hover:bg-ink/5 transition disabled:opacity-50"
         >
           {saving ? 'Saving…' : 'Save draft'}
         </button>
@@ -135,8 +135,8 @@ export function PreviewStep({
           type="button"
           disabled={saving || missingPhotosForPublish}
           onClick={onPublish}
-          className="flex-1 py-2.5 bg-[#2D3B45] text-white rounded-xl text-sm font-black
-            hover:bg-[#3a4d5a] transition disabled:opacity-50"
+          className="flex-1 py-2.5 bg-ink text-white rounded-xl text-sm font-black
+            hover:bg-ink-hover transition disabled:opacity-50"
         >
           {saving ? 'Publishing…' : 'Publish'}
         </button>

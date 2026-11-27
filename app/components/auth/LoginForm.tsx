@@ -57,7 +57,7 @@ export function LoginForm() {
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-xl">
-          <h2 className="text-base font-bold text-gray-900 mb-1">Welcome back</h2>
+          <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] text-gray-900 mb-1">Welcome back</h1>
           <p className="text-xs text-gray-400 mb-5">Sign in to your account</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
@@ -71,7 +71,7 @@ export function LoginForm() {
                   placeholder="you@example.com"
                   {...register('email')}
                   disabled={isLoading}
-                  className={`w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition ${errors.email ? 'border-red-400' : 'border-gray-200'}`}
+                  className={`w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-bg focus:border-transparent transition ${errors.email ? 'border-red-400' : 'border-gray-200'}`}
                 />
               </div>
               {errors.email && <p className="text-red-500 text-[10px] mt-0.5">{errors.email.message}</p>}
@@ -80,7 +80,7 @@ export function LoginForm() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-xs font-semibold text-gray-600">Password</label>
-                <Link href="/auth/forgot-password" className="text-[10px] text-[#F5C842] font-semibold hover:underline">
+                <Link href="/auth/forgot-password" className="text-[10px] text-accent-bg font-semibold hover:underline">
                   Forgot?
                 </Link>
               </div>
@@ -91,9 +91,9 @@ export function LoginForm() {
                   placeholder="••••••••"
                   {...register('password')}
                   disabled={isLoading}
-                  className={`w-full pl-8 pr-8 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition ${errors.password ? 'border-red-400' : 'border-gray-200'}`}
+                  className={`w-full pl-8 pr-8 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-bg focus:border-transparent transition ${errors.password ? 'border-red-400' : 'border-gray-200'}`}
                 />
-                <button type="button" onClick={() => setShowPass(v => !v)} className="absolute right-2.5 top-2.5 text-gray-300 hover:text-gray-500">
+                <button type="button" onClick={() => setShowPass(v => !v)} aria-label={showPass ? "Hide password" : "Show password"} aria-pressed={showPass} className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600">
                   {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
@@ -103,7 +103,7 @@ export function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
+              className="w-full py-2 rounded-lg bg-ink hover:bg-ink-hover text-white text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
             >
               {isLoading ? (
                 <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Signing in...</>
@@ -131,11 +131,11 @@ export function LoginForm() {
 
           <div className="grid grid-cols-2 gap-2">
             <Link href="/auth/register"
-              className="py-1.5 text-center text-[11px] font-semibold border border-gray-200 rounded-lg text-gray-600 hover:border-[#F5C842] hover:text-[#2D3B45] transition">
+              className="py-1.5 text-center text-[11px] font-semibold border border-gray-200 rounded-lg text-gray-600 hover:border-accent-bg hover:text-ink transition">
               Customer
             </Link>
             <Link href="/auth/register-vendor"
-              className="py-1.5 text-center text-[11px] font-semibold border border-gray-200 rounded-lg text-gray-600 hover:border-[#F5C842] hover:text-[#2D3B45] transition">
+              className="py-1.5 text-center text-[11px] font-semibold border border-gray-200 rounded-lg text-gray-600 hover:border-accent-bg hover:text-ink transition">
               Vendor
             </Link>
           </div>

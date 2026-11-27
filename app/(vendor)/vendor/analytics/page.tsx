@@ -21,15 +21,15 @@ function MetricCard({ label, value, sub, color, icon: Icon, border }: {
   color: string; icon: React.ElementType; border?: string;
 }) {
   return (
-    <div style={{ background: '#fff', border: `1px solid ${border ?? '#E5E7EB'}`, borderRadius: 12, padding: '18px 20px', borderLeft: `3px solid ${color}` }}>
+    <div style={{ background: '#fff', border: `1px solid ${border ?? 'var(--color-border)'}`, borderRadius: 12, padding: '18px 20px', borderLeft: `3px solid ${color}` }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
         <div style={{ width: 32, height: 32, borderRadius: 8, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon size={15} color={color} />
         </div>
       </div>
-      <div style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#6B7280', marginTop: 5 }}>{sub}</div>}
+      <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 5 }}>{sub}</div>}
     </div>
   );
 }
@@ -76,21 +76,21 @@ export default function VendorAnalyticsPage() {
   if (authLoading) return <LoadingSpinner fullPage text="Loading..." />;
 
   return (
-    <div style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+    <div style={{ fontFamily: 'inherit' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Analytics</h1>
-          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Booking requests and how you responded (latest 100 bookings)</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Analytics</h1>
+          <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: 0 }}>Booking requests and how you responded (latest 100 bookings)</p>
         </div>
         {/* Timeframe pills */}
-        <div style={{ display: 'flex', gap: 6, background: '#F3F4F6', padding: 4, borderRadius: 10 }}>
+        <div style={{ display: 'flex', gap: 6, background: 'var(--color-surface-muted)', padding: 4, borderRadius: 10 }}>
           {(['week', 'month', 'year'] as Timeframe[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)} style={{
               padding: '6px 14px', borderRadius: 7, border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              background: period === p ? '#111827' : 'transparent',
-              color:      period === p ? '#fff'    : '#6B7280',
+              background: period === p ? 'var(--color-text-primary)' : 'transparent',
+              color:      period === p ? '#fff'    : 'var(--color-text-secondary)',
               fontFamily: 'inherit',
             }}>
               {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -119,20 +119,20 @@ export default function VendorAnalyticsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }} className="analytics-grid2">
             <MetricCard label="Accepted"   value={data.accepted}   color="#10B981" icon={CheckCircle2} />
             <MetricCard label="Completed"  value={data.completed}  color="#8B5CF6" icon={CheckCircle2} />
-            <MetricCard label="Expired"    value={data.expired}    color="#9CA3AF" icon={Hourglass}    />
+            <MetricCard label="Expired"    value={data.expired}    color="var(--color-text-muted)" icon={Hourglass}    />
             <MetricCard label="Declined / cancelled" value={data.declined + data.cancelled} color="#EF4444" icon={XCircle} />
           </div>
 
           {/* Booking breakdown bar */}
           {data.total > 0 && (
-            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '20px 22px', marginBottom: 24 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 14px' }}>Booking Breakdown</p>
+            <div style={{ background: '#fff', border: '1px solid var(--color-border)', borderRadius: 12, padding: '20px 22px', marginBottom: 24 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 14px' }}>Booking Breakdown</p>
               <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', gap: 2, marginBottom: 14 }}>
                 {[
                   { count: data.requested, color: '#F59E0B' },
                   { count: data.accepted,  color: '#10B981' },
                   { count: data.completed, color: '#8B5CF6' },
-                  { count: data.expired,   color: '#9CA3AF' },
+                  { count: data.expired,   color: 'var(--color-text-muted)' },
                   { count: data.declined + data.cancelled, color: '#EF4444' },
                 ].map((seg, i) => (
                   <div key={i} style={{ flex: seg.count, background: seg.color, minWidth: seg.count > 0 ? 4 : 0 }} />
@@ -143,12 +143,12 @@ export default function VendorAnalyticsPage() {
                   { label: 'Awaiting reply', count: data.requested, color: '#F59E0B' },
                   { label: 'Accepted',  count: data.accepted,  color: '#10B981' },
                   { label: 'Completed', count: data.completed, color: '#8B5CF6' },
-                  { label: 'Expired',   count: data.expired,   color: '#9CA3AF' },
+                  { label: 'Expired',   count: data.expired,   color: 'var(--color-text-muted)' },
                   { label: 'Declined / cancelled', count: data.declined + data.cancelled, color: '#EF4444' },
                 ].map(seg => (
                   <div key={seg.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, display: 'inline-block' }} />
-                    <span style={{ fontSize: 12, color: '#6B7280' }}>{seg.label}: <strong style={{ color: '#111827' }}>{seg.count}</strong></span>
+                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{seg.label}: <strong style={{ color: 'var(--color-text-primary)' }}>{seg.count}</strong></span>
                   </div>
                 ))}
               </div>

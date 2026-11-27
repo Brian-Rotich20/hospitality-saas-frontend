@@ -150,8 +150,8 @@ export function AvailabilityCalendar({ listingId, today, start, end, onChange, o
             <button key={d} type="button" disabled={off || monthLoading} onClick={() => select(d)}
               aria-label={label} aria-pressed={inRange}
               className={`h-9 rounded-lg text-xs font-semibold transition-colors
-                ${edge ? 'bg-[#2D3B45] text-white'
-                  : inRange ? 'bg-[#2D3B45]/15 text-[#2D3B45]'
+                ${edge ? 'bg-ink text-white'
+                  : inRange ? 'bg-ink/15 text-ink'
                   : unavailable(d) ? 'bg-red-50 text-red-300 line-through cursor-not-allowed'
                   : isPast(d) ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-700 hover:bg-gray-100'}
@@ -163,7 +163,7 @@ export function AvailabilityCalendar({ listingId, today, start, end, onChange, o
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mt-3 text-[11px] text-gray-500">
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#2D3B45]" aria-hidden /> Selected</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-ink" aria-hidden /> Selected</span>
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-50 border border-red-100" aria-hidden /> Unavailable</span>
         {picking && start && <span className="text-gray-400">Pick an end date, or keep a single day.</span>}
       </div>

@@ -211,7 +211,7 @@ export default function VendorAccountPage() {
   const inputStyle = {
     width: '100%',
     padding: '9px 12px',
-    border: '1px solid #E5E7EB',
+    border: '1px solid var(--color-border)',
     borderRadius: 8,
     fontSize: 13,
     outline: 'none',
@@ -223,7 +223,7 @@ export default function VendorAccountPage() {
   const labelStyle = {
     fontSize: 12,
     fontWeight: 600,
-    color: '#374151',
+    color: 'var(--color-text-secondary)',
     display: 'block',
     marginBottom: 6,
   };
@@ -241,7 +241,7 @@ export default function VendorAccountPage() {
           style={{
             fontSize: 20,
             fontWeight: 800,
-            color: '#111827',
+            color: 'var(--color-text-primary)',
             margin: '0 0 4px',
             letterSpacing: '-0.02em',
           }}
@@ -252,7 +252,7 @@ export default function VendorAccountPage() {
         <p
           style={{
             fontSize: 13,
-            color: '#6B7280',
+            color: 'var(--color-text-secondary)',
             margin: 0,
           }}
         >
@@ -265,7 +265,7 @@ export default function VendorAccountPage() {
       <div
         style={{
           background: '#fff',
-          border: '1px solid #E5E7EB',
+          border: '1px solid var(--color-border)',
           borderRadius: 14,
           padding: 20,
           marginBottom: 16,
@@ -285,7 +285,7 @@ export default function VendorAccountPage() {
               width: 56,
               height: 56,
               borderRadius: '50%',
-              background: '#2D3B45',
+              background: 'var(--color-ink)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -350,7 +350,7 @@ export default function VendorAccountPage() {
               width: 22,
               height: 22,
               borderRadius: '50%',
-              background: '#111827',
+              background: 'var(--color-text-primary)',
               border: '2px solid #fff',
               display: 'flex',
               alignItems: 'center',
@@ -383,7 +383,7 @@ export default function VendorAccountPage() {
             style={{
               fontSize: 13,
               fontWeight: 700,
-              color: '#111827',
+              color: 'var(--color-text-primary)',
               margin: 0,
             }}
           >
@@ -393,7 +393,7 @@ export default function VendorAccountPage() {
           <p
             style={{
               fontSize: 12,
-              color: '#9CA3AF',
+              color: 'var(--color-text-muted)',
               margin: '2px 0 0',
             }}
           >
@@ -404,7 +404,7 @@ export default function VendorAccountPage() {
             <p
               style={{
                 fontSize: 11,
-                color: '#6B7280',
+                color: 'var(--color-text-secondary)',
                 margin: '4px 0 0',
               }}
             >
@@ -435,7 +435,7 @@ export default function VendorAccountPage() {
         onSubmit={handleSave}
         style={{
           background: '#fff',
-          border: '1px solid #E5E7EB',
+          border: '1px solid var(--color-border)',
           borderRadius: 14,
           padding: 20,
         }}
@@ -458,8 +458,8 @@ export default function VendorAccountPage() {
           <input
             style={{
               ...inputStyle,
-              background: '#F9FAFB',
-              color: '#9CA3AF',
+              background: 'var(--color-page)',
+              color: 'var(--color-text-muted)',
               cursor: 'not-allowed',
             }}
             value={user?.email ?? ''}
@@ -469,7 +469,7 @@ export default function VendorAccountPage() {
           <p
             style={{
               fontSize: 11,
-              color: '#9CA3AF',
+              color: 'var(--color-text-muted)',
               marginTop: 4,
             }}
           >
@@ -506,7 +506,7 @@ export default function VendorAccountPage() {
               padding: '10px 22px',
               border: 'none',
               borderRadius: 9,
-              background: saving ? '#9CA3AF' : '#111827',
+              background: saving ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
               color: '#fff',
               fontSize: 13,
               fontWeight: 700,

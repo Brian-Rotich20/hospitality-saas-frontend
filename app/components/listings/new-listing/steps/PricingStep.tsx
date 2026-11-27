@@ -31,11 +31,11 @@ export function PricingStep({
               <label key={value}
                 className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer
                   text-xs font-bold transition-colors
-                  ${checked ? 'border-[#2D3B45] bg-[#2D3B45]/5 text-[#2D3B45]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  ${checked ? 'border-ink bg-ink/5 text-ink' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                 <input type="radio" value={value} {...register('pricingType')} className="sr-only" />
                 <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex items-center justify-center
-                  ${checked ? 'border-[#2D3B45]' : 'border-gray-300'}`}>
-                  {checked && <span className="w-1.5 h-1.5 rounded-full bg-[#2D3B45]" />}
+                  ${checked ? 'border-ink' : 'border-gray-300'}`}>
+                  {checked && <span className="w-1.5 h-1.5 rounded-full bg-ink" />}
                 </span>
                 {label}
               </label>
@@ -88,8 +88,8 @@ export function PricingStep({
           <ArrowLeft size={14} /> Back
         </button>
         <button type="button" onClick={onNext}
-          className="flex-1 py-2.5 bg-[#2D3B45] text-white rounded-xl text-sm font-black
-            hover:bg-[#3a4d5a] transition flex items-center justify-center gap-2">
+          className="flex-1 py-2.5 bg-ink text-white rounded-xl text-sm font-black
+            hover:bg-ink-hover transition flex items-center justify-center gap-2">
           Review listing <ChevronRight size={15} />
         </button>
       </div>

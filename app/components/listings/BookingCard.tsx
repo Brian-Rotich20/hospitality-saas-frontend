@@ -72,7 +72,7 @@ export function BookingCard({
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Price</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-xs font-semibold text-gray-400">{currency}</span>
-                <span className="text-3xl font-black text-[#2D3B45] tracking-tight leading-none">
+                <span className="text-3xl font-black text-ink tracking-tight leading-none">
                   {price.toLocaleString()}
                 </span>
                 {suffix && (
@@ -115,8 +115,8 @@ export function BookingCard({
         ) : (
           <Link href={isAuthenticated ? bookPath : `/auth/login?redirect=${encodeURIComponent(bookPath)}`}
             className="w-full flex items-center justify-center gap-2 py-3
-              bg-[#2D3B45] text-white text-sm font-black rounded-xl
-              hover:bg-[#3a4d5a] active:scale-[0.98] transition-all no-underline">
+              bg-ink text-white text-sm font-black rounded-xl
+              hover:bg-ink-hover active:scale-[0.98] transition-all no-underline">
             <Calendar size={14} />
             {isAuthenticated ? 'Request Booking' : 'Sign in to Book'}
           </Link>

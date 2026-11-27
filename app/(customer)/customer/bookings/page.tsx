@@ -44,8 +44,8 @@ export default function CustomerBookingsPage() {
           <button key={f} onClick={() => setFilter(f)} role="tab" aria-selected={filter === f}
             className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-colors
               ${filter === f
-                ? 'bg-[#2D3B45] text-white'
-                : 'bg-white border border-gray-200 text-gray-600 hover:border-[#2D3B45]'}`}>
+                ? 'bg-ink text-white'
+                : 'bg-white border border-gray-200 text-gray-600 hover:border-ink'}`}>
             {f === 'all' ? 'All' : statusMeta(f).label}
           </button>
         ))}
@@ -74,8 +74,8 @@ export default function CustomerBookingsPage() {
             {filter !== 'all' ? 'No bookings with this status.' : 'Find a service you like and send a booking request.'}
           </p>
           <Link href="/store"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2D3B45] text-white
-              text-xs font-bold rounded-xl hover:bg-[#3a4d5a] transition no-underline">
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-ink text-white
+              text-xs font-bold rounded-xl hover:bg-ink-hover transition no-underline">
             Browse Services
           </Link>
         </div>
@@ -116,7 +116,7 @@ export default function CustomerBookingsPage() {
 
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <BookingStatusBadge status={b.status} />
-                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#2D3B45] transition-colors" aria-hidden />
+                  <ChevronRight size={13} className="text-gray-300 group-hover:text-ink transition-colors" aria-hidden />
                 </div>
               </Link>
             );

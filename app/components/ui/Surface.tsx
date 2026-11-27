@@ -132,7 +132,7 @@ export function DescriptionList({ items }: { items: { label: React.ReactNode; va
 /** Table wrapper: scrolls inside its card on narrow screens instead of the page. */
 export function Table({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <div className="overflow-x-auto -mx-px">
+    <div className="relative overflow-x-auto -mx-px">
       <table aria-label={label} className="w-full min-w-[640px] text-[14px] tabular
         [&_th]:text-left [&_th]:font-semibold [&_th]:text-[12px] [&_th]:text-text-secondary [&_th]:px-5 [&_th]:py-2.5 [&_th]:bg-page [&_th]:border-b [&_th]:border-border [&_th]:whitespace-nowrap
         [&_td]:px-5 [&_td]:py-3.5 [&_td]:border-b [&_td]:border-border [&_td]:align-middle [&_tr:last-child_td]:border-b-0">

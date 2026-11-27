@@ -135,7 +135,7 @@ export function BookingDetails({ id, viewer }: { id: string; viewer: Viewer }) {
               <RefreshCw size={12} aria-hidden /> Retry
             </button>
           )}
-          <Link href={listHref} className="px-4 py-2 bg-[#2D3B45] text-white text-xs font-bold rounded-xl no-underline hover:bg-[#3a4d5a]">
+          <Link href={listHref} className="px-4 py-2 bg-ink text-white text-xs font-bold rounded-xl no-underline hover:bg-ink-hover">
             Back to bookings
           </Link>
         </div>
@@ -192,7 +192,7 @@ export function BookingDetails({ id, viewer }: { id: string; viewer: Viewer }) {
         <div className="flex flex-wrap gap-2">
           {conversationId && (
             <Link href={`/messages/${conversationId}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3B45] text-white text-xs font-bold no-underline hover:bg-[#3a4d5a]">
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-ink text-white text-xs font-bold no-underline hover:bg-ink-hover">
               <MessageSquare size={13} aria-hidden /> Message the {viewer === 'vendor' ? 'customer' : 'vendor'}
             </Link>
           )}
@@ -218,13 +218,13 @@ export function BookingDetails({ id, viewer }: { id: string; viewer: Viewer }) {
           )}
           {viewer === 'customer' && booking.listing && (booking.status === 'declined' || booking.status === 'expired' || booking.status === 'cancelled') && (
             <Link href={`/store/${booking.listing.id}/book`}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3B45] text-white text-xs font-bold no-underline hover:bg-[#3a4d5a]">
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-ink text-white text-xs font-bold no-underline hover:bg-ink-hover">
               <Calendar size={13} aria-hidden /> Request new dates
             </Link>
           )}
           {viewer === 'customer' && booking.listing && booking.status === 'completed' && (
             <Link href={`/store/${booking.listing.id}#reviews`}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3B45] text-white text-xs font-bold no-underline hover:bg-[#3a4d5a]">
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-ink text-white text-xs font-bold no-underline hover:bg-ink-hover">
               <MessageSquare size={13} aria-hidden /> Leave a review
             </Link>
           )}
@@ -249,16 +249,16 @@ export function BookingDetails({ id, viewer }: { id: string; viewer: Viewer }) {
         {viewer === 'vendor' ? (
           <Section title="Customer">
             <Row icon={Users} label="Name">{booking.customer?.fullName || 'Customer'}</Row>
-            {booking.customer?.email && <Row icon={Mail} label="Email"><a href={`mailto:${booking.customer.email}`} className="text-[#2D3B45] underline">{booking.customer.email}</a></Row>}
-            {booking.customer?.phone && <Row icon={Phone} label="Phone"><a href={`tel:${booking.customer.phone}`} className="text-[#2D3B45] underline">{booking.customer.phone}</a></Row>}
+            {booking.customer?.email && <Row icon={Mail} label="Email"><a href={`mailto:${booking.customer.email}`} className="text-ink underline">{booking.customer.email}</a></Row>}
+            {booking.customer?.phone && <Row icon={Phone} label="Phone"><a href={`tel:${booking.customer.phone}`} className="text-ink underline">{booking.customer.phone}</a></Row>}
             {!shared && <p className="text-[11px] text-gray-400 mt-2">Contact details are shared once you accept the request.</p>}
           </Section>
         ) : (
           <Section title="Vendor">
             <Row icon={Store} label="Business">
-              {booking.listing ? <Link href={`/store/${booking.listing.id}`} className="text-[#2D3B45] underline">{booking.vendor?.businessName ?? 'Vendor'}</Link> : (booking.vendor?.businessName ?? 'Vendor')}
+              {booking.listing ? <Link href={`/store/${booking.listing.id}`} className="text-ink underline">{booking.vendor?.businessName ?? 'Vendor'}</Link> : (booking.vendor?.businessName ?? 'Vendor')}
             </Row>
-            {booking.vendor?.phoneNumber && <Row icon={Phone} label="Phone"><a href={`tel:${booking.vendor.phoneNumber}`} className="text-[#2D3B45] underline">{booking.vendor.phoneNumber}</a></Row>}
+            {booking.vendor?.phoneNumber && <Row icon={Phone} label="Phone"><a href={`tel:${booking.vendor.phoneNumber}`} className="text-ink underline">{booking.vendor.phoneNumber}</a></Row>}
             {!shared && <p className="text-[11px] text-gray-400 mt-2">The vendor&apos;s phone number is shared once they accept.</p>}
           </Section>
         )}

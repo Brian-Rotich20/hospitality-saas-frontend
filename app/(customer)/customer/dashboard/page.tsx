@@ -1,191 +1,86 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link   from 'next/link';
-import { useAuth }        from '../.././../lib/auth/auth.context';
-import { customerService, bookingsService } from '../../../lib/api/endpoints';
-import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
+// Customer home: requests still waiting for a vendor (with the vendor's deadline) and
+// bookings coming up. Data: GET /bookings/me (the customer's own bookings).
+
+import { useMemo } from 'react';
+import Link from 'next/link';
+import { ChevronRight, Clock } from 'lucide-react';
+import { bookingsService } from '../../../lib/api/endpoints';
+import { useLoad } from '../../../lib/hooks/useLoad';
+import { useAuth } from '../../../lib/auth/auth.context';
+import { deadlineLabel, formatDateRange, todayInNairobi } from '../../../lib/bookings/booking-ui';
 import type { BookingSummary } from '../../../lib/types/booking';
-import { formatDateRange } from '../../../lib/bookings/booking-ui';
-import { BookingStatusBadge } from '../../../components/bookings/BookingStatusBadge';
-import { Calendar, Heart, ShoppingBag, Clock, CheckCircle, ChevronRight, AlertCircle } from 'lucide-react';
+import { Card, EmptyState, Notice, PageHeader, Skeleton } from '../../../components/ui/Surface';
+import { Button, ButtonLink } from '../../../components/ui/Button';
 
-/** GET /users/me/stats: booking counts per status (no money fields). */
-interface CustomerStats {
-  total: number; requested: number; accepted: number; completed: number;
-  declined: number; expired: number; cancelled: number; savedCount: number;
-}
-
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+function Row({ b, waiting }: { b: BookingSummary; waiting?: boolean }) {
+  const left = waiting ? deadlineLabel(b.respondBy) : null;
+  return (
+    <li>
+      <Link href={`/customer/bookings/${b.id}`} className="flex items-center gap-3 px-5 py-3.5 no-underline hover:bg-page transition-colors">
+        <div className="w-12 h-12 rounded-lg bg-surface-muted overflow-hidden shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {b.listing?.coverPhoto && <img src={b.listing.coverPhoto} alt="" className="w-full h-full object-cover" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-semibold text-text-primary truncate">{b.listing?.title ?? 'Booking'}</p>
+          <p className="text-[13px] text-text-secondary truncate">{b.vendor?.businessName ? `${b.vendor.businessName} · ` : ''}{formatDateRange(b.startDate, b.endDate)}</p>
+        </div>
+        {waiting && (
+          <span className="shrink-0 flex items-center gap-1 text-[13px] font-semibold text-warning tabular">
+            <Clock size={13} aria-hidden /> {left ? `Reply ${left}` : 'Reply due'}
+          </span>
+        )}
+        <ChevronRight size={16} className="shrink-0 text-text-muted" aria-hidden />
+      </Link>
+    </li>
+  );
 }
 
 export default function CustomerDashboardPage() {
   const { user } = useAuth();
-  const [stats,    setStats]    = useState<CustomerStats | null>(null);
-  const [bookings, setBookings] = useState<BookingSummary[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [failed,   setFailed]   = useState(false);
-
-  useEffect(() => {
-    // Independent requests: one failing should not blank the other.
-    void Promise.allSettled([
-      customerService.getStats(),
-      bookingsService.getMyBookings({ limit: 5 }),
-    ]).then(([statsRes, bookingsRes]) => {
-      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data as CustomerStats);
-      if (bookingsRes.status === 'fulfilled' && Array.isArray(bookingsRes.value.data)) setBookings(bookingsRes.value.data);
-      setFailed(statsRes.status === 'rejected' || bookingsRes.status === 'rejected');
-    }).finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <LoadingSpinner fullPage />;
-
-  const name = user?.fullName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there';
-
-  const statCards = [
-    {
-      label: 'Total Bookings', value: stats?.total ?? 0,
-      Icon: Calendar, accent: 'bg-blue-50 text-blue-600',
-    },
-    {
-      label: 'Awaiting reply', value: stats?.requested ?? 0,
-      Icon: Clock,       accent: 'bg-amber-50 text-amber-600',
-    },
-    {
-      label: 'Accepted', value: stats?.accepted ?? 0,
-      Icon: CheckCircle,  accent: 'bg-emerald-50 text-emerald-600',
-    },
-    {
-      label: 'Saved',   value: stats?.savedCount ?? 0,
-      Icon: Heart,      accent: 'bg-pink-50 text-pink-500',
-    },
-  ];
+  const today = useMemo(() => todayInNairobi(), []);
+  const { data, error, loading, reload } = useLoad(() => bookingsService.getMyBookings({ limit: 100 }), []);
+  const all = data ?? [];
+  const waiting = all.filter((b) => b.status === 'requested');
+  const upcoming = all.filter((b) => b.status === 'accepted' && b.endDate >= today).sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const first = user?.fullName?.split(' ')[0];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-0.5">
-          {greeting()}, {name} 👋
-        </h1>
-        <p className="text-sm text-gray-500">Here&apos;s a summary of your activity.</p>
-      </div>
+    <div className="max-w-[880px] mx-auto space-y-5">
+      <PageHeader title={first ? `Hello, ${first}` : 'Your bookings'}
+        description={loading && !data ? undefined
+          : waiting.length ? `${waiting.length} request${waiting.length === 1 ? ' is' : 's are'} waiting for a vendor’s reply.`
+          : upcoming.length ? `You have ${upcoming.length} upcoming booking${upcoming.length === 1 ? '' : 's'}.`
+          : 'Find a venue or service and send a booking request.'}
+        actions={<ButtonLink href="/store" variant="primary">Browse listings</ButtonLink>} />
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {statCards.map(({ label, value, Icon, accent }) => (
-          <div key={label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-            <div className={`inline-flex p-2 rounded-xl mb-3 ${accent}`}>
-              <Icon size={15} />
-            </div>
-            <div className="text-2xl font-black text-gray-900 leading-none mb-1">{value}</div>
-            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-              {label}
-            </div>
-          </div>
-        ))}
-      </div>
+      {error && <Notice tone="error" title="Could not load your bookings" action={<Button size="sm" variant="secondary" onClick={() => void reload()}>Retry</Button>} />}
 
-      {failed && (
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 flex items-center gap-2" role="alert">
-          <AlertCircle size={14} className="text-amber-500" aria-hidden />
-          <p className="text-xs text-amber-800">Some of your activity could not be loaded. Refresh the page to try again.</p>
-        </div>
+      {loading && !data ? (
+        <div className="space-y-4"><Skeleton className="h-40 w-full rounded-2xl" /><Skeleton className="h-40 w-full rounded-2xl" /></div>
+      ) : !error && all.length === 0 ? (
+        <Card>
+          <EmptyState title="No bookings yet" action={<ButtonLink href="/store" variant="primary">Browse listings</ButtonLink>}>
+            Send a request to a vendor; they reply within 24 hours and you pay them directly.
+          </EmptyState>
+        </Card>
+      ) : (
+        <>
+          {waiting.length > 0 && (
+            <Card title="Waiting for a reply" description="Vendors have 24 hours to accept or decline." padded={false}>
+              <ul className="divide-y divide-border">{waiting.map((b) => <Row key={b.id} b={b} waiting />)}</ul>
+            </Card>
+          )}
+          <Card title="Coming up" padded={false}
+            action={<Link href="/customer/bookings" className="text-[13px] font-semibold text-text-secondary hover:text-text-primary">All bookings</Link>}>
+            {upcoming.length === 0
+              ? <EmptyState title="Nothing coming up">Accepted bookings appear here until they’re over.</EmptyState>
+              : <ul className="divide-y divide-border">{upcoming.slice(0, 5).map((b) => <Row key={b.id} b={b} />)}</ul>}
+          </Card>
+        </>
       )}
-
-      {/* Quick actions */}
-      <div>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
-          Quick Actions
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { label: 'Browse Services', href: '/store',    primary: true  },
-            { label: 'My Bookings',     href: '/customer/bookings', primary: false },
-            { label: 'Saved Listings',  href: '/saved',    primary: false },
-          ].map(({ label, href, primary }) => (
-            <Link key={label} href={href}
-              className={`px-4 py-2 rounded-xl text-xs font-bold no-underline transition-colors
-                ${primary
-                  ? 'bg-[#2D3B45] text-white hover:bg-[#3a4d5a]'
-                  : 'bg-white text-gray-700 border border-gray-200 hover:border-[#2D3B45]'}`}>
-              {label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent bookings */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            Recent Bookings
-          </p>
-          <Link href="/customer/bookings"
-            className="text-[11px] font-bold text-[#2D3B45] hover:underline no-underline
-              flex items-center gap-1">
-            View all <ChevronRight size={11} />
-          </Link>
-        </div>
-
-        {bookings.length === 0 ? (
-          <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center shadow-sm">
-            <ShoppingBag size={24} className="text-gray-200 mx-auto mb-2" />
-            <p className="text-sm font-bold text-gray-600 mb-1">No bookings yet</p>
-            <p className="text-xs text-gray-400 mb-4">
-              Explore services and send your first booking request.
-            </p>
-            <Link href="/store"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2D3B45] text-white
-                text-xs font-bold rounded-xl hover:bg-[#3a4d5a] transition no-underline">
-              <ShoppingBag size={12} /> Browse Services
-            </Link>
-          </div>
-        ) : (
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-            {bookings.map((b, i) => {
-              return (
-                <Link key={b.id} href={`/customer/bookings/${b.id}`}
-                  className={`flex items-center gap-3 px-4 py-3.5 no-underline
-                    hover:bg-gray-50 transition-colors
-                    ${i < bookings.length - 1 ? 'border-b border-gray-50' : ''}`}>
-                  {/* Cover */}
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden shrink-0">
-                    {b.listing?.coverPhoto
-                      ? <img src={b.listing.coverPhoto} alt="" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center">
-                          <Calendar size={14} className="text-gray-300" />
-                        </div>
-                    }
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-gray-900 truncate">
-                      {b.listing?.title ?? 'Listing'}
-                    </p>
-                    <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
-                      <Calendar size={9} aria-hidden /> {formatDateRange(b.startDate, b.endDate)}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <BookingStatusBadge status={b.status} />
-                    <span className="text-[10px] text-gray-400">
-                      {new Date(b.createdAt).toLocaleDateString('en-KE', {
-                        day: 'numeric', month: 'short',
-                      })}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

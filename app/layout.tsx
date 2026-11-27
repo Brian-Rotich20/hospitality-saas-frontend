@@ -16,7 +16,7 @@ const satoshi = localFont({
 export const metadata: Metadata = {
   title: "LinkMart",
   description:
-    "Discover and book verified venues, caterers and hospitality vendors across Kenya",
+    "Find venues, caterers and event services in Kenya and request to book. You pay the vendor directly.",
 };
 
 export default function RootLayout({

@@ -200,7 +200,7 @@ export default function ConversationPage() {
           ) : loadError === 'failed' ? (
             <div role="alert" className="text-center py-16">
               <p className="flex items-center justify-center gap-1.5 text-sm text-red-700 mb-3"><AlertCircle size={14} aria-hidden /> Could not load messages.</p>
-              <button onClick={() => void load()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3B45] text-white text-xs font-bold">
+              <button onClick={() => void load()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink text-white text-xs font-bold">
                 <RefreshCw size={12} aria-hidden /> Retry
               </button>
             </div>
@@ -232,7 +232,7 @@ export default function ConversationPage() {
                     <div className={`group flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[78%] sm:max-w-[65%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed whitespace-pre-wrap break-words
                         ${m.hidden && !m.body ? 'bg-white border border-dashed border-gray-200 text-gray-400 italic'
-                          : mine ? 'bg-[#2D3B45] text-white rounded-br-md' : 'bg-gray-100 text-gray-900 rounded-bl-md'}`}>
+                          : mine ? 'bg-ink text-white rounded-br-md' : 'bg-gray-100 text-gray-900 rounded-bl-md'}`}>
                         {isAdmin && <span className="block text-[10px] font-bold uppercase tracking-wide opacity-70 mb-0.5">{m.senderRole}{m.hidden ? ' · hidden' : ''}</span>}
                         {m.body ?? 'This message was removed by a moderator.'}
                         <span className={`block text-[10px] mt-0.5 tabular-nums ${mine && !(m.hidden && !m.body) ? 'text-white/60' : 'text-gray-400'}`}>
@@ -265,7 +265,7 @@ export default function ConversationPage() {
                   placeholder={`Message the ${otherSide}…`}
                   className="flex-1 resize-none max-h-40 rounded-xl border border-gray-200 px-3.5 py-2.5 text-[13px] outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 [field-sizing:content]" />
                 <button type="submit" disabled={!trimmed || sending} aria-label="Send message"
-                  className="h-10 px-4 rounded-xl bg-[#2D3B45] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-[#3a4d5a] disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="h-10 px-4 rounded-xl bg-ink text-white text-xs font-bold flex items-center gap-1.5 hover:bg-ink-hover disabled:opacity-40 disabled:cursor-not-allowed">
                   <Send size={13} aria-hidden /> {sending ? 'Sending…' : 'Send'}
                 </button>
               </div>

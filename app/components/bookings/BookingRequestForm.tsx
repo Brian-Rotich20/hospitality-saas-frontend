@@ -30,7 +30,7 @@ function Gate({ title, body, children }: { title: string; body: string; children
   );
 }
 
-const primaryBtn = 'inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3B45] text-white text-xs font-bold no-underline hover:bg-[#3a4d5a]';
+const primaryBtn = 'inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-ink text-white text-xs font-bold no-underline hover:bg-ink-hover';
 const secondaryBtn = 'inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-xs font-bold no-underline hover:bg-gray-50';
 
 export function BookingRequestForm({ listingId }: { listingId: string }) {
@@ -202,7 +202,7 @@ export function BookingRequestForm({ listingId }: { listingId: string }) {
       {gate ?? (
         <>
           <button type="submit" disabled={submitting || (touched && !valid)}
-            className="w-full py-3 rounded-xl bg-[#2D3B45] text-white text-sm font-black hover:bg-[#3a4d5a] disabled:opacity-60 disabled:cursor-not-allowed">
+            className="w-full py-3 rounded-xl bg-ink text-white text-sm font-black hover:bg-ink-hover disabled:opacity-60 disabled:cursor-not-allowed">
             {submitting ? 'Sending request…' : 'Send booking request'}
           </button>
           <ul className="space-y-1.5 text-[11px] text-gray-500">

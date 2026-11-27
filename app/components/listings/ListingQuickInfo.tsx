@@ -25,7 +25,7 @@ function InfoRow({ icon: Icon, value, sub }: {
   return (
     <div className="flex items-center gap-3">
       <div className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-        <Icon size={13} className="text-[#2D3B45]" />
+        <Icon size={13} className="text-ink" />
       </div>
       <div>
         <p className="text-sm font-semibold text-gray-800 leading-snug">{value}</p>
@@ -57,7 +57,7 @@ export function ListingInfo({ listing,
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
           {listing.category && (
             <span className="inline-flex items-center gap-1 text-[10px] font-bold
-              text-[#2D3B45] bg-[#2D3B45]/8 px-2.5 py-1 rounded-full">
+              text-ink bg-ink/8 px-2.5 py-1 rounded-full">
               <Tag size={9} />
               {(listing.category as any).name ?? listing.category}
             </span>
@@ -89,7 +89,7 @@ export function ListingInfo({ listing,
           <Section label="About">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 mt-0.5">
-                <FileText size={13} className="text-[#2D3B45]" />
+                <FileText size={13} className="text-ink" />
               </div>
               <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
                 {listing.description}
@@ -104,11 +104,11 @@ export function ListingInfo({ listing,
         <div className="px-5">
           <Section label="Hosted by">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#2D3B45] flex items-center justify-center shrink-0 overflow-hidden">
+              <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center shrink-0 overflow-hidden">
                 {listing.vendor.logo
                   ? <img src={listing.vendor.logo} alt={listing.vendor.businessName}
                       className="w-full h-full object-cover" />
-                  : <span className="text-[#F5C842] text-sm font-black">
+                  : <span className="text-accent-bg text-sm font-black">
                       {listing.vendor.businessName?.charAt(0).toUpperCase()}
                     </span>
                 }
