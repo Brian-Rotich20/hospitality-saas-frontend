@@ -96,7 +96,7 @@ function ReviewCard({ review }: { review: Review }) {
 
           {/* Vendor reply */}
           {review.vendorReply && (
-            <div className="mt-3 pl-3 border-l-2 border-ink/20 bg-gray-50 rounded-r-xl p-3">
+            <div className="mt-3 bg-primary-subtle rounded-xl p-3">
               <p className="text-[10px] font-black text-ink uppercase tracking-wider mb-1">
                 Vendor response
               </p>
