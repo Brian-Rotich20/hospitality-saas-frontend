@@ -52,13 +52,26 @@ export function AvailabilityCalendar({ listingId, today, start, end, onChange, o
   // A refresh invalidates every cached month.
   useEffect(() => { setLoaded(new Set()); setDays({}); }, [refreshKey]);
 
+  // Vendors can block dates (or accept another request) while this page is open: re-load
+  // when the customer comes back to the tab so the calendar reflects current availability.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') setLoaded(new Set()); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
   const loadMonth = useCallback(async (y: number, m: number) => {
     const key = `${y}-${pad(m + 1)}`;
     setError(false);
     try {
       const res = await availabilityService.getCalendar(listingId, ymd(y, m, 1), ymd(y, m, daysIn(y, m)));
       const data = (res.data ?? {}) as Record<string, DayInfo>;
-      setDays((prev) => ({ ...prev, ...data }));
+      // Replace this month's entries so days unblocked since the last load become selectable.
+      setDays((prev) => {
+        const next: Record<string, DayInfo> = {};
+        for (const [d, v] of Object.entries(prev)) if (!d.startsWith(key)) next[d] = v;
+        return { ...next, ...data };
+      });
       setLoaded((prev) => new Set(prev).add(key));
     } catch {
       setError(true);
