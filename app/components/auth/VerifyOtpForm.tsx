@@ -1,9 +1,10 @@
 'use client';
 
+import { AuthShell } from './AuthShell';
+
 // Email verification with the 6-digit code emailed at sign-up. After verifying, users who
 // signed up as vendors become vendors (the backend requires a verified email for that).
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { MailCheck } from 'lucide-react';
@@ -100,13 +101,10 @@ export default function VerifyOtpForm() {
   const busy = submitting || finishing;
 
   return (
-    <div className="min-h-screen bg-ink flex items-center justify-center p-4 py-10">
-      <div className="w-full max-w-sm">
-        <div className="flex justify-center mb-6">
-          <Image src="/images/logo.png" alt="LinkMart" width={120} height={28} className="h-7 w-auto" priority />
-        </div>
+    <AuthShell>
+      <div className="w-full">
 
-        <div className="bg-white rounded-2xl p-6 shadow-xl">
+        <div className="auth-card">
           <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center mb-3">
             <MailCheck size={18} className="text-amber-600" />
           </div>
@@ -158,6 +156,6 @@ export default function VerifyOtpForm() {
           )}
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

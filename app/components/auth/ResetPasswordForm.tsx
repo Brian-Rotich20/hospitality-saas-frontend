@@ -1,7 +1,8 @@
 'use client';
 
+import { AuthShell } from './AuthShell';
+
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -47,13 +48,10 @@ export function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-300 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="flex justify-center mb-6">
-          <Image src="/images/logo.png" alt="LinkMart Logo" width={120} height={28} className="h-7 w-auto" priority />
-        </div>
+    <AuthShell>
+      <div className="w-full">
 
-        <div className="bg-white rounded-2xl p-6 shadow-xl">
+        <div className="auth-card">
           {invalidLink ? (
             <div role="alert">
               <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] text-gray-900 mb-1">This link has expired</h1>
@@ -84,6 +82,6 @@ export function ResetPasswordForm() {
           )}
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }
