@@ -77,11 +77,11 @@ function NavLink({ item, active, unread, onClick }: { item: NavItem; active: boo
   return (
     <Link href={href} onClick={onClick} aria-current={active ? 'page' : undefined}
       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12.5px] font-bold no-underline transition-colors
-        ${active ? 'bg-surface-muted text-text-primary' : 'text-text-muted hover:text-text-secondary hover:bg-surface-muted'}`}>
+        ${active ? 'bg-primary-subtle text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-surface-muted'}`}>
       <Icon size={15} className="shrink-0" aria-hidden />
       <span className="flex-1 truncate">{label}</span>
       {unread > 0 && (
-        <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-brand text-white text-[10px] font-black flex items-center justify-center tabular-nums"
+        <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-brand text-on-brand text-[10px] font-black flex items-center justify-center tabular-nums"
           aria-label={`${unread} unread`}>
           {unread > 9 ? '9+' : unread}
         </span>
@@ -137,8 +137,9 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
     <div className="flex flex-col h-full p-4">
       <div className="flex items-center justify-between px-1 mb-6">
         <Link href={role === 'vendor' ? '/vendor/dashboard' : role === 'admin' ? '/admin/dashboard' : '/store'}
-          className="flex items-center no-underline shrink-0">
-          <Image src="/images/logo.png" alt="LinkMart" width={110} height={26} className="h-6 w-auto" priority />
+          className="flex items-center gap-2 no-underline shrink-0" aria-label="LinkMart home">
+          <Image src="/images/mark.png" alt="" width={32} height={32} className="w-8 h-8 rounded-full" priority />
+          <span className="text-[19px] font-bold tracking-[-0.02em] text-text-primary">LinkMart</span>
         </Link>
         <button onClick={onMobileClose} aria-label="Close menu"
           className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg text-text-muted hover:bg-surface-muted transition">

@@ -43,10 +43,10 @@ function DesktopSidebar({ categories, activeSlug }: { categories: Category[]; ac
                 <Icon size={17} className={active ? 'text-white' : 'text-text-muted'} strokeWidth={active ? 2.2 : 1.7} />
               )}
             </div>
-            <span className={`flex-1 text-xs font-semibold leading-tight min-w-0 ${active ? 'text-brand' : 'text-text-secondary'}`}>
+            <span className={`flex-1 text-xs font-semibold leading-tight min-w-0 ${active ? 'text-primary' : 'text-text-secondary'}`}>
               {name}
             </span>
-            <ChevronRight size={13} className={active ? 'text-brand shrink-0' : 'text-border shrink-0'} />
+            <ChevronRight size={13} className={active ? 'text-primary shrink-0' : 'text-text-muted shrink-0'} />
           </Link>
         );
       })}
@@ -72,11 +72,11 @@ function MobileCategoryGrid({ categories }: { categories: Category[] }) {
                   <Image src={imageUrl} alt={name} width={56} height={56}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 ) : (
-                  <Icon size={20} strokeWidth={1.5} className="text-text-muted group-hover:text-brand transition-colors" />
+                  <Icon size={20} strokeWidth={1.5} className="text-text-muted group-hover:text-brand-text transition-colors" />
                 )}
               </div>
               <span className="text-[10px] font-semibold text-center leading-tight line-clamp-2 w-full
-                text-text-secondary group-hover:text-brand transition-colors">
+                text-text-secondary group-hover:text-brand-text transition-colors">
                 {name}
               </span>
             </Link>

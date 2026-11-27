@@ -1,42 +1,54 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 @theme {
-  --font-sans: var(--font-satoshi), system-ui, sans-serif;
-  --font-display: var(--font-satoshi), system-ui, sans-serif;
-  /* LinkMart design tokens. Direction: familiar and premium, the hospitality
-     host-tool standard at full craft (see PRODUCT.md). One warm-neutral family,
-     ink for primary actions, the brand orange (matching the logo) used sparingly:
-     unread counts, the current nav item, and links that need emphasis. */
+  --font-sans: var(--font-poppins), system-ui, sans-serif;
+  --font-display: var(--font-poppins), system-ui, sans-serif;
+  /* LinkMart design tokens, set by the owner (2026-11-27): green #00831E for the header
+     and primary actions, orange #E08D35 for the main call to action, a cool #EBF2F7 page,
+     near-black #030207 text, Poppins. Auth screens use #030207 with green-yellow #C6F432.
+     Orange is too light for white or orange text on white (2.6:1), so orange buttons carry
+     dark text and orange-coloured text uses the darker --color-brand-text. */
 
-  /* ── Text (all pass WCAG AA on card and page) ── */
-  --color-text-primary:   #1F1F1F;
-  --color-text-secondary: #4D4D4A;
-  --color-text-muted:     #6B6B66;
+  /* ── Text ── */
+  --color-text-primary:   #030207;
+  --color-text-secondary: #3D4A57;
+  --color-text-muted:     #5C6B78;
 
   /* ── Surfaces ── */
-  --color-page:           #F6F6F3;
+  --color-page:           #EBF2F7;
   --color-card:           #FFFFFF;
-  --color-surface-muted:  #EFEFEB;
-  --color-border:         #E3E3DE;
-  --color-border-strong:  #CFCFC8;
+  --color-surface-muted:  #F1F6F9;
+  --color-border:         #D9E3EA;
+  --color-border-strong:  #C2CFD9;
 
-  /* ── Ink: primary actions and emphasis ── */
-  --color-ink:            #1F1F1F;
-  --color-ink-hover:      #3A3A37;
+  /* ── Primary (green): header, primary buttons, current nav item ── */
+  --color-ink:            #00831E;
+  --color-ink-hover:      #006A18;
+  --color-primary:        #00831E;
+  --color-primary-hover:  #006A18;
+  --color-primary-subtle: #E3F2E7;
 
-  /* ── Brand accent (from the logo) ── */
-  --color-brand:          #BF3E0F;
-  --color-brand-hover:    #9C3209;
-  --color-brand-subtle:   #BF3E0F14;
-  --color-accent:         #E8631F;
-  --color-accent-bg:      #FFF1E6;
-  --color-star:           #E8961A;
+  /* ── Call to action (orange) ── */
+  --color-brand:          #E08D35;
+  --color-brand-hover:    #CC7A24;
+  --color-brand-subtle:   #E08D351A;
+  --color-brand-text:     #9A5410;
+  --color-on-brand:       #030207;
+  --color-accent:         #E08D35;
+  --color-accent-bg:      #FCEFE1;
+  --color-star:           #E08D35;
+
+  /* ── Auth screens ── */
+  --color-night:          #030207;
+  --color-night-raised:   #0D0C14;
+  --color-night-border:   #2A2933;
+  --color-lime:           #C6F432;
+  --color-lime-hover:     #B4E21F;
 
   /* ── Status ── */
-  --color-success:        #17663F;
-  --color-success-bg:     #EDF7F1;
-  --color-success-border: #BFE3CD;
+  --color-success:        #00692A;
+  --color-success-bg:     #E8F5EC;
+  --color-success-border: #B6DFC2;
   --color-warning:        #8A5300;
   --color-warning-bg:     #FFF6E5;
   --color-warning-border: #F2D59B;
@@ -47,24 +59,23 @@
   --color-info-bg:        #EEF3FE;
   --color-info-border:    #C6D5F7;
 
-  /* ── Shadows: offset and soft, only for things that float ── */
-  --shadow-sm: 0 1px 2px 0 rgba(31,31,31,0.05);
-  --shadow-md: 0 4px 12px -2px rgba(31,31,31,0.08), 0 2px 4px -2px rgba(31,31,31,0.05);
-  --shadow-lg: 0 16px 32px -8px rgba(31,31,31,0.16), 0 4px 8px -4px rgba(31,31,31,0.06);
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px 0 rgba(3,2,7,0.05);
+  --shadow-md: 0 4px 12px -2px rgba(3,2,7,0.08), 0 2px 4px -2px rgba(3,2,7,0.05);
+  --shadow-lg: 0 16px 32px -8px rgba(3,2,7,0.18), 0 4px 8px -4px rgba(3,2,7,0.06);
 
-  /* ── Tailwind gray scale remapped onto the warm neutrals, so older screens that use
-     gray-* classes share the palette. gray-400 is dark enough (5.0:1 on card, 4.6:1 on page) for the
-     small secondary text it is used for across the app. ── */
-  --color-gray-50:  #F8F8F6;
-  --color-gray-100: #F1F1EE;
-  --color-gray-200: #E3E3DE;
-  --color-gray-300: #CFCFC8;
-  --color-gray-400: #707069;
-  --color-gray-500: #63635D;
-  --color-gray-600: #4D4D4A;
-  --color-gray-700: #3A3A37;
-  --color-gray-800: #282826;
-  --color-gray-900: #1F1F1F;
+  /* ── Tailwind gray scale mapped onto the cool palette (gray-400 passes AA on white
+     and on the #EBF2F7 page) ── */
+  --color-gray-50:  #F5F8FB;
+  --color-gray-100: #EBF2F7;
+  --color-gray-200: #D9E3EA;
+  --color-gray-300: #C2CFD9;
+  --color-gray-400: #5C6B78;
+  --color-gray-500: #4D5B67;
+  --color-gray-600: #3D4A57;
+  --color-gray-700: #2B3641;
+  --color-gray-800: #18212A;
+  --color-gray-900: #030207;
 
   /* ── Radius ── */
   --radius-sm:   6px;
@@ -94,12 +105,12 @@
 body {
   background-color: var(--color-page);
   color: var(--color-text-primary);
-  font-family: var(--font-satoshi);
+  font-family: var(--font-poppins), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-::selection { background: #BF3E0F26; color: var(--color-text-primary); }
+::selection { background: #00831E2E; color: var(--color-text-primary); }
 :focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 input, textarea, select { caret-color: var(--color-brand); }
 .tabular { font-variant-numeric: tabular-nums; }
@@ -147,7 +158,7 @@ input, textarea, select { caret-color: var(--color-brand); }
     background: linear-gradient(
       90deg,
       var(--color-border) 25%,
-      #F0EDE6 50%,
+      var(--color-surface-muted) 50%,
       var(--color-border) 75%
     );
     background-size: 200% 100%;
@@ -169,12 +180,12 @@ input, textarea, select { caret-color: var(--color-brand); }
     color: var(--color-text-secondary);
   }
   .sidebar-item:hover {
-    background-color: #F0EDE6;
+    background-color: var(--color-surface-muted);
   }
   .sidebar-item.active {
-    background-color: rgba(45, 59, 69, 0.06);
-    border-color: rgba(45, 59, 69, 0.12);
-    color: var(--color-brand);
+    background-color: var(--color-primary-subtle);
+    border-color: transparent;
+    color: var(--color-primary);
   }
 
   /* Icon container inside sidebar item */
@@ -186,11 +197,11 @@ input, textarea, select { caret-color: var(--color-brand); }
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background-color: #EDE9E1;
+    background-color: var(--color-surface-muted);
     transition: background 0.15s;
   }
   .sidebar-item.active .sidebar-icon {
-    background-color: var(--color-brand);
+    background-color: var(--color-primary);
   }
   .sidebar-item.active .sidebar-icon svg {
     color: white;
@@ -227,7 +238,7 @@ input, textarea, select { caret-color: var(--color-brand); }
     color: var(--color-text-secondary);
     border: 1px solid var(--color-border);
   }
-  .btn-ghost:hover { background-color: #F0EDE6; }
+  .btn-ghost:hover { background-color: var(--color-surface-muted); }
 
   .btn-success {
     background-color: #25D366;
@@ -251,7 +262,7 @@ input, textarea, select { caret-color: var(--color-brand); }
 
   .badge-brand {
     color: var(--color-brand);
-    background-color: rgba(45, 59, 69, 0.07);
+    background-color: var(--color-primary-subtle);
   }
   .badge-success {
     color: var(--color-success);
@@ -303,7 +314,7 @@ input, textarea, select { caret-color: var(--color-brand); }
     width: 32px;
     height: 32px;
     border-radius: var(--radius-xl);
-    background-color: #F5F2EC;
+    background-color: var(--color-surface-muted);
     border: 1px solid var(--color-border);
     display: flex;
     align-items: center;
@@ -434,7 +445,7 @@ input, textarea, select { caret-color: var(--color-brand); }
     transition: background 0.15s, color 0.15s;
   }
   .nav-item:hover {
-    background-color: #F0EDE6;
+    background-color: var(--color-surface-muted);
     color: var(--color-text-primary);
   }
   .nav-item-active {
@@ -488,7 +499,7 @@ input, textarea, select { caret-color: var(--color-brand); }
     width: 100%;
   }
   .dropdown-item:hover {
-    background-color: #F5F2EC;
+    background-color: var(--color-surface-muted);
     color: var(--color-text-primary);
   }
   .dropdown-item-danger {
@@ -515,7 +526,7 @@ input, textarea, select { caret-color: var(--color-brand); }
   }
   .search-wrapper:focus-within {
     border-color: var(--color-brand);
-    box-shadow: 0 0 0 3px rgba(45, 59, 69, 0.08);
+    box-shadow: 0 0 0 3px rgba(0, 131, 30, 0.15);
   }
 
   .search-divider {
@@ -565,7 +576,7 @@ input, textarea, select { caret-color: var(--color-brand); }
     align-items: center;
     gap: 8px;
     padding: 6px 6px 6px 12px;
-    background-color: #F5F2EC;
+    background-color: var(--color-surface-muted);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-full);
     cursor: pointer;
@@ -583,8 +594,8 @@ input, textarea, select { caret-color: var(--color-brand); }
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    background-color: var(--color-brand);
-    color: var(--color-star);
+    background-color: var(--color-primary-subtle);
+    color: var(--color-primary);
     padding: 2px 8px;
     border-radius: var(--radius-md);
     margin-bottom: 4px;
@@ -592,3 +603,67 @@ input, textarea, select { caret-color: var(--color-brand); }
 }
 /* First letter upper-case without changing the rest (category slugs become headings). */
 .capitalize-first::first-letter { text-transform: uppercase; }
+
+/* ── Auth screens (#030207 with green-yellow) ──────────────────────────────
+   The halftone panel: two dot fields, green-yellow from the top-left and orange from the
+   bottom-right, each faded out with a mask. */
+.auth-halftone { position: relative; background-color: var(--color-night); overflow: hidden; }
+.auth-halftone::before, .auth-halftone::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-size: 9px 9px;
+}
+.auth-halftone::before {
+  background-image: radial-gradient(circle, #C6F432 1.1px, transparent 1.6px);
+  -webkit-mask-image: radial-gradient(ellipse 75% 60% at 0% 0%, rgba(0,0,0,0.8), transparent 72%);
+          mask-image: radial-gradient(ellipse 75% 60% at 0% 0%, rgba(0,0,0,0.8), transparent 72%);
+}
+.auth-halftone::after {
+  background-image: radial-gradient(circle, #E08D35 1.1px, transparent 1.6px);
+  -webkit-mask-image: radial-gradient(ellipse 70% 55% at 100% 100%, rgba(0,0,0,0.85), transparent 72%);
+          mask-image: radial-gradient(ellipse 70% 55% at 100% 100%, rgba(0,0,0,0.85), transparent 72%);
+}
+
+/* Retheme the light utility classes the auth forms use, inside .auth-dark only.
+   Unlayered rules win over Tailwind's utility layer. */
+.auth-dark .auth-card { background: transparent; box-shadow: none; padding: 0; border-radius: 0; }
+.auth-dark h1 { color: #fff; font-size: 32px; font-weight: 600; letter-spacing: -0.02em; text-align: center; margin-bottom: 8px; }
+.auth-dark h1 + p { text-align: center; font-size: 15px; margin-bottom: 28px; }
+.auth-dark .text-gray-900, .auth-dark .text-gray-800 { color: #fff; }
+.auth-dark .text-gray-700, .auth-dark .text-gray-600 { color: #E4E6EB; }
+.auth-dark .text-gray-500, .auth-dark .text-gray-400 { color: #A3A7B0; }
+.auth-dark .text-gray-300 { color: #7A7F89; }
+.auth-dark label { color: #fff; font-size: 14px; font-weight: 600; }
+.auth-dark input:not([type='checkbox']):not([type='radio']), .auth-dark textarea, .auth-dark select {
+  background-color: var(--color-night) !important; color: #fff !important;
+  border: 1px solid var(--color-night-border) !important; border-radius: 6px !important;
+  font-size: 15px !important; padding-top: 11px !important; padding-bottom: 11px !important;
+}
+.auth-dark input::placeholder, .auth-dark textarea::placeholder { color: #6E727C !important; }
+.auth-dark input:focus, .auth-dark textarea:focus, .auth-dark select:focus {
+  border-color: var(--color-lime) !important; box-shadow: 0 0 0 3px rgba(198,244,50,0.18) !important; outline: none;
+}
+.auth-dark input + svg, .auth-dark .relative > svg { color: #7A7F89; }
+.auth-dark .relative > svg { top: 50% !important; transform: translateY(-50%); }
+.auth-dark .relative > button { top: 50% !important; transform: translateY(-50%); color: #A3A7B0; }
+.auth-dark .bg-ink, .auth-dark button[type='submit'] {
+  background-color: var(--color-lime) !important; color: var(--color-night) !important;
+  font-size: 15px !important; font-weight: 600 !important; border-radius: 6px !important; padding-top: 12px !important; padding-bottom: 12px !important;
+}
+.auth-dark .bg-ink:hover, .auth-dark button[type='submit']:hover { background-color: var(--color-lime-hover) !important; }
+.auth-dark .bg-white, .auth-dark .bg-gray-50 { background-color: transparent; }
+.auth-dark button.bg-white, .auth-dark a.border, .auth-dark button.border {
+  border-color: var(--color-night-border) !important; color: #fff !important; font-size: 15px !important; font-weight: 600 !important;
+  border-radius: 6px !important; padding-top: 11px !important; padding-bottom: 11px !important;
+}
+.auth-dark button.bg-white:hover, .auth-dark a.border:hover, .auth-dark button.border:hover { background-color: var(--color-night-raised) !important; border-color: #4A4955 !important; }
+.auth-dark .border-gray-200, .auth-dark .border-gray-100 { border-color: var(--color-night-border); }
+.auth-dark .bg-gray-200, .auth-dark .bg-gray-100 { background-color: var(--color-night-border); }
+.auth-dark .text-ink, .auth-dark .text-accent-bg { color: var(--color-lime); }
+.auth-dark a:not(.border):not(.bg-ink) { text-decoration-color: rgba(198,244,50,0.5); }
+.auth-dark .text-red-500, .auth-dark .text-red-600 { color: #FF8F80; font-size: 13px; }
+.auth-dark .border-red-400 { border-color: #FF8F80 !important; }
+.auth-dark .bg-amber-50 { background-color: rgba(224,141,53,0.12); border-color: rgba(224,141,53,0.35); }
+.auth-dark .text-amber-800, .auth-dark .text-amber-600 { color: #F3C08A; }
+.auth-dark .bg-emerald-50 { background-color: rgba(198,244,50,0.12); }
+.auth-dark .text-emerald-600 { color: var(--color-lime); }
+.auth-dark .text-xs, .auth-dark .text-\[11px\], .auth-dark .text-\[10px\] { font-size: 14px; }

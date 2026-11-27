@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Menu, MessageSquare } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '../../lib/auth/auth.context';
@@ -23,31 +24,35 @@ function AppTopbar({ onMenu }: { onMenu: () => void }) {
   const name = profile?.fullName || user?.fullName || user?.email?.split('@')[0] || 'Account';
 
   return (
-    <header className="sticky top-0 z-30 bg-page/95 backdrop-blur-sm border-b border-border h-14 px-4 md:px-6 flex items-center gap-3">
+    <header className="sticky top-0 z-30 bg-primary text-white h-16 px-4 md:px-6 flex items-center gap-3 shadow-[0_2px_8px_rgba(3,2,7,0.12)]">
       <button onClick={onMenu} aria-label="Open menu"
-        className="lg:hidden w-9 h-9 -ml-1 flex items-center justify-center rounded-lg text-text-secondary hover:bg-surface-muted">
+        className="lg:hidden w-10 h-10 -ml-1 flex items-center justify-center rounded-lg text-white hover:bg-white/10">
         <Menu size={18} />
       </button>
+      <Link href="/store" className="lg:hidden flex items-center gap-2 no-underline" aria-label="LinkMart home">
+        <Image src="/images/mark.png" alt="" width={30} height={30} className="w-[30px] h-[30px] rounded-full" />
+        <span className="hidden min-[400px]:block text-[18px] font-bold tracking-[-0.02em] text-white">LinkMart</span>
+      </Link>
       <div className="flex-1" />
 
       {role !== 'admin' && (
         <Link href="/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'}
-          className="relative w-9 h-9 flex items-center justify-center rounded-full text-text-secondary hover:bg-surface-muted no-underline">
+          className="relative w-10 h-10 flex items-center justify-center rounded-full bg-white text-primary no-underline transition-transform hover:scale-105">
           <MessageSquare size={17} aria-hidden />
-          {unread > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand ring-2 ring-page" aria-hidden />}
+          {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-brand ring-2 ring-primary" aria-hidden />}
         </Link>
       )}
 
-      <Link href={ACCOUNT_HREF[role]} className="flex items-center gap-2.5 min-w-0 no-underline rounded-full pr-1 hover:bg-surface-muted">
-        <span className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-surface-muted shrink-0">
+      <Link href={ACCOUNT_HREF[role]} className="flex items-center gap-2.5 min-w-0 no-underline rounded-full pr-2 hover:bg-white/10">
+        <span className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-white shrink-0">
           {profile?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
           ) : (
-            <span className="text-text-secondary text-xs font-extrabold">{name.charAt(0).toUpperCase()}</span>
+            <span className="text-primary text-[15px] font-bold">{name.charAt(0).toUpperCase()}</span>
           )}
         </span>
-        <span className="hidden sm:block text-[13px] font-bold text-text-primary truncate max-w-[160px]">{name}</span>
+        <span className="hidden sm:block text-[14px] font-semibold text-white truncate max-w-[160px]">{name}</span>
       </Link>
     </header>
   );

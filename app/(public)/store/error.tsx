@@ -23,7 +23,7 @@ export default function StoreError({ error, reset }: { error: Error & { digest?:
       </p>
       <div className="flex gap-2 mt-2">
         <button onClick={reset}
-          className="px-4 py-2 bg-brand text-white text-xs font-bold rounded-xl hover:bg-brand-hover transition">
+          className="px-4 py-2 bg-ink text-white text-xs font-bold rounded-xl hover:bg-ink-hover transition">
           Try again
         </button>
         <Link href="/"

@@ -1,4 +1,4 @@
-import localFont from "next/font/local";
+import { Poppins } from "next/font/google";
 
 import "./globals.css";
 
@@ -7,9 +7,10 @@ import type { Metadata } from "next";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./lib/auth/auth.context";
 
-const satoshi = localFont({
-  src: "../public/fonts/Satoshi.ttf",
-  variable: "--font-satoshi",
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
   display: "swap",
 });
 
@@ -26,27 +27,27 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${satoshi.variable} antialiased`}>
+      <body className={`${poppins.variable} antialiased`}>
         <AuthProvider>{children}</AuthProvider>
         <Toaster
           position="top-center"
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#1F1F1F',
+              background: '#030207',
               color: '#fff',
               borderRadius: '12px',
               padding: '10px 14px',
               fontSize: '14px',
               fontWeight: '500',
-              fontFamily: 'var(--font-satoshi), system-ui, sans-serif',
+              fontFamily: 'var(--font-poppins), system-ui, sans-serif',
               boxShadow: '0 16px 32px -8px rgba(31,31,31,0.25)',
             },
             success: {
-              iconTheme: { primary: '#3FB97A', secondary: '#1F1F1F' },
+              iconTheme: { primary: '#C6F432', secondary: '#030207' },
             },
             error: {
-              iconTheme: { primary: '#F2685C', secondary: '#1F1F1F' },
+              iconTheme: { primary: '#F2685C', secondary: '#030207' },
             },
           }}
         />
