@@ -26,6 +26,8 @@ export interface ListingVendor {
   businessName:    string;
   slug:            string;
   logo?:           string | null;
+  /** Public business contact from the vendor profile (shared by all of the vendor's listings). */
+  businessEmail?:  string | null;
   whatsappNumber?: string | null;
   phoneNumber?:    string | null;
   verified:        boolean;

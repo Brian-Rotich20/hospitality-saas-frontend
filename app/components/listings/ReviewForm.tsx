@@ -58,7 +58,7 @@ export function ReviewForm({ listingId, bookingId, onSuccess }: Props) {
                 size={28}
                 className={`transition-colors ${
                   n <= (hovered || rating)
-                    ? 'text-accent-bg fill-accent-bg'
+                    ? 'text-star fill-star'
                     : 'text-gray-200 fill-gray-200'
                 }`}
               />

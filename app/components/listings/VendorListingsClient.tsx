@@ -11,6 +11,7 @@ import {
   Search, Eye, Edit2, Trash2, ToggleLeft, ToggleRight, Package,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { publishErrorToast } from '../../lib/listings/publish';
 
 const STATUS: Record<string, { badge: string; dot: string }> = {
   active:  { badge: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
@@ -39,8 +40,9 @@ export function VendorListingsClient({ initialListings }: { initialListings: Lis
       await listingsService.updateStatus(id, next as 'active' | 'paused');
       setListings(prev => prev.map(l => l.id === id ? { ...l, status: next as any } : l));
       toast.success(`Listing ${next === 'active' ? 'published' : 'paused'}`);
-    } catch {
-      toast.error('Failed to update status');
+    } catch (err) {
+      if (next === 'active') publishErrorToast(err);
+      else toast.error('Could not pause the listing. Please try again.');
     } finally {
       setActionId(null);
     }

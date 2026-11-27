@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import { listingsService } from '../../../lib/api/endpoints';
+import { publishErrorToast } from '../../../lib/listings/publish';
 import type { Category } from '../../../lib/types/listing';
 import { schema } from './schema';
 import type { FormData, WizardStep } from './types';
@@ -146,11 +147,19 @@ export function NewListingForm({ categories }: { categories: Category[] }) {
       const res = await listingsService.create(payload);
       const id = res.data?.id ?? (res.data as any)?.data?.id;
 
+      let published = false;
       if (mode === 'active' && id) {
-        await listingsService.updateStatus(id, 'active').catch(() => {});
+        try {
+          await listingsService.updateStatus(id, 'active');
+          published = true;
+        } catch (err) {
+          // The listing exists as a draft; say why it isn't live instead of claiming success.
+          publishErrorToast(err, { savedAsDraft: true });
+        }
       }
 
-      toast.success(mode === 'active' ? 'Listing published!' : 'Draft saved');
+      if (mode !== 'active') toast.success('Draft saved');
+      else if (published) toast.success('Listing published');
 
       // Without this, Next's client-side Router Cache can serve a stale
       // snapshot of /vendor/listings from before this listing existed (or

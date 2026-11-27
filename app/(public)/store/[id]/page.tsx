@@ -1,17 +1,21 @@
-// app/(public)/store/[id]/page.tsx
-// ✅ Server Component — force-dynamic prevents build-time fetch timeout
+// Listing detail. Server component; the listing (with its vendor's public business contact)
+// comes from GET /listings/:id. Layout: breadcrumb, header, gallery, then the main column
+// (description, good-to-know, reviews) beside a sticky booking + contact column on desktop.
+// On phones the contact sits after the description and booking is a bottom bar.
 
-import { notFound }          from 'next/navigation';
-import Link                  from 'next/link';
-import { ArrowLeft, Shield, ChevronRight, Tag, Eye, Star } from 'lucide-react';
-import { ListingGallery }    from '../../../components/listings/ListingGallery';
-import { ListingInfo }       from '../../../components/listings/ListingQuickInfo';
-import { BookingCard }       from '../../../components/listings/BookingCard';
-import { cache }             from 'react';
-import { resolveListingPrice, type Listing } from '../../../lib/types/listing';
+import { cache } from 'react';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { ChevronRight, MapPin, Star } from 'lucide-react';
+import { ListingGallery } from '../../../components/listings/ListingGallery';
 import { ReviewSection } from '../../../components/listings/ReviewSection';
+import { ListingActions } from '../../../components/listings/detail/ListingActions';
+import { ContactPanel } from '../../../components/listings/detail/ContactPanel';
+import { BookingPanel, MobileBookingBar } from '../../../components/listings/detail/BookingPanel';
+import { Description } from '../../../components/listings/detail/Description';
 import { serverFetch } from '../../../lib/api/server';
-
+import { listingPrice } from '../../../lib/listings/price';
+import type { Listing } from '../../../lib/types/listing';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,130 +25,115 @@ const fetchListing = cache(async (id: string) => {
   return data;
 });
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
+interface Props { params: Promise<{ id: string }> }
+
+const BASIS: Record<string, string> = {
+  per_hour: 'Priced per hour', per_day: 'Priced per day', per_person: 'Priced per person', package: 'Priced as a package', contact: 'Price on request',
+};
 
 export default async function ListingDetailPage({ params }: Props) {
-  const { id }  = await params;
+  const { id } = await params;
   const listing = await fetchListing(id);
-
   if (!listing) notFound();
 
-  const price      = resolveListingPrice(listing);
-  const photos     = listing.photos ?? [];
-  const location   = listing.location ?? {};
-  const categoryName = listing.category?.name ?? null;
-  const rating     = listing.rating;
+  const price = listingPrice(listing);
+  const photos = listing.photos?.length ? listing.photos : listing.coverPhoto ? [listing.coverPhoto] : [];
+  const place = [listing.location?.area, listing.location?.county].filter(Boolean).join(', ');
+  const category = listing.category?.name ?? null;
   const reviewCount = listing.reviewCount ?? 0;
-  const views      = listing.views ?? 0;
+  const since = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' }).format(new Date(listing.createdAt));
 
   return (
-    <div className="min-h-screen bg-page">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-10">
-
-        {/* ── Breadcrumb ──────────────────────────────────────────── */}
-       <nav className="flex items-center gap-1.5 mb-4 flex-wrap">
-        <Link href="/store" className="breadcrumb-link">
-          <ArrowLeft size={11} /> Listings
-        </Link>
-        {categoryName && (
-          <>
-            <ChevronRight size={10} style={{ color: 'var(--color-border)' }} />
-            <Link href={`/store?category=${listing.category?.slug ?? ''}`} className="breadcrumb-link">
-              <Tag size={9} /> {categoryName}
-            </Link>
-          </>
-        )}
-        <ChevronRight size={10} style={{ color: 'var(--color-border)' }} />
-        <span className="text-[11px] font-semibold truncate max-w-[200px]"
-          style={{ color: 'var(--color-text-secondary)' }}>
-          {listing.title}
-        </span>
-      </nav>
-
-        {/* ── Gallery ─────────────────────────────────────────────── */}
-        <div className="mb-5">
-          <ListingGallery photos={photos} title={listing.title} listingId={listing.id} />
-        </div>
-
-        {/* ── Stats strip — views, rating, reviews ────────────────── */}
-        <div className="flex items-center gap-4 mb-5 flex-wrap">
-          {rating ? (
-            <div className="flex items-center gap-1.5">
-              <div className="flex items-center gap-0.5">
-                {[1,2,3,4,5].map(i => (
-                  <Star key={i} size={12}
-                    className={i <= Math.round(rating) ? 'text-accent-bg fill-accent-bg' : 'text-gray-200 fill-gray-200'} />
-                ))}
-              </div>
-              <span className="text-xs font-bold text-gray-700">{rating.toFixed(1)}</span>
-              <span className="text-xs text-gray-400">({reviewCount} reviews)</span>
-            </div>
-          ) : (
-            <span className="text-xs text-gray-400 flex items-center gap-1">
-              <Star size={11} className="text-gray-300" />
-              No reviews yet
-            </span>
-          )}
-          {views > 0 && (
+    <div className="bg-page min-h-screen pb-28 lg:pb-16">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+        <nav aria-label="Breadcrumb" className="pt-5 pb-3 flex items-center gap-1.5 text-[13px] text-text-secondary min-w-0">
+          <Link href="/store" className="hover:text-text-primary no-underline">Listings</Link>
+          {category && (
             <>
-              <span className="text-gray-200">·</span>
-              <span className="text-xs text-gray-400 flex items-center gap-1">
-                <Eye size={11} className="text-gray-300" />
-                {views.toLocaleString()} views
-              </span>
+              <ChevronRight size={13} className="text-text-muted shrink-0" aria-hidden />
+              <Link href={`/store?category=${listing.category?.slug ?? ''}`} className="hover:text-text-primary no-underline">{category}</Link>
             </>
           )}
-        </div>
+          <ChevronRight size={13} className="text-text-muted shrink-0" aria-hidden />
+          <span className="text-primary font-medium truncate" aria-current="page">{listing.title}</span>
+        </nav>
 
-      {/* ── Main content grid ────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
+        {listing.status !== 'active' && (
+          <p className="mb-4 rounded-xl border border-warning-border bg-warning-bg px-4 py-3 text-[14px] text-warning">
+            This listing is {listing.status === 'paused' ? 'paused' : 'a draft'}. Only you can see this page until it is published.
+          </p>
+        )}
 
-        {/* Left — listing info + reviews */}
-        <div className="space-y-5">
-          <ListingInfo listing={listing} />
-          <ReviewSection listingId={listing.id} />
-        </div>
-
-        {/* Right — booking card + trust */}
-        <div className="space-y-3">
-          <BookingCard
-            listingId={listing.id}
-            price={price}
-            pricingType={listing.pricingType}
-            currency={listing.currency ?? 'KES'}
-            location={location}
-            vendor={listing.vendor}
-          />
-
-          <div className="card flex items-start gap-3 p-4">
-            <Shield size={14} style={{ color: 'var(--color-text-muted)', flexShrink: 0, marginTop: 2 }} />
-            <div>
-              <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                How booking works
-              </p>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                Send a request; the vendor has 24 hours to respond. Once accepted, you arrange payment
-                directly with the vendor. LinkMart does not take booking payments.
-              </p>
-            </div>
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-5">
+          <div className="min-w-0">
+            <h1 className="text-[28px] sm:text-[34px] leading-[1.15] font-semibold tracking-[-0.02em] text-text-primary text-balance">{listing.title}</h1>
+            <p className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] text-text-secondary [&>span+span]:before:content-['·'] [&>span+span]:before:mr-2.5 [&>span+span]:before:text-text-muted">
+              <span className="flex items-center gap-1.5">
+                <Star size={15} aria-hidden className={listing.rating ? 'fill-star text-star' : 'text-text-muted'} />
+                {listing.rating
+                  ? <><span className="font-semibold text-text-primary tabular">{listing.rating.toFixed(1)}</span> · {reviewCount} review{reviewCount === 1 ? '' : 's'}</>
+                  : 'New on LinkMart'}
+              </span>
+              {place && <span className="flex items-center gap-1.5"><MapPin size={15} aria-hidden /> {place}</span>}
+              {category && <span>{category}</span>}
+            </p>
           </div>
+          <ListingActions listingId={listing.id} title={listing.title} />
+        </header>
+
+        <ListingGallery photos={photos} title={listing.title} />
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12 items-start">
+          <div className="min-w-0 space-y-10">
+            <section aria-labelledby="about">
+              <h2 id="about" className="text-[20px] font-semibold text-text-primary mb-3">About this {category ? category.toLowerCase().replace(/s$/, '') : 'listing'}</h2>
+              <Description text={listing.description} />
+            </section>
+
+            {listing.vendor && (
+              <div className="lg:hidden"><ContactPanel vendor={listing.vendor} listingTitle={listing.title} /></div>
+            )}
+
+            <section aria-labelledby="good-to-know">
+              <h2 id="good-to-know" className="text-[20px] font-semibold text-text-primary mb-3">Good to know</h2>
+              <dl className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
+                <div className="bg-card px-4 py-3.5">
+                  <dt className="text-[13px] text-text-secondary">Pricing</dt>
+                  <dd className="mt-0.5 text-[15px] font-medium text-text-primary">{BASIS[listing.pricingType] ?? 'Ask the vendor'}</dd>
+                </div>
+                <div className="bg-card px-4 py-3.5">
+                  <dt className="text-[13px] text-text-secondary">Payment</dt>
+                  <dd className="mt-0.5 text-[15px] font-medium text-text-primary">Agreed directly with the vendor</dd>
+                </div>
+                <div className="bg-card px-4 py-3.5">
+                  <dt className="text-[13px] text-text-secondary">On LinkMart since</dt>
+                  <dd className="mt-0.5 text-[15px] font-medium text-text-primary">{since}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <ReviewSection listingId={listing.id} />
+          </div>
+
+          <aside className="hidden lg:block lg:sticky lg:top-[96px] space-y-4" aria-label="Book or contact">
+            <BookingPanel listingId={listing.id} price={price} />
+            {listing.vendor && <ContactPanel vendor={listing.vendor} listingTitle={listing.title} />}
+          </aside>
         </div>
       </div>
 
-      </div>
+      <MobileBookingBar listingId={listing.id} price={price} />
     </div>
   );
 }
 
 export async function generateMetadata({ params }: Props) {
-  const { id }  = await params;
+  const { id } = await params;
   const listing = await fetchListing(id);
   if (!listing) return { title: 'Listing not found' };
   return {
-    title:       `${listing.title} | LinkMart`,
+    title: `${listing.title} | LinkMart`,
     description: listing.description?.slice(0, 155),
-    openGraph:   { images: listing.photos?.[0] ? [listing.photos[0]] : [] },
+    openGraph: { images: listing.photos?.[0] ? [listing.photos[0]] : [] },
   };
 }
