@@ -308,7 +308,7 @@ export default function VendorAccountPage() {
             ) : (
               <span
                 style={{
-                  color: '#F5C842',
+                  color: 'var(--color-primary)',
                   fontSize: 20,
                   fontWeight: 900,
                 }}

@@ -36,7 +36,7 @@ LinkMart never touches booking money: no checkout, fees, commissions or payment 
 ## Brand Commitments
 
 - Name: LinkMart. Logo: `public/images/logo.png` (orange cart mark with wordmark) is a fixed asset and stays. Everything else in the visual identity may be replaced. (Confirmed by the owner, 2026-11-27.)
-- Visual direction: familiar and premium, the category standard executed at full craft, no themed "world". The craft bar is the best hospitality host tools: the Airbnb host app and the Booking.com extranet. (Chosen by the owner after two direction rounds, 2026-11-27.)
+- Visual direction (pinned by the owner, 2026-11-27, replacing the earlier "familiar and premium" choice): palette green `#00831E` (header, primary actions), orange `#E08D35` (main call to action), page `#EBF2F7`; font Poppins; a green marketplace-style header with search and round icon shortcuts; sign-in and sign-up as a split screen on `#030207` with green-yellow accents; vendor onboarding as numbered steps.
 
 ## Evidence on Hand
 

@@ -1,7 +1,8 @@
 'use client';
 
+import { AuthShell } from './AuthShell';
+
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,13 +34,10 @@ export function ForgotPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-300 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="flex justify-center mb-6">
-          <Image src="/images/logo.png" alt="LinkMart Logo" width={120} height={28} className="h-7 w-auto" priority />
-        </div>
+    <AuthShell>
+      <div className="w-full">
 
-        <div className="bg-white rounded-2xl p-6 shadow-xl">
+        <div className="auth-card">
           {sent ? (
             <div role="status">
               <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
@@ -75,6 +73,6 @@ export function ForgotPasswordForm() {
           )}
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

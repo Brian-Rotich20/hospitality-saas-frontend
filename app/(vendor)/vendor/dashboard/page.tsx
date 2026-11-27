@@ -100,7 +100,7 @@ export default function VendorDashboardPage() {
         </Link>
         <Link href="/messages" className="bg-card px-5 py-4 no-underline hover:bg-page">
           <p className="text-[13px] text-text-secondary">Unread conversations</p>
-          <p className={`mt-0.5 text-[22px] font-bold tabular ${unread ? 'text-brand' : 'text-text-primary'}`}>{inbox.items ? unread : '–'}</p>
+          <p className={`mt-0.5 text-[22px] font-bold tabular ${unread ? 'text-brand-text' : 'text-text-primary'}`}>{inbox.items ? unread : '–'}</p>
         </Link>
         <Link href="/vendor/bookings" className="bg-card px-5 py-4 no-underline hover:bg-page col-span-2 sm:col-span-1">
           <p className="text-[13px] text-text-secondary">Upcoming bookings</p>

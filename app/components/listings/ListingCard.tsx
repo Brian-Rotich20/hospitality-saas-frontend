@@ -40,7 +40,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
       <div className="p-3.5 space-y-1.5">
 
         <h3 className="text-sm font-bold leading-snug line-clamp-1 text-text-primary
-          transition-colors group-hover:text-brand">
+          transition-colors group-hover:text-brand-text">
           {listing.title}
         </h3>
 

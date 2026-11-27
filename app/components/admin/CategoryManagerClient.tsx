@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import { apiClient } from '../../lib/api/client';
 import { uploadService } from '../../lib/api/endpoints';
 
-// Color system: 60% neutral (white/gray) · 30% navy #2D3B45 · 10% lime #D9F062 accent
+// Colours come from the design tokens in globals.css.
 // Red is kept as-is for destructive actions (delete) — a semantic convention, not part of the brand accent pair.
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -253,7 +253,7 @@ return (
 
             {/* Icon fallback note — lime accent chip instead of generic amber */}
             {!imageUrl && (
-              <p className="text-[11px] text-ink bg-[#D9F062]/25 inline-block px-2 py-1 rounded-md mt-1.5">
+              <p className="text-[11px] text-ink bg-primary-subtle inline-block px-2 py-1 rounded-md mt-1.5">
                 No image — icon will show as fallback in the store strip
               </p>
             )}
@@ -273,7 +273,7 @@ return (
                   onClick={() => setIcon(iconName)}
                   className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition
                     ${icon === iconName
-                      ? 'border-ink bg-[#D9F062]/20 text-ink'
+                      ? 'border-ink bg-primary-subtle text-ink'
                       : 'border-gray-100 text-gray-400 hover:border-gray-300'}`}>
                   <Icon size={16} />
                   <span className="text-[9px] leading-none">{label}</span>
@@ -377,7 +377,7 @@ function CategoryRow({ category, depth, allCategories, onEdit, onDelete, onAddCh
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-gray-900">{category.name}</span>
             {depth === 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-[#D9F062]
+              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-primary-subtle
                 text-ink rounded-md">
                 Top-level
               </span>

@@ -61,7 +61,7 @@ const TONE: Record<Tone, string> = {
   success: 'bg-success-bg text-success border-success-border',
   warning: 'bg-warning-bg text-warning border-warning-border',
   error:   'bg-error-bg text-error border-error-border',
-  brand:   'bg-accent-bg text-brand border-[#F6CDB3]',
+  brand:   'bg-accent-bg text-brand-text border-[#F2CFA6]',
 };
 const ICON = { neutral: Info, info: Info, success: CheckCircle2, warning: TriangleAlert, error: AlertCircle, brand: Info };
 

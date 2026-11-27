@@ -13,7 +13,7 @@ type Size = 'sm' | 'md' | 'lg';
 
 const VARIANT: Record<Variant, string> = {
   primary:   'bg-ink text-white hover:bg-ink-hover disabled:bg-ink/40',
-  brand:     'bg-brand text-white hover:bg-brand-hover disabled:bg-brand/40',
+  brand:     'bg-brand text-on-brand hover:bg-brand-hover disabled:bg-brand/40',
   secondary: 'bg-card text-text-primary border border-border-strong hover:bg-surface-muted disabled:text-text-muted',
   ghost:     'text-text-secondary hover:text-text-primary hover:bg-surface-muted disabled:text-text-muted',
   danger:    'bg-error text-white hover:bg-[#8F1C13] disabled:bg-error/40',

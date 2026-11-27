@@ -1,8 +1,9 @@
 'use client';
 
+import { AuthShell } from './AuthShell';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -65,15 +66,10 @@ export function RegisterVendorForm() {
   };
 
   return (
-    <div className="min-h-screen bg-ink flex items-center justify-center p-4 py-10">
-      <div className="w-full max-w-sm">
+    <AuthShell>
+      <div className="w-full">
 
-        <div className="flex justify-center mb-6">
-          <Image src="/images/logo.png" alt="LinkMart" width={120} height={28}
-            className="h-7 w-auto" priority />
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-xl">
+        <div className="auth-card">
           <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] text-gray-900 mb-0.5">Become a vendor</h1>
           <p className="text-xs text-gray-400 mb-5">Create your account — set up your store next</p>
 
@@ -156,6 +152,6 @@ export function RegisterVendorForm() {
           </p>
         )}
       </div>
-    </div>
+    </AuthShell>
   );
 }

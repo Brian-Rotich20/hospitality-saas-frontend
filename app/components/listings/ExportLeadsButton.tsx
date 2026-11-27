@@ -11,7 +11,7 @@ export function ExportLeadsButton() {
       href="/api/vendor/leads/export"
       download
       className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-gray-700 border border-gray-200
-        text-xs font-bold rounded-xl hover:border-brand hover:text-brand transition no-underline"
+        text-xs font-bold rounded-xl hover:border-brand hover:text-brand-text transition no-underline"
     >
       <Download size={14} /> Export Leads
     </a>

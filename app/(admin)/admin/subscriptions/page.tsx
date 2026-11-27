@@ -125,7 +125,7 @@ function PlansSection() {
           <input value={price} onChange={(e) => setPrice(e.target.value.replace(/[^\d]/g, ''))} inputMode="numeric" placeholder="Whole shillings"
             className="w-full h-10 rounded-[10px] border border-border-strong px-3 text-[14px] tabular outline-none focus:border-ink focus:ring-2 focus:ring-ink/15" /></label>
         <label className="sm:col-span-2 flex items-center gap-2.5 text-[14px] text-text-secondary">
-          <input type="checkbox" checked={activate} onChange={(e) => setActivate(e.target.checked)} className="w-4 h-4 accent-[#1F1F1F]" />
+          <input type="checkbox" checked={activate} onChange={(e) => setActivate(e.target.checked)} className="w-4 h-4 accent-[#00831E]" />
           Make this the active price now
         </label>
         <div className="sm:text-right"><Button type="submit">Save price</Button></div>

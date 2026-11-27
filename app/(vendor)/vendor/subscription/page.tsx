@@ -285,14 +285,14 @@ export default function SubscriptionPage() {
                   <div className="grid gap-2">
                     {methods.mpesa && (
                       <label className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 cursor-pointer transition-colors ${method === 'mpesa' ? 'border-ink bg-page' : 'border-border hover:border-border-strong'}`}>
-                        <input type="radio" name="method" className="accent-[#1F1F1F]" checked={method === 'mpesa'} onChange={() => setMethod('mpesa')} />
+                        <input type="radio" name="method" className="accent-[#00831E]" checked={method === 'mpesa'} onChange={() => setMethod('mpesa')} />
                         <Smartphone size={18} className="text-text-secondary" aria-hidden />
                         <span className="text-[14px] font-semibold text-text-primary">M-Pesa</span>
                       </label>
                     )}
                     {methods.paystack && (
                       <label className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 cursor-pointer transition-colors ${method === 'paystack' ? 'border-ink bg-page' : 'border-border hover:border-border-strong'}`}>
-                        <input type="radio" name="method" className="accent-[#1F1F1F]" checked={method === 'paystack'} onChange={() => setMethod('paystack')} />
+                        <input type="radio" name="method" className="accent-[#00831E]" checked={method === 'paystack'} onChange={() => setMethod('paystack')} />
                         <CreditCard size={18} className="text-text-secondary" aria-hidden />
                         <span className="text-[14px] font-semibold text-text-primary">Card</span>
                       </label>

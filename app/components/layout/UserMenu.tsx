@@ -56,18 +56,14 @@ export function UserMenu() {
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={() => setOpen(v => !v)} className="avatar-trigger">
-        <span className="text-xs font-semibold hidden sm:block max-w-[64px] truncate text-text-secondary">
-          {user?.email?.split('@')[0]}
-        </span>
-        <div className="avatar-circle overflow-hidden">
-          {profile?.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
-          ) : (
-            initials
-          )}
-        </div>
+      <button onClick={() => setOpen(v => !v)} aria-label="Account menu" aria-expanded={open} aria-haspopup="menu"
+        className="w-11 h-11 rounded-full bg-white text-primary font-bold text-[15px] flex items-center justify-center overflow-hidden ring-2 ring-white/40 hover:ring-white transition">
+        {profile?.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
+        ) : (
+          initials
+        )}
       </button>
 
       {open && (
@@ -90,7 +86,7 @@ export function UserMenu() {
           <button onClick={() => { logout(); setOpen(false); }}
             className="dropdown-item dropdown-item-danger">
             <LogOut size={13} />
-            Logout
+            Sign out
           </button>
         </div>
       )}

@@ -19,7 +19,7 @@ export function MobileDrawer({ navLinks, onClose }: MobileDrawerProps) {
 
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
   // Where "list a service" leads depends on who is asking; admins can't become vendors.
-  const listHref = role === 'vendor' ? '/vendor/listings/new' : role === 'customer' ? '/vendor/onboarding' : role ? null : '/auth/register-vendor';
+  const listHref = role === 'vendor' ? '/vendor/listings/new' : role === 'customer' ? '/vendor/onboarding?intent=vendor' : role ? null : '/auth/register-vendor';
   const loginHref = pathname.startsWith('/auth') ? '/auth/login' : `/auth/login?redirect=${encodeURIComponent(pathname)}`;
 
   return (

@@ -61,7 +61,7 @@ export default function AdminDashboardPage() {
               <Link href={a.href} className="flex items-center gap-3 px-5 py-4 no-underline hover:bg-page transition-colors">
                 <span className="flex-1 text-[15px] text-text-primary">{a.label}</span>
                 {a.value === null ? <Skeleton className="h-5 w-8" />
-                  : <span className={`text-[17px] font-bold tabular ${a.urgent ? 'text-brand' : 'text-text-primary'}`}>{a.value}</span>}
+                  : <span className={`text-[17px] font-bold tabular ${a.urgent ? 'text-brand-text' : 'text-text-primary'}`}>{a.value}</span>}
                 <ChevronRight size={16} className="text-text-muted" aria-hidden />
               </Link>
             </li>
