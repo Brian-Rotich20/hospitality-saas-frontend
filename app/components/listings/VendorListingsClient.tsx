@@ -88,7 +88,7 @@ export function VendorListingsClient({ initialListings }: { initialListings: Lis
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search listings..."
             className="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none
-              focus:border-[#2D3B45] transition placeholder-gray-400" />
+              focus:border-ink transition placeholder-gray-400" />
         </div>
         <select value={statusFilter} onChange={e => setFilter(e.target.value)}
           className="px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none cursor-pointer text-gray-700">
@@ -116,7 +116,7 @@ export function VendorListingsClient({ initialListings }: { initialListings: Lis
           </p>
           {listings.length === 0 && (
             <Link href="/vendor/listings/new"
-              className="px-4 py-2 bg-[#2D3B45] text-white text-xs font-bold rounded-xl hover:bg-[#3a4d5a] transition no-underline inline-block">
+              className="px-4 py-2 bg-ink text-white text-xs font-bold rounded-xl hover:bg-ink-hover transition no-underline inline-block">
               Create First Listing
             </Link>
           )}
@@ -166,15 +166,15 @@ export function VendorListingsClient({ initialListings }: { initialListings: Lis
 
                 {/* Actions */}
                 <div className="flex gap-1.5 shrink-0">
-                  <Link href={`/store/${listing.slug ?? listing.id}`} title="View public page"
+                  <Link href={`/store/${listing.id}`} title="View public page"
                    className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center
-                      text-gray-400 hover:text-[#2D3B45] hover:border-[#2D3B45] transition
+                      text-gray-400 hover:text-ink hover:border-ink transition
                       no-underline cursor-pointer">
                     <Eye size={13} />
                   </Link>
                   <Link href={`/vendor/listings/${listing.id}/edit`} title="Edit"
                     className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center
-                      text-gray-400 hover:text-[#2D3B45] hover:border-[#2D3B45] transition no-underline">
+                      text-gray-400 hover:text-ink hover:border-ink transition no-underline">
                     <Edit2 size={13} />
                   </Link>
                   <button

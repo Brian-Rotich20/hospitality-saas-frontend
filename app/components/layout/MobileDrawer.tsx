@@ -13,54 +13,58 @@ interface MobileDrawerProps {
 }
 
 export function MobileDrawer({ navLinks, onClose }: MobileDrawerProps) {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const pathname = usePathname();
+  const role = isAuthenticated ? user?.role : undefined;
 
-  const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href);
+  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
+  // Where "list a service" leads depends on who is asking; admins can't become vendors.
+  const listHref = role === 'vendor' ? '/vendor/listings/new' : role === 'customer' ? '/vendor/onboarding' : role ? null : '/auth/register-vendor';
+  const loginHref = pathname.startsWith('/auth') ? '/auth/login' : `/auth/login?redirect=${encodeURIComponent(pathname)}`;
 
   return (
-    <div className="lg:hidden border-t border-border bg-card pb-3">
+    <nav className="lg:hidden border-t border-border bg-card pb-3" aria-label="Menu">
       {navLinks.map(({ href, Icon, label }) => (
-        <Link key={href} href={href} onClick={onClose}
-          className={`flex items-center gap-3 px-5 py-3 text-sm font-medium no-underline transition-colors
-            ${isActive(href)
-              ? 'text-brand bg-accent-bg border-l-2 border-accent'
-              : 'text-text-secondary hover:bg-surface-muted'}`}>
-          <Icon size={16} />
+        <Link key={href} href={href} onClick={onClose} aria-current={isActive(href) ? 'page' : undefined}
+          className={`flex items-center gap-3 px-5 py-3 text-[15px] font-medium no-underline transition-colors
+            ${isActive(href) ? 'text-text-primary bg-surface-muted' : 'text-text-secondary hover:bg-surface-muted'}`}>
+          <Icon size={17} aria-hidden />
           {label}
         </Link>
       ))}
 
-      <div className="h-px bg-border my-2 mx-4" />
-
-      <Link href="/vendor/listings/new" onClick={onClose}
-        className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-brand no-underline hover:bg-surface-muted">
-        <Store size={16} />
-        + List a Service
-      </Link>
+      {listHref && (
+        <>
+          {navLinks.length > 0 && <div className="h-px bg-border my-2 mx-4" />}
+          <Link href={listHref} onClick={onClose}
+            className="flex items-center gap-3 px-5 py-3 text-[15px] font-semibold text-text-primary no-underline hover:bg-surface-muted">
+            <Store size={17} aria-hidden />
+            {role === 'vendor' ? 'Add a listing' : 'List your business'}
+          </Link>
+        </>
+      )}
 
       {isAuthenticated ? (
         <>
           <div className="h-px bg-border my-2 mx-4" />
-          <button onClick={() => { logout(); onClose(); }}
-            className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium text-error hover:bg-error-bg transition-colors">
-            <LogOut size={15} />
-            Logout
+          <button onClick={() => { onClose(); void logout(); }}
+            className="w-full flex items-center gap-3 px-5 py-3 text-[15px] font-medium text-error hover:bg-error-bg transition-colors">
+            <LogOut size={16} aria-hidden />
+            Sign out
           </button>
         </>
       ) : (
         <div className="px-4 pt-2 flex flex-col gap-2">
-          <Link href="/auth/login" onClick={onClose}
-            className="block text-center py-2.5 border border-border rounded-xl text-sm font-medium text-text-secondary no-underline hover:border-brand">
-            Log in
+          <Link href={loginHref} onClick={onClose}
+            className="flex items-center justify-center h-11 border border-border-strong rounded-xl text-[15px] font-semibold text-text-primary no-underline hover:bg-surface-muted">
+            Sign in
           </Link>
           <Link href="/auth/register" onClick={onClose}
-            className="block text-center py-2.5 bg-accent rounded-xl text-sm font-bold text-brand no-underline hover:opacity-90">
-            Sign up free
+            className="flex items-center justify-center h-11 bg-ink rounded-xl text-[15px] font-semibold text-white no-underline hover:bg-ink-hover">
+            Create an account
           </Link>
         </div>
       )}
-    </div>
+    </nav>
   );
 }

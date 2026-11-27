@@ -38,9 +38,9 @@ export function Stepper({ current, furthestReached, onJump }: StepperProps) {
                 className={`w-8 h-8 rounded-full flex items-center justify-center
                   text-xs font-black transition-all
                   ${done
-                    ? 'bg-[#2D3B45] text-white group-hover:bg-[#3a4d5a]'
+                    ? 'bg-ink text-white group-hover:bg-ink-hover'
                     : active
-                      ? 'bg-[#F5C842] text-[#2D3B45] ring-4 ring-[#F5C842]/25'
+                      ? 'bg-accent-bg text-ink ring-4 ring-accent-bg/25'
                       : reachable
                         ? 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
                         : 'bg-gray-100 text-gray-300'}`}
@@ -49,7 +49,7 @@ export function Stepper({ current, furthestReached, onJump }: StepperProps) {
               </div>
               <span
                 className={`text-[10px] font-bold uppercase tracking-wide transition-colors
-                  ${active ? 'text-[#2D3B45]' : reachable ? 'text-gray-500 group-hover:text-gray-700' : 'text-gray-300'}`}
+                  ${active ? 'text-ink' : reachable ? 'text-gray-500 group-hover:text-gray-700' : 'text-gray-300'}`}
               >
                 {label}
               </span>
@@ -58,7 +58,7 @@ export function Stepper({ current, furthestReached, onJump }: StepperProps) {
             {i < STEP_ORDER.length - 1 && (
               <div
                 className={`flex-1 h-px mx-3 mb-4 transition-colors
-                  ${i < currentIdx ? 'bg-[#2D3B45]' : 'bg-gray-200'}`}
+                  ${i < currentIdx ? 'bg-ink' : 'bg-gray-200'}`}
               />
             )}
           </div>

@@ -45,7 +45,7 @@ export default function VendorSettingsProfilePage() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push('/auth/login');
-    if (!authLoading && user?.role !== 'vendor') router.push('/dashboard');
+    if (!authLoading && user?.role !== 'vendor') router.push('/store');
   }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
@@ -118,25 +118,25 @@ export default function VendorSettingsProfilePage() {
   };
 
   const inputStyle = {
-    width: '100%', padding: '9px 12px', border: '1px solid #E5E7EB',
+    width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)',
     borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff',
     boxSizing: 'border-box' as const, fontFamily: 'inherit',
   };
 
-  const labelStyle = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 };
+  const labelStyle = { fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6 };
 
   if (authLoading || loading) return <LoadingSpinner fullPage text="Loading..." />;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8FAFC', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-page)', fontFamily: 'inherit' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 20px' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
             Settings
           </h1>
-          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>
+          <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: 0 }}>
             Manage your vendor profile and payout preferences
           </p>
         </div>
@@ -154,7 +154,7 @@ export default function VendorSettingsProfilePage() {
         )}
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid #E5E7EB' }}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--color-border)' }}>
           {[
             { key: 'profile', label: 'Business Profile', icon: Building2 },
             { key: 'payout',  label: 'Payout Details',  icon: FileText },
@@ -165,7 +165,7 @@ export default function VendorSettingsProfilePage() {
               style={{
                 padding: '9px 16px', border: 'none', background: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 700,
-                color: activeTab === tab.key ? '#111827' : '#9CA3AF',
+                color: activeTab === tab.key ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
                 borderBottom: activeTab === tab.key ? '2px solid #111827' : '2px solid transparent',
                 marginBottom: -1, display: 'flex', alignItems: 'center', gap: 6,
               }}
@@ -177,7 +177,7 @@ export default function VendorSettingsProfilePage() {
 
         {/* Profile Tab */}
         {activeTab === 'profile' && (
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: 24 }}>
+          <div style={{ background: '#fff', border: '1px solid var(--color-border)', borderRadius: 14, padding: 24 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={labelStyle}>Business Name *</label>
@@ -202,7 +202,7 @@ export default function VendorSettingsProfilePage() {
                 disabled={saving}
                 style={{
                   padding: '10px 22px', border: 'none', borderRadius: 9,
-                  background: saving ? '#9CA3AF' : '#111827', color: '#fff',
+                  background: saving ? 'var(--color-text-muted)' : 'var(--color-text-primary)', color: '#fff',
                   fontSize: 13, fontWeight: 700, cursor: saving ? 'wait' : 'pointer',
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}
@@ -215,7 +215,7 @@ export default function VendorSettingsProfilePage() {
 
         {/* Payout Tab */}
         {activeTab === 'payout' && (
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: 24 }}>
+          <div style={{ background: '#fff', border: '1px solid var(--color-border)', borderRadius: 14, padding: 24 }}>
             <div style={{ marginBottom: 20 }}>
               <label style={labelStyle}>Payout Method</label>
               <div style={{ display: 'flex', gap: 10 }}>
@@ -224,10 +224,10 @@ export default function VendorSettingsProfilePage() {
                     key={method}
                     onClick={() => setPayoutData(p => ({ ...p, payoutMethod: method }))}
                     style={{
-                      flex: 1, padding: '10px', border: `2px solid ${payoutData.payoutMethod === method ? '#111827' : '#E5E7EB'}`,
+                      flex: 1, padding: '10px', border: `2px solid ${payoutData.payoutMethod === method ? 'var(--color-text-primary)' : 'var(--color-border)'}`,
                       borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                      background: payoutData.payoutMethod === method ? '#111827' : '#fff',
-                      color: payoutData.payoutMethod === method ? '#fff' : '#374151',
+                      background: payoutData.payoutMethod === method ? 'var(--color-text-primary)' : '#fff',
+                      color: payoutData.payoutMethod === method ? '#fff' : 'var(--color-text-secondary)',
                     }}
                   >
                     {method === 'mpesa' ? '📱 M-Pesa' : '🏦 Bank Transfer'}
@@ -274,7 +274,7 @@ export default function VendorSettingsProfilePage() {
                 disabled={saving}
                 style={{
                   padding: '10px 22px', border: 'none', borderRadius: 9,
-                  background: saving ? '#9CA3AF' : '#111827', color: '#fff',
+                  background: saving ? 'var(--color-text-muted)' : 'var(--color-text-primary)', color: '#fff',
                   fontSize: 13, fontWeight: 700, cursor: saving ? 'wait' : 'pointer',
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}

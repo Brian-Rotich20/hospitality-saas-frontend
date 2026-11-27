@@ -2,14 +2,16 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../../lib/auth/auth.context';
-import { useRouter } from 'next/navigation';
 import { bookingsService } from '../../../lib/api/endpoints';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { Calendar, TrendingUp, CheckCircle2, XCircle, BarChart3, Eye, Zap, AlertCircle } from 'lucide-react';
+import type { BookingSummary } from '../../../lib/types/booking';
+import { Calendar, CheckCircle2, XCircle, BarChart3, Clock, Zap, AlertCircle, Hourglass } from 'lucide-react';
 
+// Booking counts only: LinkMart does not process or know booking payments, so there is no revenue figure.
 interface Analytics {
-  total: number; completed: number; cancelled: number; pending: number;
-  revenue: number; conversionRate: number; responseRate: number;
+  total: number; requested: number; accepted: number; completed: number;
+  declined: number; expired: number; cancelled: number;
+  acceptanceRate: number | null; responseRate: number | null;
 }
 
 type Timeframe = 'week' | 'month' | 'year';
@@ -19,39 +21,33 @@ function MetricCard({ label, value, sub, color, icon: Icon, border }: {
   color: string; icon: React.ElementType; border?: string;
 }) {
   return (
-    <div style={{ background: '#fff', border: `1px solid ${border ?? '#E5E7EB'}`, borderRadius: 12, padding: '18px 20px', borderLeft: `3px solid ${color}` }}>
+    <div style={{ background: '#fff', border: `1px solid ${border ?? 'var(--color-border)'}`, borderRadius: 12, padding: '18px 20px', borderLeft: `3px solid ${color}` }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
         <div style={{ width: 32, height: 32, borderRadius: 8, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon size={15} color={color} />
         </div>
       </div>
-      <div style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#6B7280', marginTop: 5 }}>{sub}</div>}
+      <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 5 }}>{sub}</div>}
     </div>
   );
 }
 
 export default function VendorAnalyticsPage() {
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
-  const router  = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [data,     setData]     = useState<Analytics | null>(null);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
   const [period,   setPeriod]   = useState<Timeframe>('month');
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) { router.push('/auth/login'); return; }
-    if (!authLoading && user?.role !== 'vendor') { router.push('/dashboard'); }
-  }, [authLoading, isAuthenticated, user, router]);
-
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true); setError(null);
-      const res      = await bookingsService.getVendorBookings({ limit: 100 });
-      const bookings: any[] = Array.isArray(res.data) ? res.data : (res.data as any)?.data ?? [];
+      const res = await bookingsService.getVendorBookings({ limit: 100 });
+      const bookings: BookingSummary[] = Array.isArray(res.data) ? res.data : [];
 
-      // Filter by timeframe
+      // Filter by when the request was received
       const now  = new Date();
       const from = new Date();
       if (period === 'week')  from.setDate(now.getDate() - 7);
@@ -59,19 +55,17 @@ export default function VendorAnalyticsPage() {
       if (period === 'year')  from.setFullYear(now.getFullYear() - 1);
 
       const inRange = bookings.filter(b => new Date(b.createdAt) >= from);
-      const completed  = inRange.filter(b => b.status === 'completed');
-      const cancelled  = inRange.filter(b => b.status === 'cancelled');
-      const pending    = inRange.filter(b => b.status === 'pending');
-      const revenue    = completed.reduce((s: number, b: any) => s + (b.totalAmount ?? 0), 0);
+      const n = (s: BookingSummary['status']) => inRange.filter(b => b.status === s).length;
+      const requested = n('requested'), accepted = n('accepted'), completed = n('completed');
+      const declined = n('declined'), expired = n('expired'), cancelled = n('cancelled');
+      // Requests the vendor decided (accepted, later completed, or declined) vs those left to expire.
+      const answered = accepted + completed + declined;
+      const decidable = answered + expired;
 
       setData({
-        total:          inRange.length,
-        completed:      completed.length,
-        cancelled:      cancelled.length,
-        pending:        pending.length,
-        revenue,
-        conversionRate: inRange.length > 0 ? (completed.length / inRange.length) * 100 : 0,
-        responseRate:   inRange.length > 0 ? ((inRange.length - pending.length) / inRange.length) * 100 : 100,
+        total: inRange.length, requested, accepted, completed, declined, expired, cancelled,
+        acceptanceRate: answered > 0 ? ((accepted + completed) / answered) * 100 : null,
+        responseRate:   decidable > 0 ? (answered / decidable) * 100 : null,
       });
     } catch { setError('Failed to load analytics'); }
     finally  { setLoading(false); }
@@ -82,21 +76,21 @@ export default function VendorAnalyticsPage() {
   if (authLoading) return <LoadingSpinner fullPage text="Loading..." />;
 
   return (
-    <div style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+    <div style={{ fontFamily: 'inherit' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Analytics</h1>
-          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Track your performance metrics</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Analytics</h1>
+          <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: 0 }}>Booking requests and how you responded (latest 100 bookings)</p>
         </div>
         {/* Timeframe pills */}
-        <div style={{ display: 'flex', gap: 6, background: '#F3F4F6', padding: 4, borderRadius: 10 }}>
+        <div style={{ display: 'flex', gap: 6, background: 'var(--color-surface-muted)', padding: 4, borderRadius: 10 }}>
           {(['week', 'month', 'year'] as Timeframe[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)} style={{
               padding: '6px 14px', borderRadius: 7, border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              background: period === p ? '#111827' : 'transparent',
-              color:      period === p ? '#fff'    : '#6B7280',
+              background: period === p ? 'var(--color-text-primary)' : 'transparent',
+              color:      period === p ? '#fff'    : 'var(--color-text-secondary)',
               fontFamily: 'inherit',
             }}>
               {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -115,41 +109,46 @@ export default function VendorAnalyticsPage() {
         <>
           {/* Primary metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }} className="analytics-grid">
-            <MetricCard label="Total Bookings"  value={data.total}                           color="#6366F1" icon={Calendar}       />
-            <MetricCard label="Revenue"         value={`KSh ${(data.revenue/1000).toFixed(0)}K`} color="#10B981" icon={TrendingUp} sub="From completed bookings" />
-            <MetricCard label="Conversion"      value={`${data.conversionRate.toFixed(0)}%`} color="#F59E0B" icon={Zap}           sub="Completed vs total"      />
-            <MetricCard label="Response Rate"   value={`${data.responseRate.toFixed(0)}%`}   color="#8B5CF6" icon={BarChart3}     sub="Non-pending ratio"        />
+            <MetricCard label="Requests"        value={data.total}    color="#6366F1" icon={Calendar} sub="Received in this period" />
+            <MetricCard label="Awaiting reply"  value={data.requested} color="#F59E0B" icon={Clock}   sub="Respond within 24 hours" />
+            <MetricCard label="Acceptance"      value={data.acceptanceRate === null ? '–' : `${data.acceptanceRate.toFixed(0)}%`} color="#10B981" icon={Zap}       sub="Accepted vs declined" />
+            <MetricCard label="Response Rate"   value={data.responseRate === null ? '–' : `${data.responseRate.toFixed(0)}%`}   color="#8B5CF6" icon={BarChart3} sub="Answered before expiry" />
           </div>
 
           {/* Secondary row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }} className="analytics-grid2">
-            <MetricCard label="Completed"  value={data.completed}  color="#10B981" icon={CheckCircle2} />
-            <MetricCard label="Cancelled"  value={data.cancelled}  color="#EF4444" icon={XCircle}      />
-            <MetricCard label="Pending"    value={data.pending}    color="#F59E0B" icon={Calendar}     />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }} className="analytics-grid2">
+            <MetricCard label="Accepted"   value={data.accepted}   color="#10B981" icon={CheckCircle2} />
+            <MetricCard label="Completed"  value={data.completed}  color="#8B5CF6" icon={CheckCircle2} />
+            <MetricCard label="Expired"    value={data.expired}    color="var(--color-text-muted)" icon={Hourglass}    />
+            <MetricCard label="Declined / cancelled" value={data.declined + data.cancelled} color="#EF4444" icon={XCircle} />
           </div>
 
           {/* Booking breakdown bar */}
           {data.total > 0 && (
-            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '20px 22px', marginBottom: 24 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 14px' }}>Booking Breakdown</p>
+            <div style={{ background: '#fff', border: '1px solid var(--color-border)', borderRadius: 12, padding: '20px 22px', marginBottom: 24 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 14px' }}>Booking Breakdown</p>
               <div style={{ display: 'flex', height: 8, borderRadius: 8, overflow: 'hidden', gap: 2, marginBottom: 14 }}>
                 {[
-                  { count: data.completed, color: '#10B981' },
-                  { count: data.pending,   color: '#F59E0B' },
-                  { count: data.cancelled, color: '#EF4444' },
+                  { count: data.requested, color: '#F59E0B' },
+                  { count: data.accepted,  color: '#10B981' },
+                  { count: data.completed, color: '#8B5CF6' },
+                  { count: data.expired,   color: 'var(--color-text-muted)' },
+                  { count: data.declined + data.cancelled, color: '#EF4444' },
                 ].map((seg, i) => (
                   <div key={i} style={{ flex: seg.count, background: seg.color, minWidth: seg.count > 0 ? 4 : 0 }} />
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: 20 }}>
+              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
                 {[
-                  { label: 'Completed', count: data.completed, color: '#10B981' },
-                  { label: 'Pending',   count: data.pending,   color: '#F59E0B' },
-                  { label: 'Cancelled', count: data.cancelled, color: '#EF4444' },
+                  { label: 'Awaiting reply', count: data.requested, color: '#F59E0B' },
+                  { label: 'Accepted',  count: data.accepted,  color: '#10B981' },
+                  { label: 'Completed', count: data.completed, color: '#8B5CF6' },
+                  { label: 'Expired',   count: data.expired,   color: 'var(--color-text-muted)' },
+                  { label: 'Declined / cancelled', count: data.declined + data.cancelled, color: '#EF4444' },
                 ].map(seg => (
                   <div key={seg.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: seg.color, display: 'inline-block' }} />
-                    <span style={{ fontSize: 12, color: '#6B7280' }}>{seg.label}: <strong style={{ color: '#111827' }}>{seg.count}</strong></span>
+                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{seg.label}: <strong style={{ color: 'var(--color-text-primary)' }}>{seg.count}</strong></span>
                   </div>
                 ))}
               </div>
@@ -161,7 +160,7 @@ export default function VendorAnalyticsPage() {
             <p style={{ fontSize: 11, fontWeight: 700, color: '#065F46', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 12px' }}>💡 Tips to Improve</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                'Respond to booking requests within 24 hours to boost response rate',
+                'Respond to booking requests within 24 hours; unanswered requests expire',
                 'Add high-quality photos to increase listing views and conversion',
                 'Ask customers to leave reviews after completed bookings',
                 'Keep pricing competitive — check similar listings in your area',
@@ -179,7 +178,7 @@ export default function VendorAnalyticsPage() {
       <style>{`
         @media (max-width: 768px) {
           .analytics-grid  { grid-template-columns: repeat(2, 1fr) !important; }
-          .analytics-grid2 { grid-template-columns: repeat(3, 1fr) !important; }
+          .analytics-grid2 { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 480px) {
           .analytics-grid  { grid-template-columns: 1fr !important; }

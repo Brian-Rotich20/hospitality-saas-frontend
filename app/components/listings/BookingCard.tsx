@@ -4,7 +4,7 @@
 import { useState }  from 'react';
 import Link          from 'next/link';
 import { useAuth }   from '../../lib/auth/auth.context';
-import { Calendar, Phone, MessageCircle, Users, MapPin, Zap, Clock } from 'lucide-react';
+import { Calendar, Phone, MessageCircle, MapPin, Clock } from 'lucide-react';
 
 const PRICING_SUFFIX: Record<string, string> = {
   per_hour:   '/ hr',
@@ -31,17 +31,17 @@ interface Props {
   price:           number;
   pricingType:     string;
   currency:        string;
-  capacity?:       number;
   location:        Location;
-  instantBooking?: boolean;
   vendor?:         Vendor;
 }
 
 export function BookingCard({
   listingId, price, pricingType, currency,
-  capacity, location, instantBooking, vendor,
+  location, vendor,
 }: Props) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const bookPath = `/store/${listingId}/book`;
+  const cannotBook = isAuthenticated && user?.role !== undefined && user.role !== 'customer';
   const [showPhone, setShowPhone] = useState(false);
 
   const suffix    = PRICING_SUFFIX[pricingType] ?? '';
@@ -72,7 +72,7 @@ export function BookingCard({
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Price</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-xs font-semibold text-gray-400">{currency}</span>
-                <span className="text-3xl font-black text-[#2D3B45] tracking-tight leading-none">
+                <span className="text-3xl font-black text-ink tracking-tight leading-none">
                   {price.toLocaleString()}
                 </span>
                 {suffix && (
@@ -80,28 +80,12 @@ export function BookingCard({
                 )}
               </div>
             </div>
-            {instantBooking && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold
-                text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded-full">
-                <Zap size={9} fill="currentColor" />
-                Instant
-              </span>
-            )}
           </div>
         )}
       </div>
 
       {/* ── Quick facts ──────────────────────────────────────────── */}
       <div className="px-5 py-3 border-b border-gray-50 space-y-2.5">
-        {capacity && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Users size={12} className="text-gray-400" />
-              Capacity
-            </div>
-            <span className="text-xs font-bold text-gray-800">{Number(capacity).toLocaleString()} guests</span>
-          </div>
-        )}
         {locationStr && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -116,29 +100,25 @@ export function BookingCard({
             <Clock size={12} className="text-gray-400" />
             Booking
           </div>
-          <span className={`text-xs font-bold ${instantBooking ? 'text-emerald-600' : 'text-amber-600'}`}>
-            {instantBooking ? 'Instant confirm' : 'Awaits approval'}
-          </span>
+          <span className="text-xs font-bold text-amber-600">Vendor replies within 24h</span>
         </div>
       </div>
 
       {/* ── CTAs ─────────────────────────────────────────────────── */}
       <div className="px-5 py-4 space-y-2">
-        {isAuthenticated ? (
-          <Link href={`/store/${listingId}/book`}
-            className="w-full flex items-center justify-center gap-2 py-3
-              bg-[#2D3B45] text-white text-sm font-black rounded-xl
-              hover:bg-[#3a4d5a] active:scale-[0.98] transition-all no-underline">
-            <Calendar size={14} />
-            Request Booking
-          </Link>
+        {cannotBook ? (
+          <p className="text-[11px] text-gray-500 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5">
+            {user?.role === 'vendor'
+              ? 'Vendor accounts cannot make bookings. Use a separate customer account to book.'
+              : 'Administrator accounts cannot make bookings.'}
+          </p>
         ) : (
-          <Link href={`/auth/login?redirect=/store/${listingId}`}
+          <Link href={isAuthenticated ? bookPath : `/auth/login?redirect=${encodeURIComponent(bookPath)}`}
             className="w-full flex items-center justify-center gap-2 py-3
-              bg-[#2D3B45] text-white text-sm font-black rounded-xl
-              hover:bg-[#3a4d5a] active:scale-[0.98] transition-all no-underline">
+              bg-ink text-white text-sm font-black rounded-xl
+              hover:bg-ink-hover active:scale-[0.98] transition-all no-underline">
             <Calendar size={14} />
-            Sign in to Book
+            {isAuthenticated ? 'Request Booking' : 'Sign in to Book'}
           </Link>
         )}
 

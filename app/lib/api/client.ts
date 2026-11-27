@@ -8,8 +8,11 @@ export interface ApiError {
   message: string;
   code?:   string;
   status?: number;
-  /** Field-level validation problems (422): `{ path: '/field', message }`. */
-  details?: { path: string; message: string }[];
+  /**
+   * Field-level validation problems (422): `{ path: '/field', message }[]`.
+   * Some 409s carry an object instead, e.g. DATES_BOOKED → `{ dates: [...] }`.
+   */
+  details?: { path: string; message: string }[] | { dates?: string[] };
 }
 
 interface ApiResponse<T> {

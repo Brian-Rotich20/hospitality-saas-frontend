@@ -58,7 +58,7 @@ export function ReviewForm({ listingId, bookingId, onSuccess }: Props) {
                 size={28}
                 className={`transition-colors ${
                   n <= (hovered || rating)
-                    ? 'text-[#F5C842] fill-[#F5C842]'
+                    ? 'text-accent-bg fill-accent-bg'
                     : 'text-gray-200 fill-gray-200'
                 }`}
               />
@@ -66,7 +66,7 @@ export function ReviewForm({ listingId, bookingId, onSuccess }: Props) {
           ))}
         </div>
         {(hovered || rating) > 0 && (
-          <p className="text-xs font-bold text-[#2D3B45]">
+          <p className="text-xs font-bold text-ink">
             {LABELS[hovered || rating]}
           </p>
         )}
@@ -82,7 +82,7 @@ export function ReviewForm({ listingId, bookingId, onSuccess }: Props) {
           maxLength={120}
           className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 bg-white
             text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2
-            focus:ring-[#2D3B45] focus:border-transparent transition"
+            focus:ring-ink focus:border-transparent transition"
         />
       </div>
 
@@ -97,7 +97,7 @@ export function ReviewForm({ listingId, bookingId, onSuccess }: Props) {
           required
           className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 bg-white
             text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2
-            focus:ring-[#2D3B45] focus:border-transparent transition resize-none"
+            focus:ring-ink focus:border-transparent transition resize-none"
         />
         <p className="text-[10px] text-gray-400 mt-1 text-right">{body.length}/2000</p>
       </div>
@@ -106,8 +106,8 @@ export function ReviewForm({ listingId, bookingId, onSuccess }: Props) {
         type="submit"
         disabled={submitting || rating === 0}
         className="w-full flex items-center justify-center gap-2 py-3
-          bg-[#2D3B45] text-white text-sm font-black rounded-xl
-          hover:bg-[#3a4d5a] transition disabled:opacity-40 disabled:cursor-not-allowed"
+          bg-ink text-white text-sm font-black rounded-xl
+          hover:bg-ink-hover transition disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {submitting
           ? <><Loader2 size={14} className="animate-spin" /> Submitting…</>

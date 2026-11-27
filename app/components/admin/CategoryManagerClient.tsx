@@ -135,7 +135,7 @@ return (
           <h2 className="text-sm font-black text-gray-900">
             {mode === 'create' ? 'New Category' : 'Edit Category'}
           </h2>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center
+          <button onClick={onClose} aria-label="Close" className="w-7 h-7 flex items-center justify-center
             rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition">
             <X size={14} />
           </button>
@@ -153,7 +153,7 @@ return (
               onChange={e => handleName(e.target.value)}
               placeholder="e.g. Photography"
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
-                outline-none focus:ring-2 focus:ring-[#2D3B45] transition"
+                outline-none focus:ring-2 focus:ring-ink transition"
             />
           </div>
 
@@ -167,7 +167,7 @@ return (
               onChange={e => { setSlug(e.target.value); setSlugTouched(true); }}
               placeholder="photography"
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
-                bg-gray-50 font-mono outline-none focus:ring-2 focus:ring-[#2D3B45] transition"
+                bg-gray-50 font-mono outline-none focus:ring-2 focus:ring-ink transition"
             />
           </div>
 
@@ -188,8 +188,8 @@ return (
                 ${uploading
                   ? 'border-gray-200 bg-gray-50 cursor-wait'
                   : imageUrl
-                    ? 'border-[#2D3B45]/30 hover:border-[#2D3B45]'
-                    : 'border-gray-200 hover:border-[#2D3B45] hover:bg-gray-50'}`}>
+                    ? 'border-ink/30 hover:border-ink'
+                    : 'border-gray-200 hover:border-ink hover:bg-gray-50'}`}>
 
               {imageUrl ? (
                 /* Image preview */
@@ -210,6 +210,7 @@ return (
                   <button
                     type="button"
                     onClick={e => { e.stopPropagation(); setImageUrl(''); }}
+                    aria-label="Remove image"
                     className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white
                       rounded-full flex items-center justify-center hover:bg-red-600 transition">
                     <X size={11} />
@@ -218,7 +219,7 @@ return (
               ) : uploading ? (
                 /* Upload progress */
                 <div className="h-32 flex flex-col items-center justify-center gap-2">
-                  <Loader2 size={20} className="text-[#2D3B45] animate-spin" />
+                  <Loader2 size={20} className="text-ink animate-spin" />
                   <span className="text-xs text-gray-500 font-semibold">Uploading...</span>
                 </div>
               ) : (
@@ -252,7 +253,7 @@ return (
 
             {/* Icon fallback note — lime accent chip instead of generic amber */}
             {!imageUrl && (
-              <p className="text-[11px] text-[#2D3B45] bg-[#D9F062]/25 inline-block px-2 py-1 rounded-md mt-1.5">
+              <p className="text-[11px] text-ink bg-[#D9F062]/25 inline-block px-2 py-1 rounded-md mt-1.5">
                 No image — icon will show as fallback in the store strip
               </p>
             )}
@@ -272,7 +273,7 @@ return (
                   onClick={() => setIcon(iconName)}
                   className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition
                     ${icon === iconName
-                      ? 'border-[#2D3B45] bg-[#D9F062]/20 text-[#2D3B45]'
+                      ? 'border-ink bg-[#D9F062]/20 text-ink'
                       : 'border-gray-100 text-gray-400 hover:border-gray-300'}`}>
                   <Icon size={16} />
                   <span className="text-[9px] leading-none">{label}</span>
@@ -291,7 +292,7 @@ return (
               value={selParent}
               onChange={e => setParent(e.target.value)}
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
-                outline-none focus:ring-2 focus:ring-[#2D3B45] transition cursor-pointer">
+                outline-none focus:ring-2 focus:ring-ink transition cursor-pointer">
               <option value="">None — top-level category</option>
               {topLevel.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -310,8 +311,8 @@ return (
           <button
             onClick={handleSubmit}
             disabled={saving || !name.trim() || uploading}
-            className="flex-1 py-2.5 bg-[#2D3B45] text-white rounded-xl text-xs font-bold
-              hover:bg-[#3a4d5a] transition disabled:opacity-50
+            className="flex-1 py-2.5 bg-ink text-white rounded-xl text-xs font-bold
+              hover:bg-ink-hover transition disabled:opacity-50
               flex items-center justify-center gap-1.5">
             {saving
               ? <><Loader2 size={12} className="animate-spin" /> Saving...</>
@@ -347,6 +348,9 @@ function CategoryRow({ category, depth, allCategories, onEdit, onDelete, onAddCh
         {/* Expand toggle */}
         <button
           onClick={() => setExpanded(v => !v)}
+          aria-label={expanded ? `Collapse ${category.name}` : `Expand ${category.name}`}
+          aria-expanded={expanded}
+          tabIndex={hasChildren ? 0 : -1}
           className={`w-5 h-5 flex items-center justify-center rounded text-gray-400
             transition ${hasChildren ? 'hover:text-gray-600' : 'invisible'}`}>
           {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -355,7 +359,7 @@ function CategoryRow({ category, depth, allCategories, onEdit, onDelete, onAddCh
         {/* Images */}
       <div className={`w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center shrink-0
         ${depth === 0
-          ? 'bg-[#2D3B45]/10 text-[#2D3B45]'
+          ? 'bg-ink/10 text-ink'
           : 'bg-gray-100 text-gray-500'}`}>
         {category.imageUrl ? (
           <img
@@ -374,7 +378,7 @@ function CategoryRow({ category, depth, allCategories, onEdit, onDelete, onAddCh
             <span className="text-sm font-bold text-gray-900">{category.name}</span>
             {depth === 0 && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 bg-[#D9F062]
-                text-[#2D3B45] rounded-md">
+                text-ink rounded-md">
                 Top-level
               </span>
             )}
@@ -388,26 +392,26 @@ function CategoryRow({ category, depth, allCategories, onEdit, onDelete, onAddCh
         </div>
 
         {/* Actions */}
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+        <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition">
           {depth === 0 && (
             <button
               onClick={() => onAddChild(category)}
-              title="Add subcategory"
+              title="Add subcategory" aria-label={`Add a subcategory to ${category.name}`}
               className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200
-                text-gray-400 hover:text-[#2D3B45] hover:border-[#2D3B45] transition text-[10px] font-bold">
+                text-gray-400 hover:text-ink hover:border-ink transition text-[10px] font-bold">
               +sub
             </button>
           )}
           <button
             onClick={() => onEdit(category)}
-            title="Edit"
+            title="Edit" aria-label={`Edit ${category.name}`}
             className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200
-              text-gray-400 hover:text-[#2D3B45] hover:border-[#2D3B45] transition">
+              text-gray-400 hover:text-ink hover:border-ink transition">
             <Pencil size={12} />
           </button>
           <button
             onClick={() => onDelete(category)}
-            title="Delete"
+            title="Delete" aria-label={`Delete ${category.name}`}
             className="w-7 h-7 flex items-center justify-center rounded-lg border border-red-100
               bg-red-50 text-red-400 hover:bg-red-100 transition">
             <Trash2 size={12} />
@@ -562,15 +566,15 @@ export function CategoryManagerClient({ initialCategories }: { initialCategories
           </h1>
           <p className="text-sm text-gray-500">
             {topCount} top-level · {totalCount} total ·{' '}
-            <span className="text-[#2D3B45] font-semibold">
+            <span className="text-ink font-semibold">
               Appear in store navigation strip
             </span>
           </p>
         </div>
         <button
           onClick={() => setModal({ type: 'create' })}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-[#2D3B45] text-white text-xs
-            font-bold rounded-xl hover:bg-[#3a4d5a] transition shrink-0">
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-ink text-white text-xs
+            font-bold rounded-xl hover:bg-ink-hover transition shrink-0">
           <Plus size={14} /> New Category
         </button>
       </div>
@@ -585,8 +589,8 @@ export function CategoryManagerClient({ initialCategories }: { initialCategories
           </p>
           <button
             onClick={() => setModal({ type: 'create' })}
-            className="px-4 py-2 bg-[#2D3B45] text-white text-xs font-bold rounded-xl
-              hover:bg-[#3a4d5a] transition">
+            className="px-4 py-2 bg-ink text-white text-xs font-bold rounded-xl
+              hover:bg-ink-hover transition">
             Create First Category
           </button>
         </div>

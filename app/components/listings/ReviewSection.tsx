@@ -43,7 +43,7 @@ function StarRow({ rating }: { rating: number }) {
     <div className="flex items-center gap-0.5">
       {[1,2,3,4,5].map(i => (
         <Star key={i} size={12}
-          className={i <= Math.round(rating) ? 'text-[#F5C842] fill-[#F5C842]' : 'text-gray-200 fill-gray-200'} />
+          className={i <= Math.round(rating) ? 'text-accent-bg fill-accent-bg' : 'text-gray-200 fill-gray-200'} />
       ))}
     </div>
   );
@@ -55,7 +55,7 @@ function RatingBar({ label, count, total }: { label: string; count: number; tota
     <div className="flex items-center gap-2 text-xs">
       <span className="w-8 text-right text-gray-500 font-medium">{label}</span>
       <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div className="h-full bg-[#F5C842] rounded-full transition-all" style={{ width: `${pct}%` }} />
+        <div className="h-full bg-accent-bg rounded-full transition-all" style={{ width: `${pct}%` }} />
       </div>
       <span className="w-6 text-gray-400">{count}</span>
     </div>
@@ -75,8 +75,8 @@ function ReviewCard({ review }: { review: Review }) {
     <div className="py-4 border-b border-gray-50 last:border-0">
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-[#2D3B45] flex items-center justify-center shrink-0">
-          <span className="text-[10px] font-black text-[#F5C842]">{initials}</span>
+        <div className="w-8 h-8 rounded-full bg-ink flex items-center justify-center shrink-0">
+          <span className="text-[10px] font-black text-accent-bg">{initials}</span>
         </div>
 
         <div className="flex-1 min-w-0">
@@ -96,8 +96,8 @@ function ReviewCard({ review }: { review: Review }) {
 
           {/* Vendor reply */}
           {review.vendorReply && (
-            <div className="mt-3 pl-3 border-l-2 border-[#2D3B45]/20 bg-gray-50 rounded-r-xl p-3">
-              <p className="text-[10px] font-black text-[#2D3B45] uppercase tracking-wider mb-1">
+            <div className="mt-3 pl-3 border-l-2 border-ink/20 bg-gray-50 rounded-r-xl p-3">
+              <p className="text-[10px] font-black text-ink uppercase tracking-wider mb-1">
                 Vendor response
               </p>
               <p className="text-xs text-gray-600 leading-relaxed">{review.vendorReply}</p>
@@ -113,7 +113,7 @@ export async function ReviewSection({ listingId }: { listingId: string }) {
   const { reviews, stats } = await fetchReviews(listingId);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+    <div id="reviews" className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden scroll-mt-20">
 
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">

@@ -51,7 +51,7 @@ export function CategoryStep({
             placeholder="Search categories…"
             className="w-full pl-8 pr-8 py-2.5 text-sm rounded-xl border border-gray-200
               bg-white placeholder-gray-400 focus:outline-none focus:ring-2
-              focus:ring-[#2D3B45] focus:border-transparent transition"
+              focus:ring-ink focus:border-transparent transition"
           />
           {query && (
             <button
@@ -79,11 +79,11 @@ export function CategoryStep({
                 className={`relative flex flex-col items-center gap-2 p-3 border rounded-xl
                   text-center transition-colors cursor-pointer
                   ${isSelected
-                    ? 'border-[#2D3B45] bg-[#2D3B45]/5'
-                    : 'border-gray-200 bg-white hover:border-[#2D3B45] hover:bg-gray-50'}`}
+                    ? 'border-ink bg-ink/5'
+                    : 'border-gray-200 bg-white hover:border-ink hover:bg-gray-50'}`}
               >
                 {isSelected && (
-                  <span className="absolute top-2 right-2 w-4 h-4 bg-[#2D3B45] rounded-full
+                  <span className="absolute top-2 right-2 w-4 h-4 bg-ink rounded-full
                     flex items-center justify-center">
                     <Check size={9} className="text-white" />
                   </span>
@@ -98,7 +98,7 @@ export function CategoryStep({
                 ) : null}
 
                 <span className={`text-xs font-black leading-tight
-                  ${isSelected ? 'text-[#2D3B45]' : 'text-gray-800'}`}>
+                  ${isSelected ? 'text-ink' : 'text-gray-800'}`}>
                   {cat.name}
                 </span>
               </button>
@@ -128,8 +128,8 @@ export function CategoryStep({
                 onClick={() => onSubCategory(subCategoryId === sub.id ? '' : sub.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors
                   ${subCategoryId === sub.id
-                    ? 'bg-[#2D3B45] text-white border-[#2D3B45]'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#2D3B45]'}`}
+                    ? 'bg-ink text-white border-ink'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-ink'}`}
               >
                 {sub.name}
               </button>
@@ -142,8 +142,8 @@ export function CategoryStep({
         type="button"
         onClick={onNext}
         disabled={!categoryId}
-        className="w-full py-3 bg-[#2D3B45] text-white rounded-xl text-sm font-black
-          hover:bg-[#3a4d5a] transition disabled:opacity-40
+        className="w-full py-3 bg-ink text-white rounded-xl text-sm font-black
+          hover:bg-ink-hover transition disabled:opacity-40
           flex items-center justify-center gap-2"
       >
         Continue <ChevronRight size={15} />

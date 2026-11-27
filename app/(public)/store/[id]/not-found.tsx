@@ -15,7 +15,7 @@ export default function ListingNotFound() {
         </p>
         <Link href="/store"
           className="inline-flex items-center gap-1.5 text-xs font-bold text-white
-            bg-[#2D3B45] px-4 py-2 rounded-xl no-underline hover:bg-[#3a4d5a] transition-colors">
+            bg-ink px-4 py-2 rounded-xl no-underline hover:bg-ink-hover transition-colors">
           <ArrowLeft size={13} /> Back to listings
         </Link>
       </div>

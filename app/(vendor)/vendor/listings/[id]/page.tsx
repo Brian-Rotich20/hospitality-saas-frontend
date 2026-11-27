@@ -27,6 +27,8 @@ interface ListingData {
   county?: string;
   area?: string;
   basePrice?: number;
+  /** Display price built from pricingType/price (informational: LinkMart never charges for bookings). */
+  priceLabel?: string;
   currency?: string;
   capacity?: number;
   rating?: number;
@@ -39,6 +41,33 @@ interface ListingData {
   instantBooking?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// The API returns `location` as { county, area }, `category` as an object, prices as
+// strings with a `pricingType`, and `rating` as a number. Map it onto this page's shape.
+interface RawListing extends Omit<ListingData, 'category' | 'location' | 'basePrice'> {
+  category?: { name?: string } | string | null;
+  location?: { county?: string; area?: string; address?: string } | string | null;
+  pricingType?: string; price?: string | null; minPrice?: string | null; maxPrice?: string | null;
+}
+
+const PRICING_UNIT: Record<string, string> = { per_hour: 'per hour', per_day: 'per day', per_person: 'per person', package: 'package' };
+
+function normaliseListing(raw: RawListing): ListingData {
+  const loc = raw.location && typeof raw.location === 'object' ? raw.location : null;
+  const amount = raw.price ?? raw.minPrice ?? null;
+  const n = amount != null ? Number(amount) : NaN;
+  return {
+    ...raw,
+    category: typeof raw.category === 'string' ? raw.category : raw.category?.name,
+    location: typeof raw.location === 'string' ? raw.location : undefined,
+    county: raw.county ?? loc?.county,
+    area: raw.area ?? loc?.area,
+    address: raw.address ?? loc?.address,
+    priceLabel: raw.pricingType === 'contact' || !Number.isFinite(n)
+      ? 'On request'
+      : `${raw.price ? '' : 'From '}${raw.currency ?? 'KES'} ${n.toLocaleString('en-KE', { maximumFractionDigits: 0 })}${raw.pricingType && PRICING_UNIT[raw.pricingType] ? ` ${PRICING_UNIT[raw.pricingType]}` : ''}`,
+  };
 }
 
 // ─── Confirm Delete Modal ─────────────────────────────────────────────────────
@@ -112,7 +141,7 @@ function DetailItem({ icon: Icon, label, value }: { icon: React.ElementType; lab
   return (
     <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50">
       <div className="w-7 h-7 rounded-lg bg-white border border-gray-100 flex items-center justify-center flex-shrink-0">
-        <Icon size={13} className="text-[#2D3B45]" />
+        <Icon size={13} className="text-ink" />
       </div>
       <div>
         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
@@ -143,9 +172,7 @@ export default function VendorListingDetailPage() {
       setLoading(true);
       setError(null);
       const response = await listingsService.getById(id);
-      // Handle both { data: {...} } and direct object
-      const data = (response as any).data ?? response;
-      setListing(data);
+      setListing(normaliseListing(response.data as unknown as RawListing));
     } catch (err) {
       setError('Failed to load listing. Please try again.');
     } finally {
@@ -216,7 +243,7 @@ export default function VendorListingDetailPage() {
           <p className="text-xs text-gray-400 mb-5">{error ?? 'Listing not found'}</p>
           <div className="flex gap-2">
             <button onClick={fetchListing}
-              className="flex-1 py-2 text-xs font-bold bg-[#2D3B45] text-white rounded-lg hover:bg-[#3a4d5a] transition">
+              className="flex-1 py-2 text-xs font-bold bg-ink text-white rounded-lg hover:bg-ink-hover transition">
               Retry
             </button>
             <Link href="/vendor/listings"
@@ -240,7 +267,7 @@ export default function VendorListingDetailPage() {
         />
       )}
 
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-5" style={{ fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-5" style={{ fontFamily: 'inherit' }}>
 
         {/* ── Back + breadcrumb ── */}
         <div className="flex items-center gap-2">
@@ -279,7 +306,7 @@ export default function VendorListingDetailPage() {
           {/* Desktop action buttons */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             <Link href={`/vendor/listings/${id}/edit`}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-[#2D3B45] text-white rounded-lg hover:bg-[#3a4d5a] transition">
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-ink text-white rounded-lg hover:bg-ink-hover transition">
               <Edit size={12} />
               Edit
             </Link>
@@ -289,7 +316,7 @@ export default function VendorListingDetailPage() {
               className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${
                 listing.status === 'active'
                   ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
-                  : 'bg-[#F5C842] text-[#2D3B45] hover:bg-yellow-400'
+                  : 'bg-accent-bg text-ink hover:bg-yellow-400'
               }`}
             >
               {toggling ? (
@@ -320,7 +347,7 @@ export default function VendorListingDetailPage() {
                 <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                   <ImageOff size={18} className="text-gray-300" />
                 </div>
-                <p className="text-xs text-gray-400 font-medium">Images coming soon</p>
+                <p className="text-xs text-gray-400 font-medium">No photos yet</p>
                 <p className="text-[10px] text-gray-300">{photos.length} photo{photos.length !== 1 ? 's' : ''} attached</p>
               </div>
             </div>
@@ -341,7 +368,7 @@ export default function VendorListingDetailPage() {
               <div className="grid grid-cols-2 gap-2">
                 <DetailItem icon={MapPin}       label="Location"  value={[listing.county, listing.area, address].filter(Boolean).join(', ') || '—'} />
                 <DetailItem icon={Users}        label="Capacity"  value={listing.capacity ? `${listing.capacity} guests` : '—'} />
-                <DetailItem icon={DollarSign}   label="Starting price" value={listing.basePrice ? `KSh ${listing.basePrice.toLocaleString()} ${listing.currency ?? 'KES'}` : '—'} />
+                <DetailItem icon={DollarSign}   label="Price shown"    value={listing.priceLabel ?? '—'} />
                 <DetailItem icon={Star}         label="Rating"    value={listing.rating ? `${listing.rating.toFixed(1)} / 5.0 (${listing.reviewCount ?? 0})` : 'No ratings yet'} />
               </div>
             </div>
@@ -370,7 +397,7 @@ export default function VendorListingDetailPage() {
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Actions</p>
 
               <Link href={`/vendor/listings/${id}/edit`}
-                className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold bg-[#2D3B45] text-white rounded-xl hover:bg-[#3a4d5a] transition">
+                className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold bg-ink text-white rounded-xl hover:bg-ink-hover transition">
                 <Edit size={13} />
                 Edit Listing
               </Link>
@@ -381,7 +408,7 @@ export default function VendorListingDetailPage() {
                 className={`w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed ${
                   listing.status === 'active'
                     ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
-                    : 'bg-[#F5C842] text-[#2D3B45] hover:bg-yellow-400'
+                    : 'bg-accent-bg text-ink hover:bg-yellow-400'
                 }`}
               >
                 {toggling ? (
@@ -461,7 +488,7 @@ export default function VendorListingDetailPage() {
         {/* ── Mobile action bar (fixed bottom) ── */}
         <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-3 flex gap-2 z-40">
           <Link href={`/vendor/listings/${id}/edit`}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold bg-[#2D3B45] text-white rounded-xl">
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold bg-ink text-white rounded-xl">
             <Edit size={13} /> Edit
           </Link>
           <button
@@ -470,7 +497,7 @@ export default function VendorListingDetailPage() {
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-xl transition ${
               listing.status === 'active'
                 ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                : 'bg-[#F5C842] text-[#2D3B45]'
+                : 'bg-accent-bg text-ink'
             }`}
           >
             {toggling ? (
@@ -481,7 +508,7 @@ export default function VendorListingDetailPage() {
               <><Play size={13} /> Publish</>
             )}
           </button>
-          <button onClick={() => setShowDelete(true)}
+          <button onClick={() => setShowDelete(true)} aria-label="Delete listing"
             className="w-10 flex items-center justify-center border border-red-100 text-red-400 rounded-xl hover:bg-red-50 transition">
             <Trash2 size={14} />
           </button>

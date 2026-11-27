@@ -3,18 +3,61 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { Package, Heart, Share2, ChevronLeft, ChevronRight, Grid2X2 } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { Package, Heart, Share2, ChevronLeft, ChevronRight, Grid2X2, X } from 'lucide-react';
+import { useAuth } from '../../lib/auth/auth.context';
+import { customerService } from '../../lib/api/endpoints';
+import type { ApiError } from '../../lib/api/client';
 
 interface Props {
   photos: string[];
   title:  string;
+  /** Enables the Save (heart) button, backed by /users/me/saved. */
+  listingId?: string;
 }
 
-export function ListingGallery({ photos, title }: Props) {
+/** Real saved state: GET /users/me/saved/:id, toggled by POST. Signed-out visitors go to sign in. */
+function useSaved(listingId?: string) {
+  const { isAuthenticated, user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!listingId || !isAuthenticated || !user?.emailVerified) return;
+    let cancelled = false;
+    customerService.isSaved(listingId)
+      .then((res) => { if (!cancelled) setSaved(!!(res.data as { saved?: boolean })?.saved); })
+      .catch(() => { /* treat as not saved */ });
+    return () => { cancelled = true; };
+  }, [listingId, isAuthenticated, user?.emailVerified]);
+
+  const toggle = async () => {
+    if (!listingId || busy) return;
+    if (!isAuthenticated) { router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`); return; }
+    setBusy(true);
+    try {
+      const res = await customerService.toggleSaved(listingId);
+      const now = !!(res.data as { saved?: boolean })?.saved;
+      setSaved(now);
+      toast.success(now ? 'Saved' : 'Removed from saved');
+    } catch (err) {
+      const e = err as ApiError;
+      toast.error(e.code === 'EMAIL_NOT_VERIFIED' ? 'Verify your email to save listings.' : e.message || 'Could not save this listing.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return { saved, busy, toggle, enabled: !!listingId };
+}
+
+export function ListingGallery({ photos, title, listingId }: Props) {
   const [idx,       setIdx]       = useState(0);
-  const [favorited, setFavorited] = useState(false);
   const [copied,    setCopied]    = useState(false);
   const [showAll,   setShowAll]   = useState(false);
+  const { saved: favorited, busy: saving, toggle: toggleSaved, enabled: canSave } = useSaved(listingId);
 
   const prev = useCallback(() =>
     setIdx(i => (i - 1 + photos.length) % photos.length), [photos.length]);
@@ -108,7 +151,8 @@ export function ListingGallery({ photos, title }: Props) {
                 const photoIdx = (idx + offset) % photos.length;
                 return (
                   <button key={offset}
-                    onClick={() => setIdx(photoIdx)}
+                    onClick={() => (offset === 2 && photos.length > 3 ? setShowAll(true) : setIdx(photoIdx))}
+                    aria-label={offset === 2 && photos.length > 3 ? `Show all ${photos.length} photos` : `Show photo ${photoIdx + 1}`}
                     className="relative flex-1 overflow-hidden group/thumb">
                     <Image
                       src={photos[photoIdx]}
@@ -120,15 +164,12 @@ export function ListingGallery({ photos, title }: Props) {
                     <div className="absolute inset-0 bg-black/10 group-hover/thumb:bg-transparent transition-colors" />
                     {/* "View all" overlay on last thumb */}
                     {offset === 2 && photos.length > 3 && (
-                      <button
-                        onClick={e => { e.stopPropagation(); setShowAll(true); }}
-                        className="absolute inset-0 flex items-center justify-center
-                          bg-black/40 hover:bg-black/50 transition-colors">
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover/thumb:bg-black/50 transition-colors">
                         <span className="text-white text-xs font-bold flex items-center gap-1.5">
-                          <Grid2X2 size={13} />
+                          <Grid2X2 size={13} aria-hidden />
                           +{photos.length - 3} more
                         </span>
-                      </button>
+                      </span>
                     )}
                   </button>
                 );
@@ -139,26 +180,26 @@ export function ListingGallery({ photos, title }: Props) {
 
         {/* Share + like — float top right of hero, outside the grid */}
         <div className="absolute top-3 right-3 sm:right-[192px] flex gap-1.5 z-20">
-          <button onClick={() => setFavorited(v => !v)} aria-label="Save"
+          {canSave && <button onClick={() => void toggleSaved()} disabled={saving} aria-label={favorited ? 'Remove from saved' : 'Save listing'} aria-pressed={favorited}
             className={`w-8 h-8 rounded-full border shadow-sm flex items-center justify-center
               transition-all active:scale-95 backdrop-blur-sm
               ${favorited
                 ? 'bg-white border-red-200 text-red-500'
                 : 'bg-white/90 border-gray-200 text-gray-500 hover:text-red-400'}`}>
             <Heart size={14} fill={favorited ? 'currentColor' : 'none'} />
-          </button>
+          </button>}
           <div className="relative">
-            <button onClick={handleShare} aria-label="Share"
+            <button onClick={handleShare} aria-label="Copy link to this listing"
               className="w-8 h-8 rounded-full bg-white/90 border border-gray-200 shadow-sm
                 flex items-center justify-center text-gray-500
-                hover:text-[#2D3B45] hover:border-[#2D3B45] transition-all active:scale-95 backdrop-blur-sm">
+                hover:text-ink hover:border-ink transition-all active:scale-95 backdrop-blur-sm">
               <Share2 size={13} />
             </button>
             {copied && (
               <span className="absolute -bottom-8 right-0
                 text-[10px] font-semibold bg-gray-900 text-white px-2.5 py-1
                 rounded-full whitespace-nowrap pointer-events-none shadow-lg">
-                Copied!
+                Link copied
               </span>
             )}
           </div>
@@ -168,9 +209,9 @@ export function ListingGallery({ photos, title }: Props) {
         {photos.length > 1 && photos.length <= 8 && (
           <div className="flex items-center justify-center gap-1.5 mt-2">
             {photos.map((_, i) => (
-              <button key={i} onClick={() => setIdx(i)}
+              <button key={i} onClick={() => setIdx(i)} aria-label={`Show photo ${i + 1}`} aria-current={i === idx}
                 className={`rounded-full transition-all duration-200
-                  ${i === idx ? 'w-4 h-1.5 bg-[#2D3B45]' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'}`} />
+                  ${i === idx ? 'w-4 h-1.5 bg-ink' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'}`} />
             ))}
           </div>
         )}
@@ -191,11 +232,11 @@ export function ListingGallery({ photos, title }: Props) {
 
           {photos.length > 1 && (
             <>
-              <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 z-10
+              <button onClick={prev} aria-label="Previous photo" className="absolute left-2 top-1/2 -translate-y-1/2 z-10
                 w-7 h-7 rounded-full bg-white/85 flex items-center justify-center active:scale-95">
                 <ChevronLeft size={14} />
               </button>
-              <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 z-10
+              <button onClick={next} aria-label="Next photo" className="absolute right-2 top-1/2 -translate-y-1/2 z-10
                 w-7 h-7 rounded-full bg-white/85 flex items-center justify-center active:scale-95">
                 <ChevronRight size={14} />
               </button>
@@ -206,12 +247,12 @@ export function ListingGallery({ photos, title }: Props) {
           )}
 
           <div className="absolute top-2 right-2 flex gap-1.5">
-            <button onClick={() => setFavorited(v => !v)}
+            {canSave && <button onClick={() => void toggleSaved()} disabled={saving} aria-label={favorited ? 'Remove from saved' : 'Save listing'} aria-pressed={favorited}
               className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all
                 ${favorited ? 'bg-white border-red-200 text-red-500' : 'bg-white/85 border-transparent text-gray-500'}`}>
               <Heart size={12} fill={favorited ? 'currentColor' : 'none'} />
-            </button>
-            <button onClick={handleShare}
+            </button>}
+            <button onClick={handleShare} aria-label="Copy link to this listing"
               className="w-7 h-7 rounded-full bg-white/85 border-transparent flex items-center justify-center text-gray-500">
               <Share2 size={12} />
             </button>
@@ -221,8 +262,8 @@ export function ListingGallery({ photos, title }: Props) {
         {photos.length > 1 && photos.length <= 8 && (
           <div className="flex justify-center gap-1.5 py-2 bg-white">
             {photos.map((_, i) => (
-              <button key={i} onClick={() => setIdx(i)}
-                className={`rounded-full transition-all ${i === idx ? 'w-4 h-1.5 bg-[#2D3B45]' : 'w-1.5 h-1.5 bg-gray-300'}`} />
+              <button key={i} onClick={() => setIdx(i)} aria-label={`Show photo ${i + 1}`} aria-current={i === idx}
+                className={`rounded-full transition-all ${i === idx ? 'w-4 h-1.5 bg-ink' : 'w-1.5 h-1.5 bg-gray-300'}`} />
             ))}
           </div>
         )}
@@ -230,17 +271,17 @@ export function ListingGallery({ photos, title }: Props) {
 
       {/* ── Full grid lightbox ─────────────────────────────────────── */}
       {showAll && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto p-4"
+        <div className="fixed inset-0 z-50 bg-black/80 overflow-y-auto p-4" role="dialog" aria-modal="true" aria-label={`All photos of ${title}`}
           onClick={() => setShowAll(false)}>
           <div className="max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-3 gap-2 py-8"
             onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowAll(false)}
-              className="col-span-2 sm:col-span-3 text-white/70 text-xs font-semibold mb-2 text-right hover:text-white transition">
-              ✕ Close
+              className="col-span-2 sm:col-span-3 justify-self-end inline-flex items-center gap-1 text-white/80 text-sm font-semibold mb-2 hover:text-white transition">
+              <X size={15} aria-hidden /> Close
             </button>
             {photos.map((src, i) => (
               <button key={i} onClick={() => { setIdx(i); setShowAll(false); }}
-                className="relative aspect-video rounded-xl overflow-hidden ring-2 ring-transparent hover:ring-[#F5C842] transition-all">
+                className="relative aspect-video rounded-xl overflow-hidden ring-2 ring-transparent hover:ring-accent-bg transition-all">
                 <Image src={src} alt={`Photo ${i + 1}`} fill className="object-cover" sizes="300px" />
               </button>
             ))}

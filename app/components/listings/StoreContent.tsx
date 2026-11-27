@@ -114,31 +114,19 @@ export function StoreLayout({
           {/* Mobile category grid */}
           <div className="lg:hidden">
             {showMobileGrid && <MobileCategoryGrid categories={categories} />}
-            {activeSlug && (
-              <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-                <span className="text-xs font-black capitalize text-text-primary">
-                  {activeSlug.replace(/-/g, ' ')}
-                </span>
-                <Link href="/store" className="text-[10px] px-2 py-0.5 font-semibold transition rounded-full
-                  bg-surface-muted text-text-muted no-underline">
-                  ✕ Clear
-                </Link>
-              </div>
-            )}
           </div>
 
-          {/* Desktop: active category label */}
-          {activeSlug && (
-            <div className="hidden lg:flex items-center gap-2 px-6 pt-5 pb-0">
-              <span className="text-sm font-black capitalize text-text-primary">
-                {activeSlug.replace(/-/g, ' ')}
-              </span>
-              <Link href="/store" className="text-[11px] px-2 py-0.5 font-semibold transition rounded-full
-                bg-surface-muted text-text-muted no-underline">
-                ✕ Clear
+          {/* Page heading: says what is being shown, with a way back to everything. */}
+          <div className="px-4 lg:px-6 pt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] text-text-primary capitalize-first">
+              {searchQuery ? `Results for “${searchQuery}”` : activeSlug ? activeSlug.replace(/-/g, ' ') : 'Venues and event services'}
+            </h1>
+            {(activeSlug || searchQuery) && (
+              <Link href="/store" className="text-[13px] font-semibold text-text-secondary hover:text-text-primary underline underline-offset-2">
+                Show everything
               </Link>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Listings */}
           <div className="px-4 lg:px-6 py-4">

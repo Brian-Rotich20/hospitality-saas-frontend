@@ -45,31 +45,31 @@ export function ForgotPasswordForm() {
               <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
                 <MailCheck size={18} className="text-emerald-600" />
               </div>
-              <h2 className="text-base font-bold text-gray-900 mb-1">Check your email</h2>
+              <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] text-gray-900 mb-1">Check your email</h1>
               <p className="text-xs text-gray-500 mb-5">
                 If an account exists for that address, we&apos;ve sent a link to reset your password.
                 The link works once and expires in 60 minutes.
               </p>
-              <Link href="/auth/login" className="text-xs font-semibold text-[#2D3B45] hover:underline">Back to sign in</Link>
+              <Link href="/auth/login" className="text-xs font-semibold text-ink hover:underline">Back to sign in</Link>
             </div>
           ) : (
             <>
-              <h2 className="text-base font-bold text-gray-900 mb-1">Forgot your password?</h2>
+              <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] text-gray-900 mb-1">Forgot your password?</h1>
               <p className="text-xs text-gray-400 mb-5">Enter your email and we&apos;ll send you a reset link.</p>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
                 <Field label="Email" error={errors.email?.message}>
                   <Mail className="absolute left-2.5 top-2.5 text-gray-300" size={14} />
                   <input type="email" autoComplete="email" placeholder="you@example.com" {...register('email')} disabled={isSubmitting}
-                    className={`w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition ${errors.email ? 'border-red-400' : 'border-gray-200'}`} />
+                    className={`w-full pl-8 pr-3 py-2 text-xs rounded-lg border bg-gray-50 text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-bg focus:border-transparent transition ${errors.email ? 'border-red-400' : 'border-gray-200'}`} />
                 </Field>
                 {error && <p role="alert" className="text-red-500 text-[11px]">{error}</p>}
                 <button type="submit" disabled={isSubmitting}
-                  className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  className="w-full py-2 rounded-lg bg-ink hover:bg-ink-hover text-white text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                   {isSubmitting ? <><Spinner /> Sending…</> : 'Send reset link'}
                 </button>
               </form>
               <p className="text-[11px] text-gray-500 mt-4">
-                Remembered it? <Link href="/auth/login" className="font-semibold text-[#2D3B45] hover:underline">Sign in</Link>
+                Remembered it? <Link href="/auth/login" className="font-semibold text-ink hover:underline">Sign in</Link>
               </p>
             </>
           )}

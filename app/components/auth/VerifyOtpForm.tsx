@@ -100,7 +100,7 @@ export default function VerifyOtpForm() {
   const busy = submitting || finishing;
 
   return (
-    <div className="min-h-screen bg-[#2D3B45] flex items-center justify-center p-4 py-10">
+    <div className="min-h-screen bg-ink flex items-center justify-center p-4 py-10">
       <div className="w-full max-w-sm">
         <div className="flex justify-center mb-6">
           <Image src="/images/logo.png" alt="LinkMart" width={120} height={28} className="h-7 w-auto" priority />
@@ -110,7 +110,7 @@ export default function VerifyOtpForm() {
           <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center mb-3">
             <MailCheck size={18} className="text-amber-600" />
           </div>
-          <h2 className="text-base font-black text-gray-900 mb-0.5">Verify your email</h2>
+          <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] text-gray-900 mb-0.5">Verify your email</h1>
           <p className="text-xs text-gray-400 mb-5">
             We sent a 6-digit code to <span className="font-semibold text-gray-600">{user?.email ?? 'your email'}</span>.
             It expires in 15 minutes.
@@ -137,14 +137,14 @@ export default function VerifyOtpForm() {
                   aria-describedby={error ? 'otp-error' : undefined}
                   placeholder="123456"
                   className={`w-full px-3 py-2 text-lg tracking-[0.4em] text-center rounded-lg border bg-gray-50 text-gray-900
-                    placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F5C842] focus:border-transparent transition
+                    placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-bg focus:border-transparent transition
                     ${error ? 'border-red-400' : 'border-gray-200'}`}
                 />
                 {error && <p id="otp-error" role="alert" className="text-red-500 text-[10px] mt-1">{error}</p>}
               </div>
 
               <button type="submit" disabled={busy || code.length !== 6}
-                className="w-full py-2 rounded-lg bg-[#2D3B45] hover:bg-[#3a4d5a] text-white text-xs font-bold transition
+                className="w-full py-2 rounded-lg bg-ink hover:bg-ink-hover text-white text-xs font-bold transition
                   disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {submitting ? <><Spinner /> Verifying…</> : 'Verify email'}
               </button>

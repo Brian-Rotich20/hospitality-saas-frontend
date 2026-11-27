@@ -57,7 +57,7 @@ export function ReviewGate({ listingId }: Props) {
         <LogIn size={14} className="text-gray-400 shrink-0" />
         <p className="text-xs text-gray-500 flex-1">
           <Link href={`/auth/login?redirect=/store/${listingId}`}
-            className="font-bold text-[#2D3B45] hover:underline">Sign in</Link>
+            className="font-bold text-ink hover:underline">Sign in</Link>
           {' '}to leave a review after your booking.
         </p>
       </div>
