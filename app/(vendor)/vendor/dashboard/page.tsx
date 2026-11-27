@@ -18,7 +18,7 @@ import { Button, ButtonLink } from '../../../components/ui/Button';
 interface VendorMe { businessName?: string; profileComplete?: boolean; missing?: string[] }
 interface MyListing { id: string; status: string }
 
-const MISSING_LABEL: Record<string, string> = { logo: 'a logo', 'phone number': 'a phone number', 'business name': 'a business name' };
+const MISSING_LABEL: Record<string, string> = { logo: 'a logo', 'phone number': 'a phone number', 'business email': 'a business email', 'WhatsApp number': 'a WhatsApp number', 'business name': 'a business name' };
 
 function BookingRow({ b, deadline }: { b: BookingSummary; deadline?: boolean }) {
   const left = deadline ? deadlineLabel(b.respondBy) : null;
@@ -76,7 +76,7 @@ export default function VendorDashboardPage() {
       {missing.length > 0 && (
         <Notice tone="info" title="Finish your business profile"
           action={<Link href="/vendor/settings/profile" className="text-[13px] font-semibold underline whitespace-nowrap">Add details</Link>}>
-          Add {missing.map((m) => MISSING_LABEL[m] ?? m).join(' and ')} so customers can recognise and reach you.
+          Add {new Intl.ListFormat('en', { type: 'conjunction' }).format(missing.map((m) => MISSING_LABEL[m] ?? m))} so customers can recognise and reach you.
         </Notice>
       )}
 

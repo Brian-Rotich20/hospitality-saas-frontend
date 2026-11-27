@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { listingsService } from '../../../../lib/api/endpoints';
 import { LoadingSpinner } from '../../../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
+import { publishErrorToast } from '../../../../lib/listings/publish';
 import {
   Edit, Trash2, Eye, Pause, Play, Calendar,
   MapPin, Users, DollarSign, Star, AlertCircle,
@@ -193,7 +194,8 @@ export default function VendorListingDetailPage() {
       setListing(prev => prev ? { ...prev, status: newStatus } : prev);
       toast.success(newStatus === 'active' ? 'Listing published' : 'Listing paused');
     } catch (err) {
-      toast.error('Failed to update listing status');
+      if (newStatus === 'active') publishErrorToast(err);
+      else toast.error('Could not pause the listing. Please try again.');
     } finally {
       setToggling(false);
     }
