@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { Heart, CalendarCheck, Menu, X, LayoutDashboard, MessageSquare, Search } from 'lucide-react';
+import { Heart, CalendarCheck, Menu, X, MessageSquare, Search } from 'lucide-react';
 import { useAuth } from '../../lib/auth/auth.context';
 import { useUnreadCount } from '../../lib/messaging/unread';
 import { UserMenu } from './UserMenu';
@@ -20,7 +20,6 @@ const CUSTOMER_NAV: Shortcut[] = [
   { href: '/customer/bookings', Icon: CalendarCheck, label: 'Bookings' },
 ];
 const VENDOR_NAV: Shortcut[] = [
-  { href: '/vendor/dashboard', Icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/vendor/bookings',  Icon: CalendarCheck,   label: 'Bookings' },
 ];
 
