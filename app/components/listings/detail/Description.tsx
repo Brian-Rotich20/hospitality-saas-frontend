@@ -13,10 +13,10 @@ export function Description({ text }: { text: string }) {
   }, [text]);
   return (
     <div>
-      <p ref={ref} className={`text-[15px] leading-[1.7] text-text-secondary whitespace-pre-line max-w-[68ch] ${open ? '' : 'line-clamp-6'}`}>{text}</p>
+      <p ref={ref} className={`text-[14px] leading-[1.7] text-text-secondary whitespace-pre-line max-w-[68ch] ${open ? '' : 'line-clamp-6'}`}>{text}</p>
       {(overflows || open) && (
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
-          className="mt-2 text-[14px] font-semibold text-primary hover:underline underline-offset-4">
+          className="mt-2 text-[13px] font-semibold text-primary hover:underline underline-offset-4">
           {open ? 'Show less' : 'Read more'}
         </button>
       )}

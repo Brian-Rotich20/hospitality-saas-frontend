@@ -51,7 +51,7 @@ function StarRow({ rating, size = 14 }: { rating: number; size?: number }) {
 function RatingBar({ stars, count, total }: { stars: number; count: number; total: number }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
-    <div className="flex items-center gap-3 text-[13px]">
+    <div className="flex items-center gap-3 text-[12px]">
       <span className="w-14 text-text-secondary tabular">{stars} star{stars === 1 ? '' : 's'}</span>
       <div className="flex-1 h-2 bg-surface-muted rounded-full overflow-hidden">
         <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
@@ -68,18 +68,18 @@ function ReviewCard({ review }: { review: Review }) {
   return (
     <li className="py-5 first:pt-0">
       <div className="flex items-center gap-3">
-        <span className="w-10 h-10 rounded-full bg-primary-subtle text-primary text-[13px] font-semibold flex items-center justify-center shrink-0" aria-hidden>{initials}</span>
+        <span className="w-10 h-10 rounded-full bg-primary-subtle text-primary text-[12px] font-semibold flex items-center justify-center shrink-0" aria-hidden>{initials}</span>
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold text-text-primary truncate">{name}</p>
-          <p className="flex items-center gap-2 text-[13px] text-text-secondary"><StarRow rating={review.rating} size={12} /> <time>{date}</time></p>
+          <p className="text-[14px] font-semibold text-text-primary truncate">{name}</p>
+          <p className="flex items-center gap-2 text-[12px] text-text-secondary"><StarRow rating={review.rating} size={12} /> <time>{date}</time></p>
         </div>
       </div>
-      {review.title && <p className="mt-3 text-[15px] font-semibold text-text-primary">{review.title}</p>}
-      <p className="mt-1.5 text-[15px] leading-relaxed text-text-secondary max-w-[68ch]">{review.body}</p>
+      {review.title && <p className="mt-3 text-[14px] font-semibold text-text-primary">{review.title}</p>}
+      <p className="mt-1.5 text-[14px] leading-relaxed text-text-secondary max-w-[68ch]">{review.body}</p>
       {review.vendorReply && (
         <div className="mt-3 bg-primary-subtle rounded-xl px-4 py-3 max-w-[68ch]">
-          <p className="text-[13px] font-semibold text-primary mb-0.5">Response from the vendor</p>
-          <p className="text-[14px] leading-relaxed text-text-secondary">{review.vendorReply}</p>
+          <p className="text-[12px] font-semibold text-primary mb-0.5">Response from the vendor</p>
+          <p className="text-[13px] leading-relaxed text-text-secondary">{review.vendorReply}</p>
         </div>
       )}
     </li>
@@ -90,14 +90,14 @@ export async function ReviewSection({ listingId }: { listingId: string }) {
   const { reviews, stats } = await fetchReviews(listingId);
   return (
     <section id="reviews" aria-labelledby="reviews-heading" className="scroll-mt-24">
-      <h2 id="reviews-heading" className="text-[20px] font-semibold text-text-primary mb-4">Reviews</h2>
+      <h2 id="reviews-heading" className="text-[17px] font-semibold text-text-primary mb-4">Reviews</h2>
 
       {stats.total > 0 && stats.average !== null && (
         <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-10 items-center bg-card border border-border rounded-2xl p-5 mb-6">
           <div>
-            <p className="flex items-baseline gap-1"><span className="text-[40px] leading-none font-semibold text-text-primary tabular">{stats.average.toFixed(1)}</span><span className="text-[15px] text-text-secondary">/5</span></p>
+            <p className="flex items-baseline gap-1"><span className="text-[32px] leading-none font-semibold text-text-primary tabular">{stats.average.toFixed(1)}</span><span className="text-[14px] text-text-secondary">/5</span></p>
             <div className="mt-2"><StarRow rating={stats.average} size={16} /></div>
-            <p className="mt-1 text-[13px] text-text-secondary">{stats.total} review{stats.total === 1 ? '' : 's'}</p>
+            <p className="mt-1 text-[12px] text-text-secondary">{stats.total} review{stats.total === 1 ? '' : 's'}</p>
           </div>
           <div className="space-y-2">
             {([[5, stats.five], [4, stats.four], [3, stats.three], [2, stats.two], [1, stats.one]] as const).map(([n, c]) => (
@@ -113,7 +113,7 @@ export async function ReviewSection({ listingId }: { listingId: string }) {
       {reviews.length > 0 ? (
         <ul className="mt-2 divide-y divide-border">{reviews.map((r) => <ReviewCard key={r.id} review={r} />)}</ul>
       ) : (
-        <p className="mt-3 text-[15px] text-text-secondary">No reviews yet. Customers can review after a completed booking.</p>
+        <p className="mt-3 text-[14px] text-text-secondary">No reviews yet. Customers can review after a completed booking.</p>
       )}
     </section>
   );

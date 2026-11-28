@@ -53,7 +53,7 @@ export function ListingActions({ listingId, title }: { listingId: string; title:
     } catch { /* share sheet dismissed */ }
   };
 
-  const pill = 'inline-flex items-center gap-2 h-10 px-4 rounded-full border border-border-strong bg-card text-[14px] font-medium text-text-primary hover:bg-surface-muted transition-colors';
+  const pill = 'inline-flex items-center gap-2 h-10 px-4 rounded-full border border-border-strong bg-card text-[13px] font-medium text-text-primary hover:bg-surface-muted transition-colors';
   return (
     <div className="flex gap-2">
       <button type="button" onClick={() => void share()} className={pill}>

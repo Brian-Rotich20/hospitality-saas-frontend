@@ -46,7 +46,7 @@ export default async function ListingDetailPage({ params }: Props) {
   return (
     <div className="bg-page min-h-screen pb-28 lg:pb-16">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
-        <nav aria-label="Breadcrumb" className="pt-5 pb-3 flex items-center gap-1.5 text-[13px] text-text-secondary min-w-0">
+        <nav aria-label="Breadcrumb" className="pt-5 pb-3 flex items-center gap-1.5 text-[12px] text-text-secondary min-w-0">
           <Link href="/store" className="hover:text-text-primary no-underline">Listings</Link>
           {category && (
             <>
@@ -59,15 +59,15 @@ export default async function ListingDetailPage({ params }: Props) {
         </nav>
 
         {listing.status !== 'active' && (
-          <p className="mb-4 rounded-xl border border-warning-border bg-warning-bg px-4 py-3 text-[14px] text-warning">
+          <p className="mb-4 rounded-xl border border-warning-border bg-warning-bg px-4 py-3 text-[13px] text-warning">
             This listing is {listing.status === 'paused' ? 'paused' : 'a draft'}. Only you can see this page until it is published.
           </p>
         )}
 
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-5">
           <div className="min-w-0">
-            <h1 className="text-[28px] sm:text-[34px] leading-[1.15] font-semibold tracking-[-0.02em] text-text-primary text-balance">{listing.title}</h1>
-            <p className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] text-text-secondary [&>span+span]:before:content-['·'] [&>span+span]:before:mr-2.5 [&>span+span]:before:text-text-muted">
+            <h1 className="text-[24px] sm:text-[28px] leading-[1.15] font-semibold tracking-[-0.02em] text-text-primary text-balance">{listing.title}</h1>
+            <p className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-text-secondary [&>span+span]:before:content-['·'] [&>span+span]:before:mr-2.5 [&>span+span]:before:text-text-muted">
               <span className="flex items-center gap-1.5">
                 <Star size={15} aria-hidden className={listing.rating ? 'fill-star text-star' : 'text-text-muted'} />
                 {listing.rating
@@ -86,7 +86,7 @@ export default async function ListingDetailPage({ params }: Props) {
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12 items-start">
           <div className="min-w-0 space-y-10">
             <section aria-labelledby="about">
-              <h2 id="about" className="text-[20px] font-semibold text-text-primary mb-3">About this {category ? category.toLowerCase().replace(/s$/, '') : 'listing'}</h2>
+              <h2 id="about" className="text-[17px] font-semibold text-text-primary mb-3">About this {category ? category.toLowerCase().replace(/s$/, '') : 'listing'}</h2>
               <Description text={listing.description} />
             </section>
 
@@ -95,19 +95,19 @@ export default async function ListingDetailPage({ params }: Props) {
             )}
 
             <section aria-labelledby="good-to-know">
-              <h2 id="good-to-know" className="text-[20px] font-semibold text-text-primary mb-3">Good to know</h2>
+              <h2 id="good-to-know" className="text-[17px] font-semibold text-text-primary mb-3">Good to know</h2>
               <dl className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
                 <div className="bg-card px-4 py-3.5">
-                  <dt className="text-[13px] text-text-secondary">Pricing</dt>
-                  <dd className="mt-0.5 text-[15px] font-medium text-text-primary">{BASIS[listing.pricingType] ?? 'Ask the vendor'}</dd>
+                  <dt className="text-[12px] text-text-secondary">Pricing</dt>
+                  <dd className="mt-0.5 text-[14px] font-medium text-text-primary">{BASIS[listing.pricingType] ?? 'Ask the vendor'}</dd>
                 </div>
                 <div className="bg-card px-4 py-3.5">
-                  <dt className="text-[13px] text-text-secondary">Payment</dt>
-                  <dd className="mt-0.5 text-[15px] font-medium text-text-primary">Agreed directly with the vendor</dd>
+                  <dt className="text-[12px] text-text-secondary">Payment</dt>
+                  <dd className="mt-0.5 text-[14px] font-medium text-text-primary">Agreed directly with the vendor</dd>
                 </div>
                 <div className="bg-card px-4 py-3.5">
-                  <dt className="text-[13px] text-text-secondary">On LinkMart since</dt>
-                  <dd className="mt-0.5 text-[15px] font-medium text-text-primary">{since}</dd>
+                  <dt className="text-[12px] text-text-secondary">On LinkMart since</dt>
+                  <dd className="mt-0.5 text-[14px] font-medium text-text-primary">{since}</dd>
                 </div>
               </dl>
             </section>
