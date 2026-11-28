@@ -91,6 +91,12 @@ export function NavBar() {
         <div className="flex-1 md:hidden" />
 
         <nav aria-label="Shortcuts" className="flex items-center gap-2.5 ml-auto">
+          {cta && (
+            <Link href={cta.href}
+              className="hidden md:flex mr-1 items-center h-11 px-6 rounded-lg bg-brand text-on-brand text-[15px] font-semibold no-underline hover:bg-brand-hover transition-colors whitespace-nowrap">
+              {cta.label}
+            </Link>
+          )}
           {shortcuts.map(({ href, Icon, label }) => (
             <Link key={href} href={href} aria-label={label} title={label} aria-current={isActive(href) ? 'page' : undefined}
               className={`${circle} hidden sm:flex ${isActive(href) ? 'ring-2 ring-white/70 ring-offset-2 ring-offset-primary' : ''}`}>
@@ -105,12 +111,6 @@ export function NavBar() {
           )}
           {isAuthenticated ? <UserMenu /> : (
             <Link href={loginHref} className="h-11 px-3 flex items-center text-[15px] font-semibold text-white no-underline hover:underline underline-offset-4">Sign in</Link>
-          )}
-          {cta && (
-            <Link href={cta.href}
-              className="hidden md:flex items-center h-11 px-6 rounded-lg bg-brand text-on-brand text-[15px] font-semibold no-underline hover:bg-brand-hover transition-colors whitespace-nowrap">
-              {cta.label}
-            </Link>
           )}
         </nav>
       </div>
